@@ -1,0 +1,24 @@
+{
+  "scripts": {
+    "test:anchor": "anchor test --skip-build tests/mmm.spec.ts",
+    "build": "cd sdk && npm run build"
+  },
+  "dependencies": {
+    "@project-serum/anchor": "^0.25.0",
+    "@project-serum/serum": "^0.13.58",
+    "@solana/spl-token": "^0.1.8",
+    "@solana/web3.js": "^1.25.0",
+    "ts-mocha": "^9.0.0"
+  },
+  "devDependencies": {
+    "@magiceden-oss/mmm": "file:sdk",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.0.0",
+    "chai": "^4.3.4",
+    "eslint-config-standard-with-typescript": "^21.0.1",
+    "eslint-plugin-prettier": "^4.0.0",
+    "mocha": "^9.0.3",
+    "prettier": "^2.3.2",
+    "typescript": "^4.4.2"
+  }
+}
