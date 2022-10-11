@@ -1,0 +1,25 @@
+[package]
+name = "mmm"
+version = "0.1.0"
+description = "MMM is an open source and secure AMM protocol on Solana"
+edition = "2018"
+license = "AGPL-3.0"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "mmm"
+
+[features]
+no-entrypoint = []
+no-idl = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { version = "0.26.0", features = ["init-if-needed"] }
+anchor-spl = "0.26.0"
+mpl-token-metadata = { version = "1.4.1", features = ["no-entrypoint"] }
+spl-token = { version = "3.3.1",  features = ["no-entrypoint"] }
+spl-associated-token-account = {version = "^1.1.1", features = ["no-entrypoint"]}
+open_creator_protocol = { version = "0.3.2", features = ["cpi"] }
+community-managed-token = { version = "0.2.0", features = ["no-entrypoint"] }

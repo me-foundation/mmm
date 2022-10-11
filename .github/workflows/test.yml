@@ -1,0 +1,21 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  anchor_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: metadaobuilders/anchor-test@v1
+        with:
+          anchor-version: '0.24.2'
+          solana-cli-version: '1.14.3'
+          node-version: '16.15.1'
+      - run: cargo fmt -- --check && cargo clippy

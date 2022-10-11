@@ -1,0 +1,31 @@
+[registry]
+url = "https://anchor.projectserum.com"
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[workspace]
+members = ["programs/mmm"]
+
+[test.validator]
+url = "https://api.devnet.solana.com"
+
+[[test.genesis]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+program = "tests/deps/token_metadata.so"
+
+[[test.validator.clone]]
+address = "CMTQqjzH6Anr9XcPVt73EFDTjWkJWPzH7H6DtvhHcyzV" # community-managed-token
+
+[[test.validator.clone]]
+address = "ocp4vWUzA2z2XMYJ3QhM9vWdyoyoQwAFJhRdVTbvo9E" # ocp: open_creator_protocol
+
+[[test.validator.clone]]
+address = "6Huqrb4xxmmNA4NufYdgpmspoLmjXFd3qEfteCddLgSz" # ocp: policy (allow all)
+
+[programs.localnet]
+mmm = "mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc"
+
+[scripts]
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.spec.ts"

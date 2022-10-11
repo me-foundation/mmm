@@ -1,0 +1,6 @@
+[workspace]
+members = ["programs/*"]
+
+[profile.dev]
+split-debuginfo = "unpacked"
+overflow-checks = true
