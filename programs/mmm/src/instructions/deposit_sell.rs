@@ -4,7 +4,10 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{state::Pool, util::check_cosigner};
+use crate::{
+    state::Pool,
+    util::{check_allowlists_for_mint, check_cosigner},
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositSellArgs {
@@ -24,6 +27,8 @@ pub struct DepositSell<'info> {
         bump
     )]
     pub pool: Account<'info, Pool>,
+    /// CHECK: we will check the metadata in check_allowlists_for_mint()
+    pub asset_metadata: AccountInfo<'info>,
     pub asset_mint: Account<'info, Mint>,
     #[account(
         mut,
@@ -48,12 +53,15 @@ pub struct DepositSell<'info> {
 pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let asset_token_account = &ctx.accounts.asset_token_account;
+    let asset_mint = &ctx.accounts.asset_mint;
+    let asset_metadata = &ctx.accounts.asset_metadata;
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let token_program = &ctx.accounts.token_program;
     let cosigner = &ctx.accounts.cosigner;
     let pool = &mut ctx.accounts.pool;
 
     check_cosigner(pool, cosigner)?;
+    check_allowlists_for_mint(&pool.allowlists, asset_mint, asset_metadata)?;
 
     anchor_spl::token::transfer(
         CpiContext::new(

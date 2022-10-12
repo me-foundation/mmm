@@ -3,6 +3,11 @@ use crate::{
     state::{Allowlist, Pool, ALLOWLIST_MAX_LEN},
 };
 use anchor_lang::prelude::*;
+use anchor_spl::token::Mint;
+
+pub fn is_native_mint(mint: Pubkey) -> bool {
+    mint.eq(&Pubkey::default())
+}
 
 pub fn check_cosigner(pool: &Account<Pool>, cosigner: &UncheckedAccount) -> Result<()> {
     if pool.cosigner.eq(&Pubkey::default()) {
@@ -18,10 +23,6 @@ pub fn check_cosigner(pool: &Account<Pool>, cosigner: &UncheckedAccount) -> Resu
     }
 
     Ok(())
-}
-
-pub fn is_native_mint(mint: Pubkey) -> bool {
-    mint.eq(&Pubkey::default())
 }
 
 pub fn check_allowlists(allowlists: &Vec<Allowlist>) -> Result<()> {
@@ -42,6 +43,18 @@ pub fn check_allowlists(allowlists: &Vec<Allowlist>) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+pub fn check_allowlists_for_mint(
+    allowlists: &Vec<Allowlist>,
+    mint: &Account<Mint>,
+    metadata: &AccountInfo,
+) -> Result<()> {
+    // TODO: we need to check the following validation rules
+    // 1. make sure the metadata is correctly derived from the metadata pda with the mint
+    // 2. make sure mint+metadata(e.g. first verified creator address) can match one of the allowlist
+    // 3. note that the allowlist is unioned together, not intersection
     Ok(())
 }
 

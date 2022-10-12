@@ -54,6 +54,11 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
 
     check_cosigner(pool, cosigner)?;
 
+    // Note that check_allowlists_for_mint is optional for withdraw_sell
+    // because sometimes the nft or sft might be moved out of the collection
+    // and we'd still like to enable the withdraw of those items for the pool owner.
+    // check_allowlists_for_mint(&pool.allowlists, asset_mint, asset_metadata)?;
+
     anchor_spl::token::transfer(
         CpiContext::new_with_signer(
             token_program.to_account_info(),
