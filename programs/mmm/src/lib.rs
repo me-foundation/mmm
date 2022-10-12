@@ -37,10 +37,6 @@ pub mod mmm {
         instructions::withdraw_sell::handler(ctx, args)
     }
 
-    pub fn withdraw_lp_fee(ctx: Context<WithdrawLPFee>, args: WithdrawLPFeeArgs) -> Result<()> {
-        Ok(())
-    }
-
     pub fn fulfill_buy(ctx: Context<FulfillBuy>, args: FulfillBuyArgs) -> Result<()> {
         Ok(())
     }

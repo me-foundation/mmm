@@ -30,6 +30,7 @@ pub struct Pool {
 
     // mutable state data
     pub sellside_orders_count: u64,
+    pub lp_fee_earned: u64,
 
     // immutable
     pub owner: Pubkey,
@@ -42,7 +43,7 @@ pub struct Pool {
 
 impl Pool {
     pub const LEN: usize = 8 +
-        8 * 3 + // u64
+        8 * 4 + // u64
         8 + // i64
         1 +  // u8
         2 +  // u16
