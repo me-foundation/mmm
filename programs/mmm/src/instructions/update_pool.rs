@@ -28,7 +28,6 @@ pub struct UpdatePool<'info> {
 
 pub fn handler(ctx: Context<UpdatePool>, args: UpdatePoolArgs) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
-    let owner = &ctx.accounts.owner;
 
     check_curve(args.curve_type, args.curve_delta)?;
 

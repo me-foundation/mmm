@@ -30,7 +30,7 @@ pub fn check_allowlists(allowlists: &Vec<Allowlist>) -> Result<()> {
         return Err(MMMErrorCode::InvalidAllowLists.into());
     }
 
-    if allowlists.len() == 0 {
+    if allowlists.is_empty() {
         msg!("InvalidAllowLists: 0 entries");
         return Err(MMMErrorCode::InvalidAllowLists.into());
     }

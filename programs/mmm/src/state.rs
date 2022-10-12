@@ -13,7 +13,7 @@ impl Allowlist {
     // kind == 1: single mint, useful for SFT
     // kind == 2,3,4 will be supported in the future
     pub fn valid(&self) -> bool {
-        return self.kind <= 1;
+        self.kind <= 1
     }
 }
 
@@ -43,11 +43,11 @@ pub struct Pool {
 impl Pool {
     pub const LEN: usize = 8 +
         8 * 3 + // u64
-        8 * 1 + // i64
-        1 * 1 +  // u8
-        2 * 1 +  // u16
+        8 + // i64
+        1 +  // u8
+        2 +  // u16
         32 * 5 +  // Pubkey
-        1 * 1 + // bool
+        1 + // bool
         4 + (1+ 32) * ALLOWLIST_MAX_LEN + // Vec<Pubkey>
         400; // padding
 }
