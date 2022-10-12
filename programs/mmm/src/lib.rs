@@ -38,7 +38,7 @@ pub mod mmm {
     }
 
     pub fn fulfill_buy(ctx: Context<FulfillBuy>, args: FulfillBuyArgs) -> Result<()> {
-        Ok(())
+        instructions::fulfill_buy::handler(ctx, args)
     }
 
     pub fn fulfill_sell(ctx: Context<FulfillSell>, args: FulfillSellArgs) -> Result<()> {

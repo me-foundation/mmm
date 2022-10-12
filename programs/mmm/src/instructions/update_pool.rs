@@ -20,6 +20,7 @@ pub struct UpdatePool<'info> {
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         bump,
+        has_one = owner,
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidLPFeeBP,
     )]
     pub pool: Account<'info, Pool>,

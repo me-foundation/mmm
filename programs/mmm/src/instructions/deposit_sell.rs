@@ -24,6 +24,7 @@ pub struct DepositSell<'info> {
     #[account(
         mut,
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
+        has_one = owner,
         bump
     )]
     pub pool: Account<'info, Pool>,

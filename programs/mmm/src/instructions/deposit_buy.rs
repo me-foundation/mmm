@@ -3,7 +3,7 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use crate::{
     errors::MMMErrorCode,
     state::Pool,
-    util::{check_cosigner, is_native_mint},
+    util::{check_cosigner},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -21,6 +21,8 @@ pub struct DepositBuy<'info> {
     pub cosigner: UncheckedAccount<'info>,
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
+        has_one = owner,
+        constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         bump
     )]
     pub pool: Account<'info, Pool>,
@@ -42,12 +44,6 @@ pub fn handler(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
     let pool = &ctx.accounts.pool;
 
     check_cosigner(pool, cosigner)?;
-
-    // make sure that this only works for native payment mint
-    if !is_native_mint(pool.payment_mint) {
-        msg!("only the native Pubkey::default() payment mint is supported");
-        return Err(MMMErrorCode::InvalidPaymentMint.into());
-    }
 
     anchor_lang::solana_program::program::invoke(
         &anchor_lang::solana_program::system_instruction::transfer(

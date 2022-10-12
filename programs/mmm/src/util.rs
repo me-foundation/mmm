@@ -5,10 +5,6 @@ use crate::{
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 
-pub fn is_native_mint(mint: Pubkey) -> bool {
-    mint.eq(&Pubkey::default())
-}
-
 pub fn check_cosigner(pool: &Account<Pool>, cosigner: &UncheckedAccount) -> Result<()> {
     if pool.cosigner.eq(&Pubkey::default()) {
         return Ok(());
