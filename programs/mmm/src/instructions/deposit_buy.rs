@@ -1,6 +1,10 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{state::Pool, util::{check_cosigner, is_native_mint}, errors::MMMErrorCode};
+use crate::{
+    errors::MMMErrorCode,
+    state::Pool,
+    util::{check_cosigner, is_native_mint},
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositBuyArgs {

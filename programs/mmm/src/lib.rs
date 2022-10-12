@@ -17,6 +17,10 @@ pub mod mmm {
         instructions::create_pool::handler(ctx, args)
     }
 
+    pub fn update_pool(ctx: Context<UpdatePool>, args: UpdatePoolArgs) -> Result<()> {
+        instructions::update_pool::handler(ctx, args)
+    }
+
     pub fn deposit_buy(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
         instructions::deposit_buy::handler(ctx, args)
     }
@@ -45,18 +49,4 @@ pub mod mmm {
         Ok(())
     }
 
-    pub fn change_spot_price(
-        ctx: Context<ChangeSpotPrice>,
-        args: ChangeSpotPriceArgs,
-    ) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn change_curve(ctx: Context<ChangeCurve>, args: ChangeCurveArgs) -> Result<()> {
-        Ok(())
-    }
-
-    pub fn change_lp_fee(ctx: Context<ChangeLPFee>, args: ChangeLPFeeArgs) -> Result<()> {
-        Ok(())
-    }
 }

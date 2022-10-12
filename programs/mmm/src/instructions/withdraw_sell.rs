@@ -1,5 +1,8 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
-use anchor_spl::{associated_token::{AssociatedToken}, token::{Mint, Token, TokenAccount}};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{Mint, Token, TokenAccount},
+};
 
 use crate::{state::Pool, util::check_cosigner};
 

@@ -1,5 +1,9 @@
+use crate::{
+    errors::MMMErrorCode,
+    state::Pool,
+    util::{check_cosigner, is_native_mint},
+};
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
-use crate::{state::Pool, util::{check_cosigner, is_native_mint}, errors::MMMErrorCode};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct WithdrawBuyArgs {
@@ -54,7 +58,6 @@ pub fn handler(ctx: Context<WithdrawBuy>, args: WithdrawBuyArgs) -> Result<()> {
             buyside_sol_escrow_account.to_account_info(),
             system_program.to_account_info(),
         ],
-
         // seeds should be the PDA of 'buyside_sol_escrow_account'
         &[&[
             b"mmm_buyside_sol_escrow_account",

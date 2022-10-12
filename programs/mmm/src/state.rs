@@ -3,12 +3,12 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 pub const ALLOWLIST_MAX_LEN: usize = 6;
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
-pub struct AllowList {
+pub struct Allowlist {
     pub kind: u8,
     pub value: Pubkey,
 }
 
-impl AllowList {
+impl Allowlist {
     // kind == 0: first verified creator address (FVCA)
     // kind == 1: single mint, useful for SFT
     // kind == 2,3,4 will be supported in the future
@@ -20,12 +20,16 @@ impl AllowList {
 #[account]
 #[derive(Default)]
 pub struct Pool {
-    // mutable
+    // mutable configurable
     pub spot_price: u64,
     pub curve_type: u8,
     pub curve_delta: u64,
-    pub sellside_orders_count: u64,
     pub reinvest: bool,
+    pub expiry: i64,
+    pub lp_fee_bp: u16,
+
+    // mutable state data
+    pub sellside_orders_count: u64,
 
     // immutable
     pub owner: Pubkey,
@@ -33,13 +37,13 @@ pub struct Pool {
     pub uuid: Pubkey, // randomly generated keypair
     pub payment_mint: Pubkey,
     pub maker_referral: Pubkey,
-    pub lp_fee_bp: u16,
-    pub allowlists: Vec<AllowList>,
+    pub allowlists: Vec<Allowlist>,
 }
 
 impl Pool {
     pub const LEN: usize = 8 +
         8 * 3 + // u64
+        8 * 1 + // i64
         1 * 1 +  // u8
         2 * 1 +  // u16
         32 * 5 +  // Pubkey
