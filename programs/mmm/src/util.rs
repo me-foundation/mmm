@@ -1,6 +1,6 @@
 use crate::{
     errors::MMMErrorCode,
-    state::{Pool, Allowlist, ALLOWLIST_MAX_LEN},
+    state::{Allowlist, Pool, ALLOWLIST_MAX_LEN},
 };
 use anchor_lang::prelude::*;
 

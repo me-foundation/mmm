@@ -1,10 +1,6 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{
-    errors::MMMErrorCode,
-    state::{Pool},
-    util::*,
-};
+use crate::{errors::MMMErrorCode, state::Pool, util::*};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct UpdatePoolArgs {
