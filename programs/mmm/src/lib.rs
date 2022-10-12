@@ -2,9 +2,10 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 declare_id!("mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc");
 
-pub mod state;
 mod errors;
 mod instructions;
+mod state;
+mod util;
 
 use instructions::*;
 
@@ -13,23 +14,23 @@ pub mod mmm {
     use super::*;
 
     pub fn create_pool(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
-        Ok(())
+        instructions::create_pool::handler(ctx, args)
     }
 
     pub fn deposit_buy(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
-        Ok(())
+        instructions::deposit_buy::handler(ctx, args)
     }
 
     pub fn deposit_sell(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
-        Ok(())
+        instructions::deposit_sell::handler(ctx, args)
     }
 
     pub fn withdraw_buy(ctx: Context<WithdrawBuy>, args: WithdrawBuyArgs) -> Result<()> {
-        Ok(())
+        instructions::withdraw_buy::handler(ctx, args)
     }
 
     pub fn withdraw_sell(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()> {
-        Ok(())
+        instructions::withdraw_sell::handler(ctx, args)
     }
 
     pub fn withdraw_lp_fee(ctx: Context<WithdrawLPFee>, args: WithdrawLPFeeArgs) -> Result<()> {
@@ -44,7 +45,10 @@ pub mod mmm {
         Ok(())
     }
 
-    pub fn change_spot_price(ctx: Context<ChangeSpotPrice>, args: ChangeSpotPriceArgs) -> Result<()> {
+    pub fn change_spot_price(
+        ctx: Context<ChangeSpotPrice>,
+        args: ChangeSpotPriceArgs,
+    ) -> Result<()> {
         Ok(())
     }
 

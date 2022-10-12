@@ -3,7 +3,7 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use crate::state::Pool;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct FulfillBuyArgs{
+pub struct FulfillBuyArgs {
     asset_amount: u64,
     min_payment_amount: u64,
 }
@@ -20,9 +20,9 @@ pub struct FulfillBuy<'info> {
     /// CHECK: we will check cosigner when cosign field is on
     cosigner: UncheckedAccount<'info>,
     #[account(
-        seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_bytes()],
+        seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         bump
     )]
     pool: Account<'info, Pool>,
-    system_program: Program<'info, System>
+    system_program: Program<'info, System>,
 }
