@@ -22,6 +22,10 @@ pub mod mmm {
         instructions::update_pool::handler(ctx, args)
     }
 
+    pub fn close_pool(ctx: Context<ClosePool>) -> Result<()> {
+        instructions::close_pool::handler(ctx)
+    }
+
     pub fn deposit_buy(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
         instructions::deposit_buy::handler(ctx, args)
     }

@@ -22,8 +22,12 @@ pub enum MMMErrorCode {
     NumericOverflow,
     #[msg("invalid requested price")]
     InvalidRequestedPrice,
+    #[msg("not empty escrow account")]
+    NotEmptyEscrowAccount,
+    #[msg("not empty sell side orders count")]
+    NotEmptySellSideOrdersCount,
     #[msg("invalid referral")]
     InvalidReferral,
     #[msg("invalid master edition")]
-    InvalidMasterEdition,
+    InvalidMasterEdition
 }
