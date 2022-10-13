@@ -2,6 +2,7 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 declare_id!("mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc");
 
+mod constants;
 mod errors;
 mod instructions;
 mod state;
