@@ -1,7 +1,4 @@
-use crate::{
-    errors::MMMErrorCode,
-    state::{Allowlist, Pool, ALLOWLIST_MAX_LEN},
-};
+use crate::{errors::MMMErrorCode, state::*};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 
@@ -69,4 +66,60 @@ pub fn check_curve(curve_type: u8, curve_delta: u64) -> Result<()> {
     }
 
     Ok(())
+}
+
+pub fn get_sol_lp_fee(
+    pool: &Pool,
+    buyside_sol_escrow_balance: u64,
+    total_sol_price: u64,
+) -> Result<u64> {
+    if pool.sellside_orders_count < 1 {
+        return Ok(0);
+    }
+
+    if buyside_sol_escrow_balance < pool.spot_price {
+        return Ok(0);
+    }
+
+    Ok(((total_sol_price as u128)
+        .checked_mul(pool.lp_fee_bp as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?) as u64)
+}
+
+pub fn get_sol_total_price(pool: &Pool, n: u64, fulfill_buy: bool) -> Result<u64> {
+    // the price needs to go down
+    let p = pool.spot_price;
+    let delta = pool.curve_delta;
+    match fulfill_buy {
+        true => {
+            match pool.curve_type {
+                CURVE_KIND_LINEAR => {
+                    // n*(2*p-(n-1)*delta)/2
+                    Ok(0)
+                }
+                CURVE_KIND_EXP => {
+                    // r = 1 / (1 + delta/10000)
+                    // p * (1-(1+r^n)/(1-r))
+                    Ok(0)
+                }
+                _ => Err(MMMErrorCode::InvalidCurveType.into()),
+            }
+        }
+        false => {
+            match pool.curve_type {
+                CURVE_KIND_LINEAR => {
+                    // n*(2*p+(n-1)*delta)/2
+                    Ok(0)
+                }
+                CURVE_KIND_EXP => {
+                    // r = (1 + delta/10000)
+                    // p * (1-(1+r^n)/(1-r))
+                    Ok(0)
+                }
+                _ => Err(MMMErrorCode::InvalidCurveType.into()),
+            }
+        }
+    }
 }

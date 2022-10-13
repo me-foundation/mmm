@@ -1,8 +1,4 @@
-use crate::{
-    errors::MMMErrorCode,
-    state::Pool,
-    util::{check_cosigner},
-};
+use crate::{errors::MMMErrorCode, state::Pool, util::check_cosigner};
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -19,7 +15,7 @@ pub struct WithdrawBuy<'info> {
     pub cosigner: UncheckedAccount<'info>,
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
-        has_one = owner,
+        has_one = owner @ MMMErrorCode::InvalidOwner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         bump
     )]

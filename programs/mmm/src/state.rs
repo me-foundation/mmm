@@ -2,6 +2,9 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 pub const ALLOWLIST_MAX_LEN: usize = 6;
 
+pub const CURVE_KIND_LINEAR: u8 = 0;
+pub const CURVE_KIND_EXP: u8 = 1;
+
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Allowlist {
     pub kind: u8,

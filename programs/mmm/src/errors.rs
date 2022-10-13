@@ -16,4 +16,10 @@ pub enum MMMErrorCode {
     InvalidCosigner,
     #[msg("invalid payment mint")]
     InvalidPaymentMint,
+    #[msg("invalid owner")]
+    InvalidOwner,
+    #[msg("numeric overflow")]
+    NumericOverflow,
+    #[msg("invalid requested price")]
+    InvalidRequestedPrice,
 }

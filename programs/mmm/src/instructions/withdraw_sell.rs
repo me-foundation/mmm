@@ -4,7 +4,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{state::Pool, util::check_cosigner};
+use crate::{errors::MMMErrorCode, state::Pool, util::check_cosigner};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct WithdrawSellArgs {
@@ -21,7 +21,7 @@ pub struct WithdrawSell<'info> {
     #[account(
         mut,
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
-        has_one = owner,
+        has_one = owner @ MMMErrorCode::InvalidOwner,
         bump
     )]
     pub pool: Account<'info, Pool>,

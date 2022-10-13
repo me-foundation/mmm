@@ -5,6 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
+    errors::MMMErrorCode,
     state::Pool,
     util::{check_allowlists_for_mint, check_cosigner},
 };
@@ -24,7 +25,7 @@ pub struct DepositSell<'info> {
     #[account(
         mut,
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
-        has_one = owner,
+        has_one = owner @ MMMErrorCode::InvalidOwner,
         bump
     )]
     pub pool: Account<'info, Pool>,
