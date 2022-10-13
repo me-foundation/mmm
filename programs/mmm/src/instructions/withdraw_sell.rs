@@ -24,7 +24,7 @@ pub struct WithdrawSell<'info> {
         has_one = owner @ MMMErrorCode::InvalidOwner,
         bump
     )]
-    pub pool: Account<'info, Pool>,
+    pub pool: Box<Account<'info, Pool>>,
     pub asset_mint: Account<'info, Mint>,
     #[account(
         init_if_needed,
@@ -78,6 +78,24 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
         ),
         args.asset_amount,
     )?;
+    // we can close the sellside_escrow_token_account if no amount left
+    if sellside_escrow_token_account.amount == args.asset_amount {
+        anchor_spl::token::close_account(CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            anchor_spl::token::CloseAccount {
+                account: sellside_escrow_token_account.to_account_info(),
+                destination: owner.to_account_info(),
+                authority: pool.to_account_info(),
+            },
+            // seeds should be the PDA of 'pool'
+            &[&[
+                b"mmm_pool",
+                owner.key().as_ref(),
+                pool.uuid.key().as_ref(),
+                &[*ctx.bumps.get("pool").unwrap()],
+            ]],
+        ))?;
+    }
 
     pool.sellside_orders_count -= args.asset_amount;
     Ok(())

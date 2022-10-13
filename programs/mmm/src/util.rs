@@ -18,17 +18,7 @@ pub fn check_cosigner(pool: &Account<Pool>, cosigner: &UncheckedAccount) -> Resu
     Ok(())
 }
 
-pub fn check_allowlists(allowlists: &Vec<Allowlist>) -> Result<()> {
-    if allowlists.len() > ALLOWLIST_MAX_LEN {
-        msg!("InvalidAllowLists: more entries than allowed");
-        return Err(MMMErrorCode::InvalidAllowLists.into());
-    }
-
-    if allowlists.is_empty() {
-        msg!("InvalidAllowLists: 0 entries");
-        return Err(MMMErrorCode::InvalidAllowLists.into());
-    }
-
+pub fn check_allowlists(allowlists: &[Allowlist]) -> Result<()> {
     for allowlist in allowlists.iter() {
         if !allowlist.valid() {
             msg!("InvalidAllowLists: invalid entry");
@@ -40,7 +30,7 @@ pub fn check_allowlists(allowlists: &Vec<Allowlist>) -> Result<()> {
 }
 
 pub fn check_allowlists_for_mint(
-    allowlists: &Vec<Allowlist>,
+    allowlists: &[Allowlist],
     mint: &Account<Mint>,
     metadata: &AccountInfo,
 ) -> Result<()> {
@@ -48,6 +38,7 @@ pub fn check_allowlists_for_mint(
     // 1. make sure the metadata is correctly derived from the metadata pda with the mint
     // 2. make sure mint+metadata(e.g. first verified creator address) can match one of the allowlist
     // 3. note that the allowlist is unioned together, not intersection
+    // 4. skip if the allowlist.is_empty()
     Ok(())
 }
 
