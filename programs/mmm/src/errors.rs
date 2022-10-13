@@ -22,4 +22,8 @@ pub enum MMMErrorCode {
     NumericOverflow,
     #[msg("invalid requested price")]
     InvalidRequestedPrice,
+    #[msg("invalid referral")]
+    InvalidReferral,
+    #[msg("invalid master edition")]
+    InvalidMasterEdition,
 }
