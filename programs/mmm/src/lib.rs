@@ -23,11 +23,11 @@ pub mod mmm {
     }
 
     pub fn close_pool(ctx: Context<ClosePool>) -> Result<()> {
-        instructions::close_pool::handler(ctx)
+        instructions::sol_close_pool::handler(ctx)
     }
 
     pub fn deposit_buy(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
-        instructions::deposit_buy::handler(ctx, args)
+        instructions::sol_deposit_buy::handler(ctx, args)
     }
 
     pub fn deposit_sell(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
@@ -35,7 +35,7 @@ pub mod mmm {
     }
 
     pub fn withdraw_buy(ctx: Context<WithdrawBuy>, args: WithdrawBuyArgs) -> Result<()> {
-        instructions::withdraw_buy::handler(ctx, args)
+        instructions::sol_withdraw_buy::handler(ctx, args)
     }
 
     pub fn withdraw_sell(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()> {
@@ -43,10 +43,10 @@ pub mod mmm {
     }
 
     pub fn fulfill_buy(ctx: Context<FulfillBuy>, args: FulfillBuyArgs) -> Result<()> {
-        instructions::fulfill_buy::handler(ctx, args)
+        instructions::sol_fulfill_buy::handler(ctx, args)
     }
 
     pub fn fulfill_sell(ctx: Context<FulfillSell>, args: FulfillSellArgs) -> Result<()> {
-        instructions::fulfill_sell::handler(ctx, args)
+        instructions::sol_fulfill_sell::handler(ctx, args)
     }
 }
