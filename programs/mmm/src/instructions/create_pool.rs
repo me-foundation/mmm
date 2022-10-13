@@ -1,8 +1,9 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 use crate::{
+    constants::*,
     errors::MMMErrorCode,
-    state::{Allowlist, Pool, ALLOWLIST_MAX_LEN},
+    state::{Allowlist, Pool},
     util::*,
 };
 

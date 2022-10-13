@@ -1,4 +1,4 @@
-use crate::{errors::MMMErrorCode, state::Pool, util::check_cosigner};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_cosigner};
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -23,10 +23,10 @@ pub struct WithdrawBuy<'info> {
     /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
         mut,
-        seeds = [b"mmm_buyside_sol_escrow_account", pool.key().as_ref()],
+        seeds = [BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(), pool.key().as_ref()],
         bump,
     )]
-    pub buyside_sol_escrow_account: AccountInfo<'info>,
+    pub buyside_sol_escrow_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
 }
 
@@ -52,7 +52,7 @@ pub fn handler(ctx: Context<WithdrawBuy>, args: WithdrawBuyArgs) -> Result<()> {
         ],
         // seeds should be the PDA of 'buyside_sol_escrow_account'
         &[&[
-            b"mmm_buyside_sol_escrow_account",
+            BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
             pool.key().as_ref(),
             &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
         ]],

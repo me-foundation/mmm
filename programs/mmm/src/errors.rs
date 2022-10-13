@@ -25,5 +25,9 @@ pub enum MMMErrorCode {
     #[msg("not empty escrow account")]
     NotEmptyEscrowAccount,
     #[msg("not empty sell side orders count")]
-    NotEmptySellSideOrdersCount
+    NotEmptySellSideOrdersCount,
+    #[msg("invalid referral")]
+    InvalidReferral,
+    #[msg("invalid master edition")]
+    InvalidMasterEdition
 }
