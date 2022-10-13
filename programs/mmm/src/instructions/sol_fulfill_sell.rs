@@ -15,7 +15,7 @@ use crate::{
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct FulfillSellArgs {
+pub struct SolFulfillSellArgs {
     asset_amount: u64,
     max_payment_amount: u64,
 }
@@ -25,8 +25,8 @@ pub struct FulfillSellArgs {
 // the buyer expects to pay a max_payment_amount for the asset_amount
 // that the buyer wants to buy.
 #[derive(Accounts)]
-#[instruction(args:FulfillSellArgs)]
-pub struct FulfillSell<'info> {
+#[instruction(args:SolFulfillSellArgs)]
+pub struct SolFulfillSell<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK: we will check the owner field that matches the pool owner
@@ -76,7 +76,7 @@ pub struct FulfillSell<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<FulfillSell>, args: FulfillSellArgs) -> Result<()> {
+pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
     let cosigner = &ctx.accounts.cosigner;

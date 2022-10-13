@@ -3,14 +3,14 @@ use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_cosigner};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct DepositBuyArgs {
+pub struct SolDepositBuyArgs {
     payment_amount: u64,
 }
 
 // This is targeting the deposit of native payment_mint: SOL
 #[derive(Accounts)]
-#[instruction(args:DepositBuyArgs)]
-pub struct DepositBuy<'info> {
+#[instruction(args:SolDepositBuyArgs)]
+pub struct SolDepositBuy<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     /// CHECK: we will check cosigner when cosign field is on
@@ -32,7 +32,7 @@ pub struct DepositBuy<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
+pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;

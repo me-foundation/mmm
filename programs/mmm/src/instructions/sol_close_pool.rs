@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{errors::MMMErrorCode, state::Pool, util::*};
 
 #[derive(Accounts)]
-pub struct ClosePool<'info> {
+pub struct SolClosePool<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     /// CHECK: we will check cosigner when cosign field is on
@@ -28,7 +28,7 @@ pub struct ClosePool<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<ClosePool>) -> Result<()> {
+pub fn handler(ctx: Context<SolClosePool>) -> Result<()> {
     let pool = &ctx.accounts.pool;
     let cosigner = &ctx.accounts.cosigner;
     check_cosigner(pool, cosigner)?;

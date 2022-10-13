@@ -2,13 +2,13 @@ use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_cosigne
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct WithdrawBuyArgs {
+pub struct SolWithdrawBuyArgs {
     payment_amount: u64,
 }
 
 #[derive(Accounts)]
-#[instruction(args:WithdrawBuyArgs)]
-pub struct WithdrawBuy<'info> {
+#[instruction(args:SolWithdrawBuyArgs)]
+pub struct SolWithdrawBuy<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     /// CHECK: we will check cosigner when cosign field is on
@@ -30,7 +30,7 @@ pub struct WithdrawBuy<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<WithdrawBuy>, args: WithdrawBuyArgs) -> Result<()> {
+pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
