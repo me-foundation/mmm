@@ -19,7 +19,7 @@ pub struct WithdrawBuy<'info> {
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         bump
     )]
-    pub pool: Account<'info, Pool>,
+    pub pool: Box<Account<'info, Pool>>,
     /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
         mut,

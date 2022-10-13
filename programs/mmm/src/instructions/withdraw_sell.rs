@@ -24,7 +24,7 @@ pub struct WithdrawSell<'info> {
         has_one = owner @ MMMErrorCode::InvalidOwner,
         bump
     )]
-    pub pool: Account<'info, Pool>,
+    pub pool: Box<Account<'info, Pool>>,
     pub asset_mint: Account<'info, Mint>,
     #[account(
         init_if_needed,

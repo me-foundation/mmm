@@ -28,7 +28,7 @@ pub struct DepositSell<'info> {
         has_one = owner @ MMMErrorCode::InvalidOwner,
         bump
     )]
-    pub pool: Account<'info, Pool>,
+    pub pool: Box<Account<'info, Pool>>,
     /// CHECK: we will check the metadata in check_allowlists_for_mint()
     pub asset_metadata: AccountInfo<'info>,
     pub asset_mint: Account<'info, Mint>,
