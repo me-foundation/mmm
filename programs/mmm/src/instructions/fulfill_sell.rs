@@ -143,6 +143,10 @@ pub fn handler(ctx: Context<FulfillSell>, args: FulfillSellArgs) -> Result<()> {
         )?;
     }
 
+    // TODO:
+    // 1. update spot_price
+    // 2. pay referral fee
+
     pool.sellside_orders_count -= args.asset_amount;
     pool.lp_fee_earned += lp_fee;
 
