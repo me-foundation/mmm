@@ -29,5 +29,5 @@ pub enum MMMErrorCode {
     #[msg("invalid referral")]
     InvalidReferral,
     #[msg("invalid master edition")]
-    InvalidMasterEdition
+    InvalidMasterEdition,
 }

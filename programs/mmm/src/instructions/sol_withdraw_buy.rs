@@ -1,16 +1,14 @@
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_cosigner};
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_cosigner};
-
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct DepositBuyArgs {
+pub struct SolWithdrawBuyArgs {
     payment_amount: u64,
 }
 
-// This is targeting the deposit of native payment_mint: SOL
 #[derive(Accounts)]
-#[instruction(args:DepositBuyArgs)]
-pub struct DepositBuy<'info> {
+#[instruction(args:SolWithdrawBuyArgs)]
+pub struct SolWithdrawBuy<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     /// CHECK: we will check cosigner when cosign field is on
@@ -32,7 +30,7 @@ pub struct DepositBuy<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
+pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
@@ -41,7 +39,7 @@ pub fn handler(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
 
     check_cosigner(pool, cosigner)?;
 
-    anchor_lang::solana_program::program::invoke(
+    anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::system_instruction::transfer(
             owner.key,
             buyside_sol_escrow_account.key,
@@ -52,6 +50,12 @@ pub fn handler(ctx: Context<DepositBuy>, args: DepositBuyArgs) -> Result<()> {
             buyside_sol_escrow_account.to_account_info(),
             system_program.to_account_info(),
         ],
+        // seeds should be the PDA of 'buyside_sol_escrow_account'
+        &[&[
+            BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
+            pool.key().as_ref(),
+            &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
+        ]],
     )?;
 
     Ok(())

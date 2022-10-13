@@ -15,18 +15,18 @@ use crate::{
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct FulfillBuyArgs {
+pub struct SolFulfillSellArgs {
     asset_amount: u64,
-    min_payment_amount: u64,
+    max_payment_amount: u64,
 }
 
-// FulfillBuy means a seller wants to sell NFT/SFT into the pool
-// where the pool has some buyside payment liquidity. Therefore,
-// the seller expects a min_payment_amount for the asset_amount that
-// the seller wants to sell.
+// FulfillSell means a buyer wants to buy NFT/SFT from the pool
+// where the pool has some sellside asset liquidity. Therefore,
+// the buyer expects to pay a max_payment_amount for the asset_amount
+// that the buyer wants to buy.
 #[derive(Accounts)]
-#[instruction(args:FulfillBuyArgs)]
-pub struct FulfillBuy<'info> {
+#[instruction(args:SolFulfillSellArgs)]
+pub struct SolFulfillSell<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK: we will check the owner field that matches the pool owner
@@ -50,7 +50,7 @@ pub struct FulfillBuy<'info> {
         seeds = [BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(), pool.key().as_ref()],
         bump,
     )]
-    pub buyside_sol_escrow_account: UncheckedAccount<'info>,
+    pub buyside_sol_escrow_account: AccountInfo<'info>,
     /// CHECK: we will check the metadata in check_allowlists_for_mint()
     pub asset_metadata: UncheckedAccount<'info>,
     /// CHECK: we will check the master_edtion in check_allowlists_for_mint()
@@ -59,13 +59,6 @@ pub struct FulfillBuy<'info> {
     pub asset_mint: Account<'info, Mint>,
     #[account(
         mut,
-        token::mint = asset_mint,
-        token::authority = payer,
-    )]
-    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
-    #[account(
-        init_if_needed,
-        payer = payer,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
     )]
@@ -74,22 +67,21 @@ pub struct FulfillBuy<'info> {
         init_if_needed,
         payer = payer,
         associated_token::mint = asset_mint,
-        associated_token::authority = owner,
+        associated_token::authority = payer,
     )]
-    pub owner_token_account: Box<Account<'info, TokenAccount>>,
+    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<FulfillBuy>, args: FulfillBuyArgs) -> Result<()> {
+pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
     let cosigner = &ctx.accounts.cosigner;
     let pool = &mut ctx.accounts.pool;
     let owner = &ctx.accounts.owner;
-    let owner_token_account = &ctx.accounts.owner_token_account;
     let referral = &ctx.accounts.referral;
 
     let payer = &ctx.accounts.payer;
@@ -110,120 +102,112 @@ pub fn handler(ctx: Context<FulfillBuy>, args: FulfillBuyArgs) -> Result<()> {
     )?;
 
     let (total_price, next_price) =
-        get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
-    if total_price < args.min_payment_amount {
+        get_sol_total_price_and_next_price(pool, args.asset_amount, false)?;
+    if total_price > args.max_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
     let referral_fee = get_sol_referral_fee(pool, total_price)?;
 
-    let transfer_asset_to = if pool.reinvest {
-        sellside_escrow_token_account.to_account_info()
+    let transfer_sol_to = if pool.reinvest {
+        buyside_sol_escrow_account.to_account_info()
     } else {
-        owner_token_account.to_account_info()
+        owner.to_account_info()
     };
 
+    // TODO: make sure that the lp fee is paid with the correct amount
+    anchor_lang::solana_program::program::invoke(
+        &anchor_lang::solana_program::system_instruction::transfer(
+            payer.key,
+            transfer_sol_to.key,
+            total_price,
+        ),
+        &[
+            payer.to_account_info(),
+            transfer_sol_to,
+            system_program.to_account_info(),
+        ],
+    )?;
+
     anchor_spl::token::transfer(
-        CpiContext::new(
+        CpiContext::new_with_signer(
             token_program.to_account_info(),
             anchor_spl::token::Transfer {
-                from: payer_asset_account.to_account_info(),
-                to: transfer_asset_to,
-                authority: payer.to_account_info(),
+                from: sellside_escrow_token_account.to_account_info(),
+                to: payer_asset_account.to_account_info(),
+                authority: pool.to_account_info(),
             },
+            // seeds should be the PDA of 'pool'
+            &[&[
+                b"mmm_pool",
+                owner.key().as_ref(),
+                pool.uuid.key().as_ref(),
+                &[*ctx.bumps.get("pool").unwrap()],
+            ]],
         ),
         args.asset_amount,
     )?;
-    // we can close the payer_asset_account if no amount left
-    if payer_asset_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
+    // we can close the sellside_escrow_token_account if no amount left
+    if sellside_escrow_token_account.amount == args.asset_amount {
+        anchor_spl::token::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
             anchor_spl::token::CloseAccount {
-                account: payer_asset_account.to_account_info(),
-                destination: payer.to_account_info(),
-                authority: payer.to_account_info(),
+                account: sellside_escrow_token_account.to_account_info(),
+                destination: owner.to_account_info(),
+                authority: pool.to_account_info(),
             },
+            // seeds should be the PDA of 'pool'
+            &[&[
+                b"mmm_pool",
+                owner.key().as_ref(),
+                pool.uuid.key().as_ref(),
+                &[*ctx.bumps.get("pool").unwrap()],
+            ]],
         ))?;
     }
 
-    anchor_lang::solana_program::program::invoke_signed(
-        &anchor_lang::solana_program::system_instruction::transfer(
-            buyside_sol_escrow_account.key,
-            payer.key,
-            total_price
-                .checked_sub(lp_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)?
-                .checked_sub(referral_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)?,
-        ),
-        &[
-            buyside_sol_escrow_account.to_account_info(),
-            payer.to_account_info(),
-            system_program.to_account_info(),
-        ],
-        // seeds should be the PDA of 'buyside_sol_escrow_account'
-        &[&[
-            BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-            pool.key().as_ref(),
-            &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
-        ]],
-    )?;
-
     if lp_fee > 0 {
-        anchor_lang::solana_program::program::invoke_signed(
+        anchor_lang::solana_program::program::invoke(
             &anchor_lang::solana_program::system_instruction::transfer(
-                buyside_sol_escrow_account.key,
-                owner.key,
-                lp_fee,
+                payer.key, owner.key, lp_fee,
             ),
             &[
-                buyside_sol_escrow_account.to_account_info(),
+                payer.to_account_info(),
                 owner.to_account_info(),
                 system_program.to_account_info(),
             ],
-            // seeds should be the PDA of 'buyside_sol_escrow_account'
-            &[&[
-                BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-                pool.key().as_ref(),
-                &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
-            ]],
         )?;
     }
 
     if referral_fee > 0 {
-        anchor_lang::solana_program::program::invoke_signed(
+        anchor_lang::solana_program::program::invoke(
             &anchor_lang::solana_program::system_instruction::transfer(
-                buyside_sol_escrow_account.key,
+                payer.key,
                 referral.key,
-                lp_fee,
+                referral_fee,
             ),
             &[
-                buyside_sol_escrow_account.to_account_info(),
+                payer.to_account_info(),
                 referral.to_account_info(),
                 system_program.to_account_info(),
             ],
-            // seeds should be the PDA of 'buyside_sol_escrow_account'
-            &[&[
-                BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-                pool.key().as_ref(),
-                &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
-            ]],
         )?;
     }
 
     pool.spot_price = next_price;
     pool.sellside_orders_count = pool
         .sellside_orders_count
-        .checked_add(args.asset_amount)
+        .checked_sub(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     pool.lp_fee_earned += lp_fee;
 
     msg!(
-        "BUY {} of {} from {} for {} lamports",
+        "SELL {} of {} to {} for {} lamports",
         args.asset_amount,
         asset_mint.key(),
         payer.key(),
         total_price
     );
+
     Ok(())
 }
