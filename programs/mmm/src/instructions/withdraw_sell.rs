@@ -78,7 +78,6 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
         ),
         args.asset_amount,
     )?;
-
     // we can close the sellside_escrow_token_account if no amount left
     if sellside_escrow_token_account.amount == args.asset_amount {
         anchor_spl::token::close_account(CpiContext::new_with_signer(

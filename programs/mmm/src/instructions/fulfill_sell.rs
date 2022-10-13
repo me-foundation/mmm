@@ -129,6 +129,24 @@ pub fn handler(ctx: Context<FulfillSell>, args: FulfillSellArgs) -> Result<()> {
         ),
         args.asset_amount,
     )?;
+    // we can close the sellside_escrow_token_account if no amount left
+    if sellside_escrow_token_account.amount == args.asset_amount {
+        anchor_spl::token::close_account(CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            anchor_spl::token::CloseAccount {
+                account: sellside_escrow_token_account.to_account_info(),
+                destination: owner.to_account_info(),
+                authority: pool.to_account_info(),
+            },
+            // seeds should be the PDA of 'pool'
+            &[&[
+                b"mmm_pool",
+                owner.key().as_ref(),
+                pool.uuid.key().as_ref(),
+                &[*ctx.bumps.get("pool").unwrap()],
+            ]],
+        ))?;
+    }
 
     if lp_fee > 0 {
         anchor_lang::solana_program::program::invoke(
