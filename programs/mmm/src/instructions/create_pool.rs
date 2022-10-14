@@ -21,8 +21,6 @@ pub struct CreatePoolArgs {
     pub cosigner_annotation: [u8; 32],
 
     // immutable
-    pub owner: Pubkey,
-    pub cosigner: Pubkey,
     pub uuid: Pubkey, // randomly generated keypair
     pub payment_mint: Pubkey,
     pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
@@ -33,8 +31,9 @@ pub struct CreatePoolArgs {
 pub struct CreatePool<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    /// CHECK: we will check cosigner when cosign field is on
-    pub cosigner: UncheckedAccount<'info>,
+    /// CHECK: the cosigner can be set as owner if you want optional cosigner
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     #[account(
         init,
         payer = owner,
@@ -72,11 +71,10 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
 
     // immutable
     pool.owner = owner.key();
-    pool.cosigner = args.cosigner;
+    pool.cosigner = cosigner.key();
     pool.uuid = args.uuid;
     pool.payment_mint = args.payment_mint;
     pool.allowlists = args.allowlists;
 
-    check_cosigner(pool, cosigner)?;
     Ok(())
 }

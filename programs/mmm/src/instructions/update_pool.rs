@@ -21,12 +21,13 @@ pub struct UpdatePoolArgs {
 pub struct UpdatePool<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    /// CHECK: we will check cosigner when cosign field is on
-    pub cosigner: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         bump,
         has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidLPFeeBP,
     )]
     pub pool: Box<Account<'info, Pool>>,
@@ -35,10 +36,7 @@ pub struct UpdatePool<'info> {
 
 pub fn handler(ctx: Context<UpdatePool>, args: UpdatePoolArgs) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
-    let cosigner = &ctx.accounts.cosigner;
-
     check_curve(args.curve_type, args.curve_delta)?;
-    check_cosigner(pool, cosigner)?;
 
     // mutable
     pool.spot_price = args.spot_price;

@@ -1,4 +1,4 @@
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_cosigner};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool};
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -11,11 +11,12 @@ pub struct SolWithdrawBuyArgs {
 pub struct SolWithdrawBuy<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    /// CHECK: we will check cosigner when cosign field is on
-    pub cosigner: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         bump
     )]
@@ -34,20 +35,17 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
     let owner = &ctx.accounts.owner;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
-    let cosigner = &ctx.accounts.cosigner;
     let pool = &ctx.accounts.pool;
-
-    check_cosigner(pool, cosigner)?;
 
     anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::system_instruction::transfer(
-            owner.key,
             buyside_sol_escrow_account.key,
+            owner.key,
             args.payment_amount,
         ),
         &[
-            owner.to_account_info(),
             buyside_sol_escrow_account.to_account_info(),
+            owner.to_account_info(),
             system_program.to_account_info(),
         ],
         // seeds should be the PDA of 'buyside_sol_escrow_account'

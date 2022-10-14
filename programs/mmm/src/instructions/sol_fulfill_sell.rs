@@ -9,7 +9,7 @@ use crate::{
     errors::MMMErrorCode,
     state::Pool,
     util::{
-        check_allowlists_for_mint, check_cosigner, get_sol_lp_fee, get_sol_referral_fee,
+        check_allowlists_for_mint, get_sol_lp_fee, get_sol_referral_fee,
         get_sol_total_price_and_next_price,
     },
 };
@@ -32,15 +32,17 @@ pub struct SolFulfillSell<'info> {
     /// CHECK: we will check the owner field that matches the pool owner
     #[account(mut)]
     pub owner: UncheckedAccount<'info>,
-    /// CHECK: we will check cosigner when cosign field is on
-    pub cosigner: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     /// CHECK: we will check that the referral matches the pool's referral
     pub referral: UncheckedAccount<'info>,
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = referral @ MMMErrorCode::InvalidReferral,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
+        constraint = pool.expiry == 0 || pool.expiry > Clock::get().unwrap().unix_timestamp @ MMMErrorCode::Expired,
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
@@ -79,7 +81,6 @@ pub struct SolFulfillSell<'info> {
 pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
-    let cosigner = &ctx.accounts.cosigner;
     let pool = &mut ctx.accounts.pool;
     let owner = &ctx.accounts.owner;
     let referral = &ctx.accounts.referral;
@@ -93,7 +94,6 @@ pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
 
-    check_cosigner(pool, cosigner)?;
     check_allowlists_for_mint(
         &pool.allowlists,
         asset_mint,
