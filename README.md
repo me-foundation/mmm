@@ -53,19 +53,19 @@ Overview of the pool accounts
 
 Overview
 
-![](./docs/overview.excalidraw.png)
+<img src="./docs/overview.excalidraw.png" width="400">
 
 Bonding Curve
 
-![](./docs/curve.excalidraw.png)
+<img src="./docs/curve.excalidraw.png" width="400">
 
 Fulfill Buy Side
 
-![](./docs/fulfill_buy.excalidraw.png)
+<img src="./docs/fulfill_buy.excalidraw.png" width="400">
 
 Fulfill Sell Side
 
-![](./docs/fulfill_sell.excalidraw.png)
+<img src="./docs/fulfill_sell.excalidraw.png" width="400">
 
 ## MMM Javascript/Typescript SDK
 Coming soon
