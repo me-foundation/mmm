@@ -1,7 +1,6 @@
 use crate::{errors::MMMErrorCode, state::*};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
-use arrayref::array_ref;
 use mpl_token_metadata::{
     id as token_metadata_program_key,
     pda::{find_master_edition_account, find_metadata_account},
@@ -9,17 +8,9 @@ use mpl_token_metadata::{
 };
 
 // copied from mpl-token-metadata
-fn get_max_supply_off_master_edition(
-    master_edition_account_info: &AccountInfo,
-) -> Result<Option<u64>> {
-    let data = master_edition_account_info.try_borrow_data()?;
-    // this is an option, 9 bytes, first is 0 means is none
-    if data[9] == 0 {
-        Ok(None)
-    } else {
-        let amount_data = array_ref![data, 10, 8];
-        Ok(Some(u64::from_le_bytes(*amount_data)))
-    }
+fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
+    let version = master_edition_account_info.data.borrow()[0];
+    return version == 2 || version == 6;
 }
 
 pub fn check_allowlists(allowlists: &[Allowlist]) -> Result<()> {
@@ -60,15 +51,8 @@ pub fn check_allowlists_for_mint(
         if master_edition.owner.ne(&token_metadata_program_key()) {
             return Err(ErrorCode::AccountOwnedByWrongProgram.into());
         }
-        match get_max_supply_off_master_edition(master_edition)? {
-            None => {
-                return Err(MMMErrorCode::InvalidMasterEdition.into());
-            }
-            Some(n) => {
-                if n > 0 {
-                    return Err(MMMErrorCode::InvalidMasterEdition.into());
-                }
-            }
+        if !check_master_edition(master_edition) {
+            return Err(MMMErrorCode::InvalidMasterEdition.into());
         }
     }
     for allowlist_val in allowlists.iter() {

@@ -36,7 +36,7 @@ pub struct SolFulfillSell<'info> {
     /// CHECK: we will check that the referral matches the pool's referral
     pub referral: UncheckedAccount<'info>,
     #[account(
-        seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
+        seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = referral @ MMMErrorCode::InvalidReferral,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
@@ -138,7 +138,7 @@ pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result
             },
             // seeds should be the PDA of 'pool'
             &[&[
-                b"mmm_pool",
+                POOL_PREFIX.as_bytes(),
                 owner.key().as_ref(),
                 pool.uuid.key().as_ref(),
                 &[*ctx.bumps.get("pool").unwrap()],
@@ -157,7 +157,7 @@ pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result
             },
             // seeds should be the PDA of 'pool'
             &[&[
-                b"mmm_pool",
+                POOL_PREFIX.as_bytes(),
                 owner.key().as_ref(),
                 pool.uuid.key().as_ref(),
                 &[*ctx.bumps.get("pool").unwrap()],

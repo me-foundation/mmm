@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{errors::MMMErrorCode, state::Pool, util::*};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::*};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct UpdatePoolArgs {
@@ -23,14 +23,14 @@ pub struct UpdatePool<'info> {
     pub owner: Signer<'info>,
     pub cosigner: Signer<'info>,
     #[account(
-        seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
+        mut,
+        seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         bump,
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidLPFeeBP,
     )]
     pub pool: Box<Account<'info, Pool>>,
-    pub system_program: Program<'info, System>,
 }
 
 pub fn handler(ctx: Context<UpdatePool>, args: UpdatePoolArgs) -> Result<()> {
