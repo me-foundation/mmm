@@ -22,6 +22,7 @@ pub struct WithdrawSell<'info> {
         mut,
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
@@ -32,13 +33,13 @@ pub struct WithdrawSell<'info> {
         associated_token::mint = asset_mint,
         associated_token::authority = owner,
     )]
-    pub asset_token_account: Account<'info, TokenAccount>,
+    pub asset_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
     )]
-    pub sellside_escrow_token_account: Account<'info, TokenAccount>,
+    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,

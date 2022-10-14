@@ -40,6 +40,7 @@ pub struct SolFulfillSell<'info> {
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = referral @ MMMErrorCode::InvalidReferral,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         constraint = pool.expiry == 0 || pool.expiry > Clock::get().unwrap().unix_timestamp @ MMMErrorCode::Expired,
         bump

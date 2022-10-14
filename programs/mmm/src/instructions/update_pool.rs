@@ -27,6 +27,7 @@ pub struct UpdatePool<'info> {
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         bump,
         has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidLPFeeBP,
     )]
     pub pool: Box<Account<'info, Pool>>,

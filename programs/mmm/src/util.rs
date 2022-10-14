@@ -77,10 +77,11 @@ pub fn check_allowlists_for_mint(
             ALLOWLIST_KIND_FVCA => match parsed_metadata.data.creators {
                 Some(ref creators) => {
                     // TODO: can we make sure we only take master_edition here?
-                    if !creators.is_empty() {
-                        if creators[0].address == allowlist_val.value && creators[0].verified {
-                            return Ok(true);
-                        }
+                    if !creators.is_empty()
+                        && creators[0].address == allowlist_val.value
+                        && creators[0].verified
+                    {
+                        return Ok(true);
                     }
                 }
                 _ => {}
