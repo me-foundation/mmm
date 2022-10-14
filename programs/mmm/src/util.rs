@@ -22,22 +22,6 @@ fn get_max_supply_off_master_edition(
     }
 }
 
-pub fn check_cosigner(pool: &Account<Pool>, cosigner: &UncheckedAccount) -> Result<()> {
-    if pool.cosigner.eq(&Pubkey::default()) {
-        return Ok(());
-    }
-
-    if pool.cosigner.ne(cosigner.key) {
-        return Err(MMMErrorCode::InvalidCosigner.into());
-    }
-
-    if !cosigner.is_signer {
-        return Err(MMMErrorCode::InvalidCosigner.into());
-    }
-
-    Ok(())
-}
-
 pub fn check_allowlists(allowlists: &[Allowlist]) -> Result<()> {
     for allowlist in allowlists.iter() {
         if !allowlist.valid() {
@@ -92,6 +76,7 @@ pub fn check_allowlists_for_mint(
             ALLOWLIST_KIND_EMPTY => {}
             ALLOWLIST_KIND_FVCA => match parsed_metadata.data.creators {
                 Some(ref creators) => {
+                    // TODO: can we make sure we only take master_edition here?
                     if !creators.is_empty() {
                         if creators[0].address == allowlist_val.value && creators[0].verified {
                             return Ok(true);

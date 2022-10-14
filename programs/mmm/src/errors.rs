@@ -30,4 +30,6 @@ pub enum MMMErrorCode {
     InvalidReferral,
     #[msg("invalid master edition")]
     InvalidMasterEdition,
+    #[msg("expired")]
+    Expired,
 }

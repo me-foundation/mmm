@@ -4,11 +4,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{
-    errors::MMMErrorCode,
-    state::Pool,
-    util::{check_allowlists_for_mint, check_cosigner},
-};
+use crate::{errors::MMMErrorCode, state::Pool, util::check_allowlists_for_mint};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositSellArgs {
@@ -20,12 +16,13 @@ pub struct DepositSellArgs {
 pub struct DepositSell<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    /// CHECK: we will check cosigner when cosign field is on
-    pub cosigner: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     #[account(
         mut,
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
@@ -62,10 +59,8 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
     let asset_master_edition = &ctx.accounts.asset_master_edition;
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let token_program = &ctx.accounts.token_program;
-    let cosigner = &ctx.accounts.cosigner;
     let pool = &mut ctx.accounts.pool;
 
-    check_cosigner(pool, cosigner)?;
     check_allowlists_for_mint(
         &pool.allowlists,
         asset_mint,

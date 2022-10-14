@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_cosigner};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolDepositBuyArgs {
@@ -13,11 +13,12 @@ pub struct SolDepositBuyArgs {
 pub struct SolDepositBuy<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    /// CHECK: we will check cosigner when cosign field is on
-    pub cosigner: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         bump
     )]
@@ -36,10 +37,6 @@ pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<(
     let owner = &ctx.accounts.owner;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
-    let cosigner = &ctx.accounts.cosigner;
-    let pool = &ctx.accounts.pool;
-
-    check_cosigner(pool, cosigner)?;
 
     anchor_lang::solana_program::program::invoke(
         &anchor_lang::solana_program::system_instruction::transfer(

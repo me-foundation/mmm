@@ -1,13 +1,13 @@
 use anchor_lang::prelude::*;
 
-use crate::{errors::MMMErrorCode, state::Pool, util::*};
+use crate::{errors::MMMErrorCode, state::Pool};
 
 #[derive(Accounts)]
 pub struct SolClosePool<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    /// CHECK: we will check cosigner when cosign field is on
-    pub cosigner: UncheckedAccount<'info>,
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     #[account(
         mut,
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
@@ -15,6 +15,7 @@ pub struct SolClosePool<'info> {
         constraint = pool.sellside_orders_count == 0 @ MMMErrorCode::NotEmptySellSideOrdersCount,
         bump,
         has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         close = owner
     )]
     pub pool: Box<Account<'info, Pool>>,
@@ -28,10 +29,6 @@ pub struct SolClosePool<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<SolClosePool>) -> Result<()> {
-    let pool = &ctx.accounts.pool;
-    let cosigner = &ctx.accounts.cosigner;
-    check_cosigner(pool, cosigner)?;
-
+pub fn handler(_ctx: Context<SolClosePool>) -> Result<()> {
     Ok(())
 }
