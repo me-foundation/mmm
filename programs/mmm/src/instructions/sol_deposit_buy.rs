@@ -15,7 +15,7 @@ pub struct SolDepositBuy<'info> {
     pub owner: Signer<'info>,
     pub cosigner: Signer<'info>,
     #[account(
-        seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
+        seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,

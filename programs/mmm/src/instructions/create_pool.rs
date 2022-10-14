@@ -36,7 +36,7 @@ pub struct CreatePool<'info> {
     #[account(
         init,
         payer = owner,
-        seeds = [b"mmm_pool", owner.key().as_ref(), args.uuid.as_ref()],
+        seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), args.uuid.as_ref()],
         bump,
         space = Pool::LEN,
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidLPFeeBP,

@@ -4,7 +4,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{errors::MMMErrorCode, state::Pool, util::check_allowlists_for_mint};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_allowlists_for_mint};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositSellArgs {
@@ -19,7 +19,7 @@ pub struct DepositSell<'info> {
     pub cosigner: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
+        seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         bump
@@ -77,6 +77,17 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         ),
         args.asset_amount,
     )?;
+
+    if asset_token_account.amount == args.asset_amount {
+        anchor_spl::token::close_account(CpiContext::new(
+            token_program.to_account_info(),
+            anchor_spl::token::CloseAccount {
+                account: asset_token_account.to_account_info(),
+                destination: owner.to_account_info(),
+                authority: owner.to_account_info(),
+            },
+        ))?;
+    }
 
     pool.sellside_orders_count += args.asset_amount;
     Ok(())

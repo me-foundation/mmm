@@ -4,7 +4,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{errors::MMMErrorCode, state::Pool};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct WithdrawSellArgs {
@@ -19,7 +19,7 @@ pub struct WithdrawSell<'info> {
     pub cosigner: Signer<'info>,
     #[account(
         mut,
-        seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],
+        seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         bump
@@ -67,7 +67,7 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
             },
             // seeds should be the PDA of 'pool'
             &[&[
-                b"mmm_pool",
+                POOL_PREFIX.as_bytes(),
                 owner.key().as_ref(),
                 pool.uuid.key().as_ref(),
                 &[*ctx.bumps.get("pool").unwrap()],
@@ -86,7 +86,7 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
             },
             // seeds should be the PDA of 'pool'
             &[&[
-                b"mmm_pool",
+                POOL_PREFIX.as_bytes(),
                 owner.key().as_ref(),
                 pool.uuid.key().as_ref(),
                 &[*ctx.bumps.get("pool").unwrap()],
