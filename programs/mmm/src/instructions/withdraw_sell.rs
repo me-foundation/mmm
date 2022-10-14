@@ -16,7 +16,6 @@ pub struct WithdrawSellArgs {
 pub struct WithdrawSell<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    #[account(mut)]
     pub cosigner: Signer<'info>,
     #[account(
         mut,

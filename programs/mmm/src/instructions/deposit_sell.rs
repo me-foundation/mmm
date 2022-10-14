@@ -16,7 +16,6 @@ pub struct DepositSellArgs {
 pub struct DepositSell<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    #[account(mut)]
     pub cosigner: Signer<'info>,
     #[account(
         mut,

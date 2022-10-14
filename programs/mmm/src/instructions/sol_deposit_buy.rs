@@ -13,7 +13,6 @@ pub struct SolDepositBuyArgs {
 pub struct SolDepositBuy<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
-    #[account(mut)]
     pub cosigner: Signer<'info>,
     #[account(
         seeds = [b"mmm_pool", owner.key().as_ref(), pool.uuid.as_ref()],

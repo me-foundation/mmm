@@ -32,7 +32,6 @@ pub struct SolFulfillBuy<'info> {
     /// CHECK: we will check the owner field that matches the pool owner
     #[account(mut)]
     pub owner: UncheckedAccount<'info>,
-    #[account(mut)]
     pub cosigner: Signer<'info>,
     /// CHECK: we will check that the referral matches the pool's referral
     pub referral: UncheckedAccount<'info>,
