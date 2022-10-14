@@ -12,7 +12,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -45,7 +45,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -78,7 +78,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -109,7 +109,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -147,7 +147,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -190,7 +190,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -283,7 +283,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -366,7 +366,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -429,7 +429,7 @@ export type Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -887,7 +887,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -920,7 +920,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -953,7 +953,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -984,7 +984,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -1022,7 +1022,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -1065,7 +1065,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -1158,7 +1158,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -1241,7 +1241,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
@@ -1304,7 +1304,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "cosigner",
-          "isMut": true,
+          "isMut": false,
           "isSigner": true
         },
         {
