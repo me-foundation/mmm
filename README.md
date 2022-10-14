@@ -52,9 +52,11 @@ Overview of the pool accounts
 - LP Fee: Liquidity provider fee. When the pool has enough two-side liquidity, the liquidity pool owner can earn the lp fee. Buy-side liquidity needs to have SOL or SPL greater than the spot_price, and sell-side liquidity needs to have at least 1 asset.
 
 Overview
+
 ![](./docs/overview.excalidraw.png)
 
 Bonding Curve
+
 ![](./docs/curve.excalidraw.png)
 
 ## MMM Javascript/Typescript SDK
