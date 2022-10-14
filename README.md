@@ -59,6 +59,14 @@ Bonding Curve
 
 ![](./docs/curve.excalidraw.png)
 
+Fulfill Buy Side
+
+![](./docs/fulfill_buy.excalidraw.png)
+
+Fulfill Sell Side
+
+![](./docs/fulfill_sell.excalidraw.png)
+
 ## MMM Javascript/Typescript SDK
 Coming soon
 
