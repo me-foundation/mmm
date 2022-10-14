@@ -194,7 +194,7 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
             &anchor_lang::solana_program::system_instruction::transfer(
                 buyside_sol_escrow_account.key,
                 referral.key,
-                lp_fee,
+                referral_fee,
             ),
             &[
                 buyside_sol_escrow_account.to_account_info(),
