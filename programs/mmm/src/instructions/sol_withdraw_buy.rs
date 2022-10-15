@@ -1,4 +1,4 @@
-use crate::{constants::*, errors::MMMErrorCode, state::Pool};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::try_close_pool};
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -53,6 +53,14 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
             pool.key().as_ref(),
             &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
         ]],
+    )?;
+
+    try_close_pool(
+        pool,
+        *ctx.bumps.get("pool").unwrap(),
+        owner.to_account_info(),
+        system_program.to_account_info(),
+        buyside_sol_escrow_account.lamports(),
     )?;
 
     Ok(())

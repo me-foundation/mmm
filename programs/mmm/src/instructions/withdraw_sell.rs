@@ -4,7 +4,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::try_close_pool};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct WithdrawSellArgs {
@@ -39,6 +39,13 @@ pub struct WithdrawSell<'info> {
         associated_token::authority = pool,
     )]
     pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    /// CHECK: it's a pda, and the private key is owned by the seeds
+    #[account(
+        mut,
+        seeds = [BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(), pool.key().as_ref()],
+        bump,
+    )]
+    pub buyside_sol_escrow_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -51,6 +58,8 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let token_program = &ctx.accounts.token_program;
     let pool = &mut ctx.accounts.pool;
+    let system_program = &ctx.accounts.system_program;
+    let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
 
     // Note that check_allowlists_for_mint is optional for withdraw_sell
     // because sometimes the nft or sft might be moved out of the collection
@@ -95,5 +104,14 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     }
 
     pool.sellside_orders_count -= args.asset_amount;
+
+    try_close_pool(
+        pool,
+        *ctx.bumps.get("pool").unwrap(),
+        owner.to_account_info(),
+        system_program.to_account_info(),
+        buyside_sol_escrow_account.lamports(),
+    )?;
+
     Ok(())
 }
