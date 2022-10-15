@@ -84,7 +84,6 @@ jobs:
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
           solana --version
-          solana-keygen new
       - name: install Anchor
         if: steps.cache-anchor.outputs.cache-hit != 'true'
         run: |
@@ -96,8 +95,7 @@ jobs:
           anchor build
       - name: build amm sdk
         run: |
-          npm install
-          npm run build
+          npm i
         working-directory: ./sdk
       - name: install
         run: |
