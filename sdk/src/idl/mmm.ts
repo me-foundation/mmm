@@ -385,6 +385,11 @@ export type Mmm = {
           "isSigner": false
         },
         {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -802,8 +807,8 @@ export type Mmm = {
     },
     {
       "code": 6002,
-      "name": "InvalidLPFeeBP",
-      "msg": "invalid lp fee bp"
+      "name": "InvalidBP",
+      "msg": "invalid bp"
     },
     {
       "code": 6003,
@@ -1255,6 +1260,11 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1672,8 +1682,8 @@ export const IDL: Mmm = {
     },
     {
       "code": 6002,
-      "name": "InvalidLPFeeBP",
-      "msg": "invalid lp fee bp"
+      "name": "InvalidBP",
+      "msg": "invalid bp"
     },
     {
       "code": 6003,
