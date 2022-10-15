@@ -29,7 +29,7 @@ pub fn check_allowlists_for_mint(
     mint: &Account<Mint>,
     metadata: &AccountInfo,
     master_edition: &AccountInfo,
-) -> Result<bool> {
+) -> Result<()> {
     // TODO: we need to check the following validation rules
     // 1. make sure the metadata is correctly derived from the metadata pda with the mint
     // 2. make sure mint+metadata(e.g. first verified creator address) can match one of the allowlist
@@ -55,6 +55,7 @@ pub fn check_allowlists_for_mint(
             return Err(MMMErrorCode::InvalidMasterEdition.into());
         }
     }
+
     for allowlist_val in allowlists.iter() {
         match allowlist_val.kind {
             ALLOWLIST_KIND_EMPTY => {}
@@ -65,20 +66,20 @@ pub fn check_allowlists_for_mint(
                         && creators[0].address == allowlist_val.value
                         && creators[0].verified
                     {
-                        return Ok(true);
+                        return Ok(());
                     }
                 }
                 _ => {}
             },
             ALLOWLIST_KIND_MINT => {
                 if mint.key() == allowlist_val.value {
-                    return Ok(true);
+                    return Ok(());
                 }
             }
             ALLOWLIST_KIND_MCC => match parsed_metadata.collection {
                 Some(ref collection_data) => {
                     if collection_data.key == allowlist_val.value && collection_data.verified {
-                        return Ok(true);
+                        return Ok(());
                     }
                 }
                 _ => {}
@@ -88,7 +89,9 @@ pub fn check_allowlists_for_mint(
             }
         }
     }
-    Ok(false)
+
+    // at the end, we didn't find a match, thus return err
+    return Err(MMMErrorCode::InvalidAllowLists.into());
 }
 
 pub fn check_curve(curve_type: u8, curve_delta: u64) -> Result<()> {
