@@ -28,7 +28,8 @@ pub struct UpdatePool<'info> {
         bump,
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
-        constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidLPFeeBP,
+        constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidBP,
+        constraint = args.referral_bp <= 10000 @ MMMErrorCode::InvalidBP,
     )]
     pub pool: Box<Account<'info, Pool>>,
 }

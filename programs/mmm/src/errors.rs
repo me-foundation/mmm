@@ -6,8 +6,8 @@ pub enum MMMErrorCode {
     InvalidLPFee,
     #[msg("invalid allowlists")]
     InvalidAllowLists,
-    #[msg("invalid lp fee bp")]
-    InvalidLPFeeBP,
+    #[msg("invalid bp")]
+    InvalidBP,
     #[msg("invalid curve type")]
     InvalidCurveType,
     #[msg("invalid curve delta")]
