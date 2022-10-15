@@ -34,8 +34,10 @@ pub struct SolFulfillSell<'info> {
     pub owner: UncheckedAccount<'info>,
     pub cosigner: Signer<'info>,
     /// CHECK: we will check that the referral matches the pool's referral
+    #[account(mut)]
     pub referral: UncheckedAccount<'info>,
     #[account(
+        mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = referral @ MMMErrorCode::InvalidReferral,

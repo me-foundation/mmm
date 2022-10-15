@@ -1,13 +1,17 @@
+import { AccountLayout } from '@solana/spl-token';
 import {
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
 } from '@solana/web3.js';
+import { assert } from 'chai';
 import fs from 'fs';
 import path from 'path';
-import { AllowlistKind, PREFIXES } from '../../sdk/src';
+import { AllowlistKind } from '../../sdk/src';
 
+export const SIGNATURE_FEE_LAMPORTS = 5000;
+export const LAMPORT_ERROR_RANGE = 500;
 const KEYPAIR_PATH = path.join(process.env.HOME!, '/.config/solana/id.json');
 
 let keypair;
@@ -20,6 +24,22 @@ export const getKeypair = () => {
     Buffer.from(JSON.parse(keypairFile.toString())),
   );
   return keypair;
+};
+
+export const assertIsBetween = (num: number, center: number, range: number) => {
+  assert.isAbove(num, center - range);
+  assert.isBelow(num, center + range);
+};
+
+let tokenAccountRent = 0;
+export const getTokenAccountRent = async (conn: Connection) => {
+  if (tokenAccountRent) {
+    return tokenAccountRent;
+  }
+  tokenAccountRent = await conn.getMinimumBalanceForRentExemption(
+    AccountLayout.span,
+  );
+  return tokenAccountRent;
 };
 
 export const getEmptyAllowLists = (num: number) => {

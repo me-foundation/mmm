@@ -9,22 +9,16 @@ import {
 import {
   Keypair,
   LAMPORTS_PER_SOL,
-  PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import { assert } from 'chai';
-import {
-  Mmm,
-  CurveKind,
-  AllowlistKind,
-  getMMMPoolPDA,
-  getMMMBuysideSolEscrowPDA,
-} from '../sdk/src';
+import { Mmm, AllowlistKind, getMMMBuysideSolEscrowPDA } from '../sdk/src';
 import {
   createPool,
   getEmptyAllowLists,
   getMetaplexInstance,
+  mintCollection,
   mintNfts,
 } from './utils';
 
@@ -91,13 +85,16 @@ describe('mmm-deposit', () => {
           creators: [
             { address: creator.publicKey, share: 100, authority: creator },
           ],
+          sftAmount: 10,
         }),
       ]);
+
+      const mintAddress1 = nfts[0].mintAddress;
+      const mintAddress2 = sfts[0].mintAddress;
 
       let poolAccountInfo = await program.account.pool.fetch(poolKey);
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 0);
 
-      const mintAddress1 = nfts[0].mintAddress;
       const poolAta1 = await getAssociatedTokenAddress(
         mintAddress1,
         poolKey,
@@ -125,27 +122,23 @@ describe('mmm-deposit', () => {
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         })
-        .remainingAccounts([
-          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
-        ])
         .signers([cosigner])
         .rpc();
 
-      const nftEscrow = await getTokenAccount(connection, poolAta1);
+      let nftEscrow = await getTokenAccount(connection, poolAta1);
       assert.equal(Number(nftEscrow.amount), 1);
       assert.deepEqual(nftEscrow.owner, poolKey);
       poolAccountInfo = await program.account.pool.fetch(poolKey);
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
       assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
 
-      const mintAddress2 = sfts[0].mintAddress;
       const poolAta2 = await getAssociatedTokenAddress(
         mintAddress2,
         poolKey,
         true,
       );
       await program.methods
-        .depositSell({ assetAmount: new anchor.BN(1) })
+        .depositSell({ assetAmount: new anchor.BN(5) })
         .accountsStrict({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -166,14 +159,241 @@ describe('mmm-deposit', () => {
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         })
-        .remainingAccounts([
-          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
-        ])
         .signers([cosigner])
         .rpc();
 
       poolAccountInfo = await program.account.pool.fetch(poolKey);
-      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 2);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 6);
+      nftEscrow = await getTokenAccount(connection, poolAta2);
+      assert.equal(Number(nftEscrow.amount), 5);
+      assert.deepEqual(nftEscrow.owner, poolKey);
+      const sftAccount = await getTokenAccount(
+        connection,
+        sfts[0].tokenAddress!,
+      );
+      assert.equal(Number(sftAccount.amount), 5);
+      assert.deepEqual(sftAccount.owner, wallet.publicKey);
+    });
+
+    it('happy path - mcc only', async () => {
+      const metaplexInstance = getMetaplexInstance(connection);
+      const { collection } = await mintCollection(connection, {
+        numNfts: 0,
+        legacy: true,
+        verifyCollection: true,
+      });
+      const [{ poolKey }, nfts, sfts] = await Promise.all([
+        createPool(program, {
+          owner: wallet.publicKey,
+          cosigner,
+          allowlists: [
+            { kind: AllowlistKind.mcc, value: collection.mintAddress },
+            ...getEmptyAllowLists(5),
+          ],
+        }),
+        mintNfts(connection, {
+          numNfts: 1,
+          collectionAddress: collection.mintAddress,
+          verifyCollection: true,
+        }),
+        mintNfts(connection, {
+          numNfts: 1,
+          sftAmount: 10,
+          collectionAddress: collection.mintAddress,
+          verifyCollection: true,
+        }),
+      ]);
+
+      const mintAddress1 = nfts[0].mintAddress;
+      const mintAddress2 = sfts[0].mintAddress;
+
+      let poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 0);
+
+      const poolAta1 = await getAssociatedTokenAddress(
+        mintAddress1,
+        poolKey,
+        true,
+      );
+      await program.methods
+        .depositSell({ assetAmount: new anchor.BN(1) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          assetMetadata: metaplexInstance
+            .nfts()
+            .pdas()
+            .metadata({ mint: mintAddress1 }),
+          assetMasterEdition: metaplexInstance
+            .nfts()
+            .pdas()
+            .masterEdition({ mint: mintAddress1 }),
+          assetMint: mintAddress1,
+          assetTokenAccount: nfts[0].tokenAddress!,
+          sellsideEscrowTokenAccount: poolAta1,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .signers([cosigner])
+        .rpc();
+
+      let nftEscrow = await getTokenAccount(connection, poolAta1);
+      assert.equal(Number(nftEscrow.amount), 1);
+      assert.deepEqual(nftEscrow.owner, poolKey);
+      poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
+      assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
+
+      const poolAta2 = await getAssociatedTokenAddress(
+        mintAddress2,
+        poolKey,
+        true,
+      );
+      await program.methods
+        .depositSell({ assetAmount: new anchor.BN(5) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          assetMetadata: metaplexInstance
+            .nfts()
+            .pdas()
+            .metadata({ mint: mintAddress2 }),
+          assetMasterEdition: metaplexInstance
+            .nfts()
+            .pdas()
+            .masterEdition({ mint: mintAddress2 }),
+          assetMint: mintAddress2,
+          assetTokenAccount: sfts[0].tokenAddress!,
+          sellsideEscrowTokenAccount: poolAta2,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .signers([cosigner])
+        .rpc();
+
+      poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 6);
+      nftEscrow = await getTokenAccount(connection, poolAta2);
+      assert.equal(Number(nftEscrow.amount), 5);
+      assert.deepEqual(nftEscrow.owner, poolKey);
+      const sftAccount = await getTokenAccount(
+        connection,
+        sfts[0].tokenAddress!,
+      );
+      assert.equal(Number(sftAccount.amount), 5);
+      assert.deepEqual(sftAccount.owner, wallet.publicKey);
+    });
+
+    it('happy path - mint only', async () => {
+      const metaplexInstance = getMetaplexInstance(connection);
+      const [nfts, sfts] = await Promise.all([
+        mintNfts(connection, {
+          numNfts: 1,
+        }),
+        mintNfts(connection, {
+          numNfts: 1,
+          sftAmount: 10,
+        }),
+      ]);
+      const mintAddress1 = nfts[0].mintAddress;
+      const mintAddress2 = sfts[0].mintAddress;
+      const { poolKey } = await createPool(program, {
+        owner: wallet.publicKey,
+        cosigner,
+        allowlists: [
+          { kind: AllowlistKind.mint, value: mintAddress1 },
+          { kind: AllowlistKind.mint, value: mintAddress2 },
+          ...getEmptyAllowLists(4),
+        ],
+      });
+
+      let poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 0);
+
+      const poolAta1 = await getAssociatedTokenAddress(
+        mintAddress1,
+        poolKey,
+        true,
+      );
+      await program.methods
+        .depositSell({ assetAmount: new anchor.BN(1) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          assetMetadata: metaplexInstance
+            .nfts()
+            .pdas()
+            .metadata({ mint: mintAddress1 }),
+          assetMasterEdition: metaplexInstance
+            .nfts()
+            .pdas()
+            .masterEdition({ mint: mintAddress1 }),
+          assetMint: mintAddress1,
+          assetTokenAccount: nfts[0].tokenAddress!,
+          sellsideEscrowTokenAccount: poolAta1,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .signers([cosigner])
+        .rpc();
+
+      let nftEscrow = await getTokenAccount(connection, poolAta1);
+      assert.equal(Number(nftEscrow.amount), 1);
+      assert.deepEqual(nftEscrow.owner, poolKey);
+      poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
+      assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
+
+      const poolAta2 = await getAssociatedTokenAddress(
+        mintAddress2,
+        poolKey,
+        true,
+      );
+      await program.methods
+        .depositSell({ assetAmount: new anchor.BN(5) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          assetMetadata: metaplexInstance
+            .nfts()
+            .pdas()
+            .metadata({ mint: mintAddress2 }),
+          assetMasterEdition: metaplexInstance
+            .nfts()
+            .pdas()
+            .masterEdition({ mint: mintAddress2 }),
+          assetMint: mintAddress2,
+          assetTokenAccount: sfts[0].tokenAddress!,
+          sellsideEscrowTokenAccount: poolAta2,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .signers([cosigner])
+        .rpc();
+
+      poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 6);
+      nftEscrow = await getTokenAccount(connection, poolAta2);
+      assert.equal(Number(nftEscrow.amount), 5);
+      assert.deepEqual(nftEscrow.owner, poolKey);
+      const sftAccount = await getTokenAccount(
+        connection,
+        sfts[0].tokenAddress!,
+      );
+      assert.equal(Number(sftAccount.amount), 5);
+      assert.deepEqual(sftAccount.owner, wallet.publicKey);
     });
   });
 });

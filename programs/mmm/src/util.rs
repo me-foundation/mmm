@@ -10,6 +10,7 @@ use mpl_token_metadata::{
 // copied from mpl-token-metadata
 fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
     let version = master_edition_account_info.data.borrow()[0];
+    msg!("version is {}", version);
     return version == 2 || version == 6;
 }
 

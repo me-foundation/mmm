@@ -190,12 +190,12 @@ export type Mmm = {
         },
         {
           "name": "referral",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -283,12 +283,12 @@ export type Mmm = {
         },
         {
           "name": "referral",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1060,12 +1060,12 @@ export const IDL: Mmm = {
         },
         {
           "name": "referral",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1153,12 +1153,12 @@ export const IDL: Mmm = {
         },
         {
           "name": "referral",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
