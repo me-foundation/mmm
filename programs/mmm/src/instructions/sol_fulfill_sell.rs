@@ -10,7 +10,7 @@ use crate::{
     state::Pool,
     util::{
         check_allowlists_for_mint, get_sol_lp_fee, get_sol_referral_fee,
-        get_sol_total_price_and_next_price,
+        get_sol_total_price_and_next_price, try_close_pool,
     },
 };
 
@@ -199,6 +199,14 @@ pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result
         .checked_sub(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     pool.lp_fee_earned += lp_fee;
+
+    try_close_pool(
+        pool,
+        *ctx.bumps.get("pool").unwrap(),
+        owner.to_account_info(),
+        system_program.to_account_info(),
+        buyside_sol_escrow_account.lamports(),
+    )?;
 
     msg!(
         "SELL {} of {} to {} for {} lamports",
