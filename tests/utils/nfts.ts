@@ -1,9 +1,9 @@
 import {
-  amount,
   CreatorInput,
   keypairIdentity,
   Metaplex,
   PublicKey,
+  token as getSplTokenAmount,
 } from '@metaplex-foundation/js';
 import { Connection } from '@solana/web3.js';
 import { getKeypair } from './generic';
@@ -34,13 +34,14 @@ export const mintNfts = async (
     return undefined;
   })();
 
-  if (config.sftAmount === undefined) {
+  const sftAmount = config.sftAmount;
+  if (sftAmount === undefined) {
     return Promise.all(
       Array(0, config.numNfts).map((_, index) =>
         metaplexInstance.nfts().create(
           {
             name: `TEST #${index}`,
-            uri: `https://bafybeighhkowmk5ponzoixl2ycv3ihsrshknefc5xxy3eotrfo743x5e3u.ipfs.dweb.link/${index}.json`,
+            uri: `nft://${index}.json`,
             sellerFeeBasisPoints: 123,
             isCollection: config.isCollection,
             tokenOwner: config.recipient,
@@ -59,14 +60,15 @@ export const mintNfts = async (
         metaplexInstance.nfts().createSft(
           {
             name: `TEST #${index}`,
-            uri: `https://bafybeighhkowmk5ponzoixl2ycv3ihsrshknefc5xxy3eotrfo743x5e3u.ipfs.dweb.link/${index}.json`,
+            uri: `nft://${index}.json`,
             sellerFeeBasisPoints: 123,
             isCollection: config.isCollection,
-            tokenOwner: config.recipient,
+            tokenOwner: config.recipient ?? getKeypair().publicKey,
             collection: config.collectionAddress,
             collectionAuthority: collectionSigner,
             collectionIsSized: config.collectionIsSized,
             creators: config.creators,
+            tokenAmount: getSplTokenAmount(sftAmount),
           },
           { confirmOptions: { skipPreflight: true, commitment: 'processed' } },
         ),

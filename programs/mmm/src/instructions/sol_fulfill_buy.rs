@@ -33,9 +33,11 @@ pub struct SolFulfillBuy<'info> {
     #[account(mut)]
     pub owner: UncheckedAccount<'info>,
     pub cosigner: Signer<'info>,
+    #[account(mut)]
     /// CHECK: we will check that the referral matches the pool's referral
     pub referral: UncheckedAccount<'info>,
     #[account(
+        mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = referral @ MMMErrorCode::InvalidReferral,
@@ -142,6 +144,24 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
                 destination: payer.to_account_info(),
                 authority: payer.to_account_info(),
             },
+        ))?;
+    }
+
+    // we can also close the pool escrow token account if we don't reinvest and its balance is 0
+    if !pool.reinvest && sellside_escrow_token_account.amount == 0 {
+        anchor_spl::token::close_account(CpiContext::new_with_signer(
+            token_program.to_account_info(),
+            anchor_spl::token::CloseAccount {
+                account: sellside_escrow_token_account.to_account_info(),
+                destination: payer.to_account_info(),
+                authority: pool.to_account_info(),
+            },
+            &[&[
+                POOL_PREFIX.as_bytes(),
+                pool.owner.as_ref(),
+                pool.uuid.as_ref(),
+                &[*ctx.bumps.get("pool").unwrap()],
+            ]],
         ))?;
     }
 
