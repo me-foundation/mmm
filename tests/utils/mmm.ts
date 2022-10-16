@@ -32,7 +32,8 @@ export const createPool = async (
     spotPrice?: anchor.BN;
     curveType?: CurveKind;
     curveDelta?: anchor.BN;
-    reinvest?: boolean;
+    reinvestFulfillBuy?: boolean;
+    reinvestFulfillSell?: boolean;
     expiry?: anchor.BN;
     lpFeeBp?: number;
     referral?: PublicKey;
@@ -57,7 +58,8 @@ export const createPool = async (
     spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
     curveType: CurveKind.linear,
     curveDelta: new anchor.BN(0),
-    reinvest: true,
+    reinvestFulfillBuy: true,
+    reinvestFulfillSell: true,
     expiry: new anchor.BN(0),
     lpFeeBp: 200,
     referral: referral.publicKey,

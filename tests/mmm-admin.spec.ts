@@ -37,7 +37,8 @@ describe('mmm-admin', () => {
           spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
           curveType: CurveKind.linear,
           curveDelta: new anchor.BN(0),
-          reinvest: true,
+          reinvestFulfillBuy: true,
+          reinvestFulfillSell: true,
           expiry: new anchor.BN(42),
           lpFeeBp: 200,
           referral: referral.publicKey,
@@ -61,7 +62,8 @@ describe('mmm-admin', () => {
       assert.equal(poolAccountInfo.spotPrice.toNumber(), 1 * LAMPORTS_PER_SOL);
       assert.equal(poolAccountInfo.curveType, CurveKind.linear);
       assert.equal(poolAccountInfo.curveDelta.toNumber(), 0);
-      assert.isTrue(poolAccountInfo.reinvest);
+      assert.isTrue(poolAccountInfo.reinvestFulfillBuy);
+      assert.isTrue(poolAccountInfo.reinvestFulfillSell);
       assert.equal(poolAccountInfo.expiry.toNumber(), 42);
       assert.equal(poolAccountInfo.lpFeeBp, 200);
       assert.equal(
@@ -104,7 +106,8 @@ describe('mmm-admin', () => {
           spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
           curveType: CurveKind.linear,
           curveDelta: new anchor.BN(0),
-          reinvest: true,
+          reinvestFulfillBuy: true,
+          reinvestFulfillSell: true,
           expiry: new anchor.BN(42),
           lpFeeBp: 200,
           referral: referral.publicKey,
@@ -129,7 +132,8 @@ describe('mmm-admin', () => {
           spotPrice: new anchor.BN(2 * LAMPORTS_PER_SOL),
           curveType: CurveKind.exp,
           curveDelta: new anchor.BN(888),
-          reinvest: true,
+          reinvestFulfillBuy: true,
+          reinvestFulfillSell: true,
           expiry: new anchor.BN(0),
           lpFeeBp: 150,
           referral: PublicKey.default,
@@ -151,7 +155,8 @@ describe('mmm-admin', () => {
       assert.equal(poolAccountInfo.spotPrice.toNumber(), 2 * LAMPORTS_PER_SOL);
       assert.equal(poolAccountInfo.curveType, CurveKind.exp);
       assert.equal(poolAccountInfo.curveDelta.toNumber(), 888);
-      assert.isTrue(poolAccountInfo.reinvest);
+      assert.isTrue(poolAccountInfo.reinvestFulfillBuy);
+      assert.isTrue(poolAccountInfo.reinvestFulfillSell);
       assert.equal(poolAccountInfo.expiry.toNumber(), 0);
       assert.equal(poolAccountInfo.lpFeeBp, 150);
       assert.deepEqual(poolAccountInfo.referral, PublicKey.default);

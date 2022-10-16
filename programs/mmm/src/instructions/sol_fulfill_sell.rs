@@ -110,7 +110,7 @@ pub fn handler(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
     let referral_fee = get_sol_referral_fee(pool, total_price)?;
 
-    let transfer_sol_to = if pool.reinvest {
+    let transfer_sol_to = if pool.reinvest_fulfill_sell {
         buyside_sol_escrow_account.to_account_info()
     } else {
         owner.to_account_info()
