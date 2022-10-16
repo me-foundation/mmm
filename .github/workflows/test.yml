@@ -7,9 +7,6 @@ on:
   pull_request:
     branches:
       - main
-env:
-  solana_version: 1.14.3
-  anchor_version: 0.25.0
 
 jobs:
   anchor_test:
