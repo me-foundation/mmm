@@ -605,8 +605,11 @@ describe('mmm-fulfill', () => {
         assert.equal(poolEscrowBalance, 6.8 * LAMPORTS_PER_SOL);
         assert.equal(afterWalletBalance, initWalletBalance + expectedLpFees);
         assert.equal(Number(poolAta.amount), 1);
-        assert.deepEqual(poolAta.owner, poolData.poolKey);
-        assert.deepEqual(poolAta.mint, poolData.nft.mintAddress);
+        assert.deepEqual(poolAta.owner.toBase58(), poolData.poolKey.toBase58());
+        assert.deepEqual(
+          poolAta.mint.toBase58(),
+          poolData.nft.mintAddress.toBase58(),
+        );
 
         initReferralBalance = referralBalance;
         initSellerBalance = sellerBalance;

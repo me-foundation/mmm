@@ -64,7 +64,10 @@ describe('mmm-admin', () => {
       assert.isTrue(poolAccountInfo.reinvest);
       assert.equal(poolAccountInfo.expiry.toNumber(), 42);
       assert.equal(poolAccountInfo.lpFeeBp, 200);
-      assert.deepEqual(poolAccountInfo.referral, referral.publicKey);
+      assert.equal(
+        poolAccountInfo.referral.toBase58(),
+        referral.publicKey.toBase58(),
+      );
       assert.equal(poolAccountInfo.referralBp, 300);
       assert.deepEqual(
         poolAccountInfo.cosignerAnnotation,
