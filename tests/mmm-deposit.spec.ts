@@ -127,7 +127,7 @@ describe('mmm-deposit', () => {
 
       let nftEscrow = await getTokenAccount(connection, poolAta1);
       assert.equal(Number(nftEscrow.amount), 1);
-      assert.deepEqual(nftEscrow.owner, poolKey);
+      assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
       poolAccountInfo = await program.account.pool.fetch(poolKey);
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
       assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
@@ -242,7 +242,7 @@ describe('mmm-deposit', () => {
 
       let nftEscrow = await getTokenAccount(connection, poolAta1);
       assert.equal(Number(nftEscrow.amount), 1);
-      assert.deepEqual(nftEscrow.owner, poolKey);
+      assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
       poolAccountInfo = await program.account.pool.fetch(poolKey);
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
       assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
@@ -348,7 +348,7 @@ describe('mmm-deposit', () => {
 
       let nftEscrow = await getTokenAccount(connection, poolAta1);
       assert.equal(Number(nftEscrow.amount), 1);
-      assert.deepEqual(nftEscrow.owner, poolKey);
+      assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
       poolAccountInfo = await program.account.pool.fetch(poolKey);
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
       assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
