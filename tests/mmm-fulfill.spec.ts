@@ -45,7 +45,8 @@ describe('mmm-fulfill', () => {
             curveType: CurveKind.linear,
             curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(10)), // 0.1 SOL
             expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
-            reinvest: true,
+            reinvestFulfillBuy: true,
+            reinvestFulfillSell: true,
           },
           'sell',
         ),
@@ -171,7 +172,8 @@ describe('mmm-fulfill', () => {
             curveType: CurveKind.linear,
             curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(10)), // 0.1 SOL
             spotPrice: new anchor.BN(2.1 * LAMPORTS_PER_SOL),
-            reinvest: false,
+            reinvestFulfillBuy: false,
+            reinvestFulfillSell: false,
             expiry: new anchor.BN(0),
             lpFeeBp: 200,
             referral: poolData.referral.publicKey,
@@ -385,7 +387,8 @@ describe('mmm-fulfill', () => {
             curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(10)), // 0.1 SOL
             expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
             referralBp: 200,
-            reinvest: false,
+            reinvestFulfillBuy: false,
+            reinvestFulfillSell: false,
           },
           'buy',
           seller.publicKey,
@@ -509,7 +512,8 @@ describe('mmm-fulfill', () => {
             curveType: CurveKind.linear,
             curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(10)), // 0.1 SOL
             spotPrice: new anchor.BN(0.5 * LAMPORTS_PER_SOL),
-            reinvest: true,
+            reinvestFulfillBuy: true,
+            reinvestFulfillSell: true,
             expiry: new anchor.BN(0),
             lpFeeBp: 200,
             referral: poolData.referral.publicKey,

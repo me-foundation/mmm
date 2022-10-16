@@ -512,7 +512,11 @@ export type Mmm = {
             "type": "u64"
           },
           {
-            "name": "reinvest",
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
+          },
+          {
+            "name": "reinvestFulfillSell",
             "type": "bool"
           },
           {
@@ -598,7 +602,11 @@ export type Mmm = {
             "type": "u64"
           },
           {
-            "name": "reinvest",
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
+          },
+          {
+            "name": "reinvestFulfillSell",
             "type": "bool"
           },
           {
@@ -734,7 +742,11 @@ export type Mmm = {
             "type": "u64"
           },
           {
-            "name": "reinvest",
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
+          },
+          {
+            "name": "reinvestFulfillSell",
             "type": "bool"
           },
           {
@@ -1387,7 +1399,11 @@ export const IDL: Mmm = {
             "type": "u64"
           },
           {
-            "name": "reinvest",
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
+          },
+          {
+            "name": "reinvestFulfillSell",
             "type": "bool"
           },
           {
@@ -1473,7 +1489,11 @@ export const IDL: Mmm = {
             "type": "u64"
           },
           {
-            "name": "reinvest",
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
+          },
+          {
+            "name": "reinvestFulfillSell",
             "type": "bool"
           },
           {
@@ -1609,7 +1629,11 @@ export const IDL: Mmm = {
             "type": "u64"
           },
           {
-            "name": "reinvest",
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
+          },
+          {
+            "name": "reinvestFulfillSell",
             "type": "bool"
           },
           {
