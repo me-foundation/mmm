@@ -44,7 +44,8 @@ pub struct Pool {
     pub spot_price: u64,
     pub curve_type: u8,
     pub curve_delta: u64,
-    pub reinvest: bool,
+    pub reinvest_fulfill_buy: bool,
+    pub reinvest_fulfill_sell: bool,
     pub expiry: i64,
     pub lp_fee_bp: u16,
     pub referral: Pubkey,
@@ -74,7 +75,7 @@ impl Pool {
         1 +  // u8
         2 * 2 +  // u16
         32 * 5 +  // Pubkey
-        1 + // bool
+        2 + // bool
         32 + // [u8; 32]
         4 + (1+ 32) * ALLOWLIST_MAX_LEN + // Allowlist
         400; // padding

@@ -13,7 +13,8 @@ pub struct CreatePoolArgs {
     pub spot_price: u64,
     pub curve_type: u8,
     pub curve_delta: u64,
-    pub reinvest: bool,
+    pub reinvest_fulfill_buy: bool,
+    pub reinvest_fulfill_sell: bool,
     pub expiry: i64,
     pub lp_fee_bp: u16,
     pub referral: Pubkey,
@@ -58,7 +59,8 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
     pool.spot_price = args.spot_price;
     pool.curve_type = args.curve_type;
     pool.curve_delta = args.curve_delta;
-    pool.reinvest = args.reinvest;
+    pool.reinvest_fulfill_buy = args.reinvest_fulfill_buy;
+    pool.reinvest_fulfill_sell = args.reinvest_fulfill_sell;
     pool.expiry = args.expiry;
     pool.lp_fee_bp = args.lp_fee_bp;
     pool.referral = args.referral;

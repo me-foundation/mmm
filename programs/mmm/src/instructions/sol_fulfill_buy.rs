@@ -118,7 +118,7 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
     let referral_fee = get_sol_referral_fee(pool, total_price)?;
 
-    let transfer_asset_to = if pool.reinvest {
+    let transfer_asset_to = if pool.reinvest_fulfill_buy {
         sellside_escrow_token_account.to_account_info()
     } else {
         owner_token_account.to_account_info()
@@ -148,7 +148,7 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
     }
 
     // we can also close the pool escrow token account if we don't reinvest and its balance is 0
-    if !pool.reinvest && sellside_escrow_token_account.amount == 0 {
+    if !pool.reinvest_fulfill_buy && sellside_escrow_token_account.amount == 0 {
         anchor_spl::token::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
             anchor_spl::token::CloseAccount {
