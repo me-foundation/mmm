@@ -1,4 +1,4 @@
-name: Test project
+name: test
 
 on:
   push:
@@ -12,97 +12,12 @@ env:
   anchor_version: 0.25.0
 
 jobs:
-  install:
+  anchor_test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        case: ['npm run test:anchor', 'cargo test']
     steps:
       - uses: actions/checkout@v2
-      - name: test
-        run: |
-          echo "${{ matrix.case }}"
-      - uses: actions/cache@v2
-        name: Cache Cargo registry + index
-        id: cache-anchor
+      - uses: metadaobuilders/anchor-test@v1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-          key: cargo-${{ runner.os }}-v0000-${{ hashFiles('**/Cargo.lock') }}
-      - uses: actions/cache@v2
-        name: Cache Solana Tool Suite
-        id: cache-solana
-        with:
-          path: |
-            ~/.cache/solana/
-            ~/.local/share/solana/
-          key: solana-${{ runner.os }}-v0000-${{ env.solana_version }}
-      - uses: actions/cache@v2
-        name: Cache target folder
-        id: cache-programs
-        with:
-          path: |
-            ./target
-          key: solana-${{ runner.os }}-v0000-${{ hashFiles('**/programs/**/*.rs') }}-${{ hashFiles('**/programs/**/*.toml') }}
-      - uses: actions/cache@v2
-        name: Cache Node Modules
-        id: cache-node-modules
-        with:
-          path: |
-            ~/.npm/
-            ./node_modules
-          key: npm-${{ runner.os }}-v0000-${{ hashFiles('**/package-lock.json') }}
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-      - name: install global mocha
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          npm install -g mocha
-          npm install -g ts-mocha
-          npm install -g typescript
-          npm install -g @project-serum/anchor
-          ts-mocha -h
-      - name: install essential
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pkg-config build-essential libudev-dev
-      - name: install solana
-        if: steps.cache-solana.outputs.cache-hit != 'true'
-        run: |
-          sh -c "$(curl -sSfL https://release.solana.com/v${{ env.solana_version }}/install)"
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          solana --version
-      - name: setup solana
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          solana --version
-          solana-keygen new --no-bip39-passphrase
-      - name: install Anchor
-        if: steps.cache-anchor.outputs.cache-hit != 'true'
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          npm i -g @project-serum/anchor-cli@0.25.0
-      - name: build programs
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          anchor build
-      - name: build amm sdk
-        run: |
-          npm i
-        working-directory: ./sdk
-      - name: install
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          npm install
-      - name: test
-        run: |
-          export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
-          ${{ matrix.case }}
+          anchor-version: '0.25.0'
+          solana-cli-version: '1.14.3'
+          node-version: '16.15.1'
