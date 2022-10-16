@@ -96,13 +96,14 @@ pub struct Pool { // 8 bytes anchor discriminator
 }
 ```
 
-## Tests
+## Build and Test
 ```bash
-yarn test:anchor
+anchor build
+anchor test
 ```
 
 ## Security
-TODO
+https://magiceden.io/.well-known/security.txt
 
 ## License
 MIT © [MagicEden Open Source](https://github.com/magiceden-oss)
