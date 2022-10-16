@@ -84,6 +84,7 @@ jobs:
         run: |
           export PATH="/home/runner/.local/share/solana/install/active_release/bin:$PATH"
           solana --version
+          solana-keygen new --no-bip39-passphrase
       - name: install Anchor
         if: steps.cache-anchor.outputs.cache-hit != 'true'
         run: |
