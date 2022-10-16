@@ -10,7 +10,7 @@ use mpl_token_metadata::{
 // copied from mpl-token-metadata
 fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
     let version = master_edition_account_info.data.borrow()[0];
-    return version == 2 || version == 6;
+    version == 2 || version == 6
 }
 
 pub fn check_allowlists(allowlists: &[Allowlist]) -> Result<()> {
@@ -59,8 +59,8 @@ pub fn check_allowlists_for_mint(
     for allowlist_val in allowlists.iter() {
         match allowlist_val.kind {
             ALLOWLIST_KIND_EMPTY => {}
-            ALLOWLIST_KIND_FVCA => match parsed_metadata.data.creators {
-                Some(ref creators) => {
+            ALLOWLIST_KIND_FVCA => {
+                if let Some(ref creators) = parsed_metadata.data.creators {
                     // TODO: can we make sure we only take master_edition here?
                     if !creators.is_empty()
                         && creators[0].address == allowlist_val.value
@@ -69,21 +69,19 @@ pub fn check_allowlists_for_mint(
                         return Ok(());
                     }
                 }
-                _ => {}
-            },
+            }
             ALLOWLIST_KIND_MINT => {
                 if mint.key() == allowlist_val.value {
                     return Ok(());
                 }
             }
-            ALLOWLIST_KIND_MCC => match parsed_metadata.collection {
-                Some(ref collection_data) => {
+            ALLOWLIST_KIND_MCC => {
+                if let Some(ref collection_data) = parsed_metadata.collection {
                     if collection_data.key == allowlist_val.value && collection_data.verified {
                         return Ok(());
                     }
                 }
-                _ => {}
-            },
+            }
             _ => {
                 return Err(MMMErrorCode::InvalidAllowLists.into());
             }
@@ -91,7 +89,7 @@ pub fn check_allowlists_for_mint(
     }
 
     // at the end, we didn't find a match, thus return err
-    return Err(MMMErrorCode::InvalidAllowLists.into());
+    Err(MMMErrorCode::InvalidAllowLists.into())
 }
 
 pub fn check_curve(curve_type: u8, curve_delta: u64) -> Result<()> {

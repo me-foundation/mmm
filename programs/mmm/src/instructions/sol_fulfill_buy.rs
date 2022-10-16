@@ -235,7 +235,10 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
         .sellside_orders_count
         .checked_add(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    pool.lp_fee_earned += lp_fee;
+    pool.lp_fee_earned = pool
+        .lp_fee_earned
+        .checked_add(lp_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
 
     try_close_pool(
         pool,
