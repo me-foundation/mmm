@@ -18,3 +18,4 @@ jobs:
           anchor-version: '0.24.2'
           solana-cli-version: '1.14.3'
           node-version: '16.15.1'
+      - run: cargo fmt -- --check && cargo clippy -- -Dwarnings
