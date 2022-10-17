@@ -52,7 +52,7 @@ pub struct Pool {
     pub referral_bp: u16,
     pub buyside_creator_royalty_bp: u16,
 
-    // usually annotation set by the cosigner, could be the hash of the certain
+    // cosigner_annotation: it's set by the cosigner, could be the hash of the certain
     // free form of content, like collection_symbol, SFT name, and traits name
     // and etc. Needs to be carefully verified by the specific cosigner
     pub cosigner_annotation: [u8; 32],
