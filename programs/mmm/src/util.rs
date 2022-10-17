@@ -1,4 +1,4 @@
-use crate::{constants::POOL_PREFIX, errors::MMMErrorCode, state::*};
+use crate::{errors::MMMErrorCode, state::*};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 use mpl_token_metadata::{
@@ -248,9 +248,7 @@ pub fn get_sol_total_price_and_next_price(
 
 pub fn try_close_pool<'info>(
     pool: &Account<'info, Pool>,
-    pool_bump: u8,
     owner: AccountInfo<'info>,
-    system_program: AccountInfo<'info>,
     buyside_sol_escrow_balance: u64,
 ) -> Result<()> {
     if pool.sellside_orders_count != 0 {
@@ -261,31 +259,14 @@ pub fn try_close_pool<'info>(
         return Ok(());
     }
 
-    anchor_lang::solana_program::program::invoke_signed(
-        &anchor_lang::solana_program::system_instruction::transfer(
-            &pool.key(),
-            &pool.owner.key(),
-            pool.to_account_info().lamports(),
-        ),
-        &[
-            pool.to_account_info(),
-            owner.to_account_info(),
-            system_program.to_account_info(),
-        ],
-        // seeds should be the PDA of 'pool'
-        &[&[
-            POOL_PREFIX.as_bytes(),
-            owner.key().as_ref(),
-            pool.uuid.key().as_ref(),
-            &[pool_bump],
-        ]],
-    )?;
-
     pool.to_account_info()
         .data
         .borrow_mut()
         .copy_from_slice(&[0; Pool::LEN]);
 
+    let curr_lamports = pool.to_account_info().lamports();
+    **pool.to_account_info().lamports.borrow_mut() = 0;
+    **owner.lamports.borrow_mut() = owner.lamports().checked_add(curr_lamports).unwrap();
     Ok(())
 }
 

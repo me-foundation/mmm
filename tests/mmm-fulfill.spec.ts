@@ -518,7 +518,7 @@ describe('mmm-fulfill', () => {
         0.7 * LAMPORTS_PER_SOL,
       );
       assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
-      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 3);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 0);
 
       const ownerNftAtaAddress = await getAssociatedTokenAddress(
         poolData.nft.mintAddress,
@@ -624,6 +624,7 @@ describe('mmm-fulfill', () => {
         assert.equal(
           sellerBalance,
           initSellerBalance +
+            0.01 * LAMPORTS_PER_SOL +
             0.5 * LAMPORTS_PER_SOL -
             expectedTxFees -
             expectedReferralFees -
@@ -635,7 +636,10 @@ describe('mmm-fulfill', () => {
         );
         assert.equal(poolAtaBalance, tokenAccountRent);
         assert.equal(poolEscrowBalance, 6.8 * LAMPORTS_PER_SOL);
-        assert.equal(afterWalletBalance, initWalletBalance + expectedLpFees);
+        assert.equal(
+          afterWalletBalance,
+          initWalletBalance + expectedLpFees - 0.01 * LAMPORTS_PER_SOL,
+        );
         assert.equal(Number(poolAta.amount), 1);
         assert.deepEqual(poolAta.owner.toBase58(), poolData.poolKey.toBase58());
         assert.deepEqual(
@@ -652,11 +656,7 @@ describe('mmm-fulfill', () => {
         poolAccountInfo.spotPrice.toNumber(),
         0.4 * LAMPORTS_PER_SOL,
       );
-      assert.equal(
-        poolAccountInfo.lpFeeEarned.toNumber(),
-        0.5 * LAMPORTS_PER_SOL * 0.02,
-      );
-      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 4);
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
     });
   });
 });

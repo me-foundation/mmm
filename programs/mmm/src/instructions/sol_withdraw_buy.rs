@@ -13,6 +13,7 @@ pub struct SolWithdrawBuy<'info> {
     pub owner: Signer<'info>,
     pub cosigner: Signer<'info>,
     #[account(
+        mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
@@ -57,9 +58,7 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
 
     try_close_pool(
         pool,
-        *ctx.bumps.get("pool").unwrap(),
         owner.to_account_info(),
-        system_program.to_account_info(),
         buyside_sol_escrow_account.lamports(),
     )?;
 

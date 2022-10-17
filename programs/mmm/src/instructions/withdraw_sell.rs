@@ -61,7 +61,6 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let token_program = &ctx.accounts.token_program;
     let pool = &mut ctx.accounts.pool;
-    let system_program = &ctx.accounts.system_program;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
 
     // Note that check_allowlists_for_mint is optional for withdraw_sell
@@ -110,9 +109,7 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
 
     try_close_pool(
         pool,
-        *ctx.bumps.get("pool").unwrap(),
         owner.to_account_info(),
-        system_program.to_account_info(),
         buyside_sol_escrow_account.lamports(),
     )?;
 

@@ -28,8 +28,8 @@ describe('mmm-deposit', () => {
   const program = anchor.workspace.Mmm as Program<Mmm>;
   const cosigner = Keypair.generate();
 
-  describe('Can deposit buyside sol mmm', () => {
-    it('happy path', async () => {
+  describe('sol_deposit_buy', () => {
+    it('transfers users SOL into escrow account', async () => {
       const { poolKey } = await createPool(program, {
         owner: wallet.publicKey,
         cosigner,
@@ -61,8 +61,80 @@ describe('mmm-deposit', () => {
     });
   });
 
-  describe('Can deposit buy side', () => {
-    it('happy path - fvca only', async () => {
+  describe('try_close_pool', () => {
+    it('closes the pool ONLY when escrow is empty', async () => {
+      const { poolKey } = await createPool(program, {
+        owner: wallet.publicKey,
+        cosigner,
+      });
+
+      const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+        program.programId,
+        poolKey,
+      );
+      await program.methods
+        .solDepositBuy({ paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([
+          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
+        ])
+        .signers([cosigner])
+        .rpc();
+
+      assert.equal(
+        await connection.getBalance(solEscrowKey),
+        2 * LAMPORTS_PER_SOL,
+      );
+
+      await program.methods
+        .solWithdrawBuy({ paymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([
+          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
+        ])
+        .signers([cosigner])
+        .rpc();
+
+      assert.equal(
+        await connection.getBalance(solEscrowKey),
+        1 * LAMPORTS_PER_SOL,
+      );
+      assert.notEqual(await connection.getBalance(poolKey), 0);
+
+      await program.methods
+        .solWithdrawBuy({ paymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([
+          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
+        ])
+        .signers([cosigner])
+        .rpc();
+
+      assert.equal(await connection.getBalance(solEscrowKey), 0);
+      assert.equal(await connection.getBalance(poolKey), 0);
+    });
+  });
+
+  describe('deposit_sell', () => {
+    it('correctly verifies fvca-only allowlists when depositing items', async () => {
       const creator = Keypair.generate();
       const metaplexInstance = getMetaplexInstance(connection);
       const [{ poolKey }, nfts, sfts] = await Promise.all([
@@ -177,7 +249,7 @@ describe('mmm-deposit', () => {
       assert.deepEqual(sftAccount.owner, wallet.publicKey);
     });
 
-    it('happy path - mcc only', async () => {
+    it('correctly verifies mcc-only allowlists when depositing items', async () => {
       const metaplexInstance = getMetaplexInstance(connection);
       const { collection } = await mintCollection(connection, {
         numNfts: 0,
@@ -294,7 +366,7 @@ describe('mmm-deposit', () => {
       assert.deepEqual(sftAccount.owner, wallet.publicKey);
     });
 
-    it('happy path - mint only', async () => {
+    it('correctly verifies mint-only allowlists when depositing items', async () => {
       const metaplexInstance = getMetaplexInstance(connection);
       const [nfts, sfts] = await Promise.all([
         mintNfts(connection, {

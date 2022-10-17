@@ -228,9 +228,7 @@ pub fn handler<'info>(
 
     try_close_pool(
         pool,
-        *ctx.bumps.get("pool").unwrap(),
         owner.to_account_info(),
-        system_program.to_account_info(),
         buyside_sol_escrow_account.lamports(),
     )?;
 
