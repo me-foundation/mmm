@@ -30,6 +30,8 @@ We'd like to introduce the standard of AMM to maximize the liquidity for traders
   - MCC Collection Standard
   - Merkle Tree (coming soon)
 - cosign and cosigner annotations
+- buyside creator royalty setting
+- flexible reinvest options for both buyside and sellside 
 - multiple bonding curves
   - linear
   - exponential
@@ -86,6 +88,7 @@ pub struct Pool { // 8 bytes anchor discriminator
     pub lp_fee_bp: u16,
     pub referral: Pubkey,
     pub referral_bp: u16,
+    pub buyside_creator_royalty_bp: u16,
     pub cosigner_annotation: [u8; 32],
     pub sellside_orders_count: u64,
     pub lp_fee_earned: u64,
