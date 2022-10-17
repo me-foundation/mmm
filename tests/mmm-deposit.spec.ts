@@ -61,6 +61,78 @@ describe('mmm-deposit', () => {
     });
   });
 
+  describe('try_close_pool', () => {
+    it('closes the pool ONLY when escrow is empty', async () => {
+      const { poolKey } = await createPool(program, {
+        owner: wallet.publicKey,
+        cosigner,
+      });
+
+      const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+        program.programId,
+        poolKey,
+      );
+      await program.methods
+        .solDepositBuy({ paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([
+          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
+        ])
+        .signers([cosigner])
+        .rpc();
+
+      assert.equal(
+        await connection.getBalance(solEscrowKey),
+        2 * LAMPORTS_PER_SOL,
+      );
+
+      await program.methods
+        .solWithdrawBuy({ paymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([
+          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
+        ])
+        .signers([cosigner])
+        .rpc();
+
+      assert.equal(
+        await connection.getBalance(solEscrowKey),
+        1 * LAMPORTS_PER_SOL,
+      );
+      assert.notEqual(await connection.getBalance(poolKey), 0);
+
+      await program.methods
+        .solWithdrawBuy({ paymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL) })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([
+          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
+        ])
+        .signers([cosigner])
+        .rpc();
+
+      assert.equal(await connection.getBalance(solEscrowKey), 0);
+      assert.equal(await connection.getBalance(poolKey), 0);
+    });
+  });
+
   describe('Can deposit buy side', () => {
     it('happy path - fvca only', async () => {
       const creator = Keypair.generate();

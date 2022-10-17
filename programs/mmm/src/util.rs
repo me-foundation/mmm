@@ -261,31 +261,14 @@ pub fn try_close_pool<'info>(
         return Ok(());
     }
 
-    anchor_lang::solana_program::program::invoke_signed(
-        &anchor_lang::solana_program::system_instruction::transfer(
-            &pool.key(),
-            &pool.owner.key(),
-            pool.to_account_info().lamports(),
-        ),
-        &[
-            pool.to_account_info(),
-            owner.to_account_info(),
-            system_program.to_account_info(),
-        ],
-        // seeds should be the PDA of 'pool'
-        &[&[
-            POOL_PREFIX.as_bytes(),
-            owner.key().as_ref(),
-            pool.uuid.key().as_ref(),
-            &[pool_bump],
-        ]],
-    )?;
-
     pool.to_account_info()
         .data
         .borrow_mut()
         .copy_from_slice(&[0; Pool::LEN]);
 
+    let curr_lamports = pool.to_account_info().lamports();
+    **pool.to_account_info().lamports.borrow_mut() = 0;
+    **owner.lamports.borrow_mut() = owner.lamports().checked_add(curr_lamports).unwrap();
     Ok(())
 }
 
