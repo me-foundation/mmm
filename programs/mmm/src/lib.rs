@@ -34,11 +34,17 @@ pub mod mmm {
         instructions::sol_withdraw_buy::handler(ctx, args)
     }
 
-    pub fn sol_fulfill_buy(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<()> {
+    pub fn sol_fulfill_buy<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolFulfillBuy<'info>>,
+        args: SolFulfillBuyArgs,
+    ) -> Result<()> {
         instructions::sol_fulfill_buy::handler(ctx, args)
     }
 
-    pub fn sol_fulfill_sell(ctx: Context<SolFulfillSell>, args: SolFulfillSellArgs) -> Result<()> {
+    pub fn sol_fulfill_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolFulfillSell<'info>>,
+        args: SolFulfillSellArgs,
+    ) -> Result<()> {
         instructions::sol_fulfill_sell::handler(ctx, args)
     }
 

@@ -20,6 +20,7 @@ pub struct CreatePoolArgs {
     pub referral: Pubkey,
     pub referral_bp: u16,
     pub cosigner_annotation: [u8; 32],
+    pub buyside_creator_royalty_bp: u16,
 
     // immutable
     pub uuid: Pubkey, // randomly generated keypair
@@ -42,6 +43,7 @@ pub struct CreatePool<'info> {
         space = Pool::LEN,
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.referral_bp <= 10000 @ MMMErrorCode::InvalidBP,
+        constraint = args.buyside_creator_royalty_bp <= 10000 @ MMMErrorCode::InvalidBP,
     )]
     pub pool: Box<Account<'info, Pool>>,
     pub system_program: Program<'info, System>,
@@ -66,6 +68,7 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
     pool.referral = args.referral;
     pool.referral_bp = args.referral_bp;
     pool.cosigner_annotation = args.cosigner_annotation;
+    pool.buyside_creator_royalty_bp = args.buyside_creator_royalty_bp;
 
     // state variables
     pool.sellside_orders_count = 0;

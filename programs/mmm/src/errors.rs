@@ -32,4 +32,8 @@ pub enum MMMErrorCode {
     InvalidMasterEdition, // 0x177d
     #[msg("expired")]
     Expired, // 0x177e
+    #[msg("invalid creator address")]
+    InvalidCreatorAddress, // 0x177f
+    #[msg("not enough balance")]
+    NotEnoughBalance, // 0x1780
 }

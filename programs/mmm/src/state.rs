@@ -50,6 +50,7 @@ pub struct Pool {
     pub lp_fee_bp: u16,
     pub referral: Pubkey,
     pub referral_bp: u16,
+    pub buyside_creator_royalty_bp: u16,
 
     // usually annotation set by the cosigner, could be the hash of the certain
     // free form of content, like collection_symbol, SFT name, and traits name

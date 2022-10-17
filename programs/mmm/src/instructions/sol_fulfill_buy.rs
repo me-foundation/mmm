@@ -10,7 +10,7 @@ use crate::{
     state::Pool,
     util::{
         check_allowlists_for_mint, get_sol_lp_fee, get_sol_referral_fee,
-        get_sol_total_price_and_next_price, try_close_pool,
+        get_sol_total_price_and_next_price, pay_creator_fees_in_sol, try_close_pool,
     },
 };
 
@@ -22,8 +22,8 @@ pub struct SolFulfillBuyArgs {
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
 // where the pool has some buyside payment liquidity. Therefore,
-// the seller expects a min_payment_amount for the asset_amount that
-// the seller wants to sell.
+// the seller expects a min_payment_amount that goes back to the
+// seller's wallet for the asset_amount that the seller wants to sell.
 #[derive(Accounts)]
 #[instruction(args:SolFulfillBuyArgs)]
 pub struct SolFulfillBuy<'info> {
@@ -86,7 +86,10 @@ pub struct SolFulfillBuy<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<()> {
+pub fn handler<'info>(
+    ctx: Context<'_, '_, '_, 'info, SolFulfillBuy<'info>>,
+    args: SolFulfillBuyArgs,
+) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
     let pool = &mut ctx.accounts.pool;
@@ -102,6 +105,18 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
 
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
+    let pool_key = pool.key();
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        pool.owner.as_ref(),
+        pool.uuid.as_ref(),
+        &[*ctx.bumps.get("pool").unwrap()],
+    ]];
+    let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
+        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
+        pool_key.as_ref(),
+        &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
+    ]];
 
     check_allowlists_for_mint(
         &pool.allowlists,
@@ -112,9 +127,6 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
 
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
-    if total_price < args.min_payment_amount {
-        return Err(MMMErrorCode::InvalidRequestedPrice.into());
-    }
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
     let referral_fee = get_sol_referral_fee(pool, total_price)?;
 
@@ -135,6 +147,7 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
         ),
         args.asset_amount,
     )?;
+
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
         anchor_spl::token::close_account(CpiContext::new(
@@ -156,36 +169,32 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
                 destination: payer.to_account_info(),
                 authority: pool.to_account_info(),
             },
-            &[&[
-                POOL_PREFIX.as_bytes(),
-                pool.owner.as_ref(),
-                pool.uuid.as_ref(),
-                &[*ctx.bumps.get("pool").unwrap()],
-            ]],
+            pool_seeds,
         ))?;
+    }
+
+    // prevent frontrun by pool config changes
+    let payment_amount = total_price
+        .checked_sub(lp_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_sub(referral_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    if payment_amount < args.min_payment_amount {
+        return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }
 
     anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::system_instruction::transfer(
             buyside_sol_escrow_account.key,
             payer.key,
-            total_price
-                .checked_sub(lp_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)?
-                .checked_sub(referral_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)?,
+            payment_amount,
         ),
         &[
             buyside_sol_escrow_account.to_account_info(),
             payer.to_account_info(),
             system_program.to_account_info(),
         ],
-        // seeds should be the PDA of 'buyside_sol_escrow_account'
-        &[&[
-            BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-            pool.key().as_ref(),
-            &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
-        ]],
+        buyside_sol_escrow_account_seeds,
     )?;
 
     if lp_fee > 0 {
@@ -200,12 +209,7 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
                 owner.to_account_info(),
                 system_program.to_account_info(),
             ],
-            // seeds should be the PDA of 'buyside_sol_escrow_account'
-            &[&[
-                BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-                pool.key().as_ref(),
-                &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
-            ]],
+            buyside_sol_escrow_account_seeds,
         )?;
     }
 
@@ -221,16 +225,10 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
                 referral.to_account_info(),
                 system_program.to_account_info(),
             ],
-            // seeds should be the PDA of 'buyside_sol_escrow_account'
-            &[&[
-                BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-                pool.key().as_ref(),
-                &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
-            ]],
+            buyside_sol_escrow_account_seeds,
         )?;
     }
 
-    pool.spot_price = next_price;
     pool.sellside_orders_count = pool
         .sellside_orders_count
         .checked_add(args.asset_amount)
@@ -239,6 +237,17 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
         .lp_fee_earned
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
+    pool.spot_price = next_price;
+
+    let royalty_paid = pay_creator_fees_in_sol(
+        pool.buyside_creator_royalty_bp,
+        total_price,
+        payer_asset_metadata.to_account_info(),
+        ctx.remaining_accounts,
+        buyside_sol_escrow_account.to_account_info(),
+        buyside_sol_escrow_account_seeds,
+        system_program.to_account_info(),
+    )?;
 
     try_close_pool(
         pool,
@@ -249,11 +258,10 @@ pub fn handler(ctx: Context<SolFulfillBuy>, args: SolFulfillBuyArgs) -> Result<(
     )?;
 
     msg!(
-        "BUY {} of {} from {} for {} lamports",
-        args.asset_amount,
-        asset_mint.key(),
-        payer.key(),
-        total_price
+        "{{\"royalty_paid\":{},\"total_price\":{}}}",
+        royalty_paid,
+        total_price,
     );
+
     Ok(())
 }
