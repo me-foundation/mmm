@@ -596,14 +596,13 @@ describe('mmm-fulfill', () => {
       {
         const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;
         const expectedLpFees = 0.5 * LAMPORTS_PER_SOL * 0.02;
-        const poolAta = await getTokenAccount(connection, poolData.poolAtaNft);
         const [
           sellerBalance,
           referralBalance,
           poolAtaBalance,
           poolEscrowBalance,
           afterWalletBalance,
-          _poolAta,
+          poolAta,
         ] = await Promise.all([
           connection.getBalance(seller.publicKey),
           connection.getBalance(poolData.referral.publicKey),
