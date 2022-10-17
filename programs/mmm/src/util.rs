@@ -288,3 +288,74 @@ pub fn try_close_pool<'info>(
 
     Ok(())
 }
+
+pub fn pay_creator_fees_in_sol<'info>(
+    buyside_creator_royalty_bp: u16,
+    total_price: u64,
+    metadata_info: AccountInfo<'info>,
+    creator_accounts: &[AccountInfo<'info>],
+    payer: AccountInfo<'info>,
+    payer_seeds: &[&[&[u8]]],
+    system_program: AccountInfo<'info>,
+) -> Result<u64> {
+    let metadata = Metadata::from_account_info(&metadata_info)?;
+
+    // total royalty paid by the buyer, it's one of the following
+    //   - buyside_sol_escrow_account (when fulfill buy)
+    //   - payer                      (when fulfill sell)
+    // returns the total royalty paid
+    //   royalty = spot_price * (royalty_bp / 10000) * (buyside_creator_royalty_bp / 10000)
+    let royalty = ((total_price as u128)
+        .checked_mul(metadata.data.seller_fee_basis_points as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_mul(buyside_creator_royalty_bp as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?) as u64;
+
+    if royalty == 0 {
+        return Ok(0);
+    }
+
+    if payer.lamports() < royalty {
+        return Err(MMMErrorCode::NotEnoughBalance.into());
+    }
+
+    match metadata.data.creators {
+        None => {
+            return Ok(0);
+        }
+        Some(creators) => {
+            let creator_accounts_iter = &mut creator_accounts.iter();
+            for creator in creators {
+                let creator_fee = (royalty as u128)
+                    .checked_mul(creator.share as u128)
+                    .ok_or(MMMErrorCode::NumericOverflow)?
+                    .checked_div(100)
+                    .ok_or(MMMErrorCode::NumericOverflow)? as u64;
+                let current_creator_info = next_account_info(creator_accounts_iter)?;
+                if creator.address.ne(current_creator_info.key) {
+                    return Err(MMMErrorCode::InvalidCreatorAddress.into());
+                }
+                if creator_fee > 0 {
+                    anchor_lang::solana_program::program::invoke_signed(
+                        &anchor_lang::solana_program::system_instruction::transfer(
+                            payer.key,
+                            current_creator_info.key,
+                            creator_fee,
+                        ),
+                        &[
+                            payer.to_account_info(),
+                            current_creator_info.to_account_info(),
+                            system_program.to_account_info(),
+                        ],
+                        payer_seeds,
+                    )?;
+                }
+            }
+        }
+    }
+    Ok(royalty)
+}

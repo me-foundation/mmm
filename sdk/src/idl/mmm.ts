@@ -536,6 +536,10 @@ export type Mmm = {
             "type": "u16"
           },
           {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
             "name": "cosignerAnnotation",
             "type": {
               "array": [
@@ -635,6 +639,10 @@ export type Mmm = {
             }
           },
           {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
             "name": "uuid",
             "type": "publicKey"
           },
@@ -708,6 +716,10 @@ export type Mmm = {
           {
             "name": "maxPaymentAmount",
             "type": "u64"
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           }
         ]
       }
@@ -773,6 +785,10 @@ export type Mmm = {
                 32
               ]
             }
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           }
         ]
       }
@@ -881,6 +897,16 @@ export type Mmm = {
       "code": 6014,
       "name": "Expired",
       "msg": "expired"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidCreatorAddress",
+      "msg": "invalid creator address"
+    },
+    {
+      "code": 6016,
+      "name": "NotEnoughBalance",
+      "msg": "not enough balance"
     }
   ]
 };
@@ -1423,6 +1449,10 @@ export const IDL: Mmm = {
             "type": "u16"
           },
           {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
             "name": "cosignerAnnotation",
             "type": {
               "array": [
@@ -1522,6 +1552,10 @@ export const IDL: Mmm = {
             }
           },
           {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
             "name": "uuid",
             "type": "publicKey"
           },
@@ -1595,6 +1629,10 @@ export const IDL: Mmm = {
           {
             "name": "maxPaymentAmount",
             "type": "u64"
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           }
         ]
       }
@@ -1660,6 +1698,10 @@ export const IDL: Mmm = {
                 32
               ]
             }
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           }
         ]
       }
@@ -1768,6 +1810,16 @@ export const IDL: Mmm = {
       "code": 6014,
       "name": "Expired",
       "msg": "expired"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidCreatorAddress",
+      "msg": "invalid creator address"
+    },
+    {
+      "code": 6016,
+      "name": "NotEnoughBalance",
+      "msg": "not enough balance"
     }
   ]
 };

@@ -68,6 +68,7 @@ describe('mmm-fulfill', () => {
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
             maxPaymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL),
+            buysideCreatorRoyaltyBp: 0,
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -179,6 +180,7 @@ describe('mmm-fulfill', () => {
             referral: poolData.referral.publicKey,
             referralBp: 300,
             cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
+            buysideCreatorRoyaltyBp: 0,
           })
           .accountsStrict({
             owner: wallet.publicKey,
@@ -193,6 +195,7 @@ describe('mmm-fulfill', () => {
           .solFulfillSell({
             assetAmount: new anchor.BN(2),
             maxPaymentAmount: new anchor.BN(4.3 * LAMPORTS_PER_SOL),
+            buysideCreatorRoyaltyBp: 0,
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -285,6 +288,7 @@ describe('mmm-fulfill', () => {
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
             maxPaymentAmount: new anchor.BN(4.3 * LAMPORTS_PER_SOL),
+            buysideCreatorRoyaltyBp: 0,
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -519,6 +523,7 @@ describe('mmm-fulfill', () => {
             referral: poolData.referral.publicKey,
             referralBp: 300,
             cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
+            buysideCreatorRoyaltyBp: 0,
           })
           .accountsStrict({
             owner: wallet.publicKey,
