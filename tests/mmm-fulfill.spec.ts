@@ -64,10 +64,13 @@ describe('mmm-fulfill', () => {
       let initBuyerBalance = await connection.getBalance(buyer.publicKey);
 
       {
+        const expectedReferralFees = 1 * LAMPORTS_PER_SOL * 0.03;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
-            maxPaymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL),
+            maxPaymentAmount: new anchor.BN(
+              1 * LAMPORTS_PER_SOL + expectedReferralFees,
+            ),
             buysideCreatorRoyaltyBp: 0,
           })
           .accountsStrict({
@@ -191,10 +194,13 @@ describe('mmm-fulfill', () => {
           .rpc();
 
         initWalletBalance = await connection.getBalance(wallet.publicKey);
+        const expectedReferralFees = 4.3 * LAMPORTS_PER_SOL * 0.03;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(2),
-            maxPaymentAmount: new anchor.BN(4.3 * LAMPORTS_PER_SOL),
+            maxPaymentAmount: new anchor.BN(
+              4.3 * LAMPORTS_PER_SOL + expectedReferralFees,
+            ),
             buysideCreatorRoyaltyBp: 0,
           })
           .accountsStrict({
@@ -411,10 +417,13 @@ describe('mmm-fulfill', () => {
       let initSellerBalance = await connection.getBalance(seller.publicKey);
 
       {
+        const expectedReferralFees = 2.7 * LAMPORTS_PER_SOL * 0.02;
         const tx = await program.methods
           .solFulfillBuy({
             assetAmount: new anchor.BN(3),
-            minPaymentAmount: new anchor.BN(2.7 * LAMPORTS_PER_SOL),
+            minPaymentAmount: new anchor.BN(
+              2.7 * LAMPORTS_PER_SOL - expectedReferralFees,
+            ),
           })
           .accountsStrict({
             payer: seller.publicKey,
@@ -534,10 +543,14 @@ describe('mmm-fulfill', () => {
           .rpc();
 
         initWalletBalance = await connection.getBalance(wallet.publicKey);
+        const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;
+        const expectedLpFees = 0.5 * LAMPORTS_PER_SOL * 0.02;
         const tx = await program.methods
           .solFulfillBuy({
             assetAmount: new anchor.BN(1),
-            minPaymentAmount: new anchor.BN(0.5 * LAMPORTS_PER_SOL),
+            minPaymentAmount: new anchor.BN(
+              0.5 * LAMPORTS_PER_SOL - expectedReferralFees - expectedLpFees,
+            ),
           })
           .accountsStrict({
             payer: seller.publicKey,
@@ -583,13 +596,14 @@ describe('mmm-fulfill', () => {
       {
         const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;
         const expectedLpFees = 0.5 * LAMPORTS_PER_SOL * 0.02;
+        const poolAta = await getTokenAccount(connection, poolData.poolAtaNft);
         const [
           sellerBalance,
           referralBalance,
           poolAtaBalance,
           poolEscrowBalance,
           afterWalletBalance,
-          poolAta,
+          _poolAta,
         ] = await Promise.all([
           connection.getBalance(seller.publicKey),
           connection.getBalance(poolData.referral.publicKey),
