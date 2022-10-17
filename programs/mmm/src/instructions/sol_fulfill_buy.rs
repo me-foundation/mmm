@@ -232,10 +232,12 @@ pub fn handler<'info>(
         )?;
     }
 
-    pool.sellside_orders_count = pool
-        .sellside_orders_count
-        .checked_add(args.asset_amount)
-        .ok_or(MMMErrorCode::NumericOverflow)?;
+    if (pool.reinvest_fulfill_buy) {
+        pool.sellside_orders_count = pool
+            .sellside_orders_count
+            .checked_add(args.asset_amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?;
+    }
     pool.lp_fee_earned = pool
         .lp_fee_earned
         .checked_add(lp_fee)

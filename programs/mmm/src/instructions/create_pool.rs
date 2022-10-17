@@ -71,7 +71,7 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
     pool.buyside_creator_royalty_bp = args.buyside_creator_royalty_bp;
 
     // state variables
-    pool.sellside_orders_count = 0;
+    pool.sellside_orders_count = 0; // always equal to the number of NFTs in the pool
     pool.lp_fee_earned = 0;
 
     // immutable
