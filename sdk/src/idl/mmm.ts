@@ -147,7 +147,7 @@ export type Mmm = {
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1104,7 +1104,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
