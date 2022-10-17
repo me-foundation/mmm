@@ -65,6 +65,7 @@ export const createPool = async (
     referral: referral.publicKey,
     referralBp: 300,
     cosignerAnnotation: new Array(32).fill(0),
+    buysideCreatorRoyaltyBp: 0,
 
     owner: args.owner,
     cosigner: args.cosigner?.publicKey ?? args.owner,
@@ -198,7 +199,7 @@ export const createPoolWithExampleDeposits = async (
 
   if (side === 'both' || side === 'sell') {
     await program.methods
-      .depositSell({ assetAmount: new anchor.BN(1) })
+      .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
       .accountsStrict({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
@@ -214,6 +215,7 @@ export const createPoolWithExampleDeposits = async (
         assetMint: mintAddress1,
         assetTokenAccount: nfts[0].tokenAddress!,
         sellsideEscrowTokenAccount: poolAta1,
+        allowlistAuxAccount: SystemProgram.programId,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -223,7 +225,7 @@ export const createPoolWithExampleDeposits = async (
       .rpc();
 
     await program.methods
-      .depositSell({ assetAmount: new anchor.BN(5) })
+      .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
       .accountsStrict({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
@@ -239,6 +241,7 @@ export const createPoolWithExampleDeposits = async (
         assetMint: mintAddress2,
         assetTokenAccount: sfts[0].tokenAddress!,
         sellsideEscrowTokenAccount: poolAta2,
+        allowlistAuxAccount: SystemProgram.programId,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,

@@ -9,6 +9,7 @@ use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::try_close_poo
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct WithdrawSellArgs {
     asset_amount: u64,
+    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
 #[derive(Accounts)]
@@ -46,6 +47,8 @@ pub struct WithdrawSell<'info> {
         bump,
     )]
     pub buyside_sol_escrow_account: UncheckedAccount<'info>,
+    /// CHECK: will be used for allowlist checks
+    pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,

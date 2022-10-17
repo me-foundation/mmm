@@ -234,6 +234,11 @@ export type Mmm = {
           "isSigner": false
         },
         {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -322,6 +327,11 @@ export type Mmm = {
           "isSigner": false
         },
         {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -387,6 +397,11 @@ export type Mmm = {
         {
           "name": "buysideSolEscrowAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -460,6 +475,11 @@ export type Mmm = {
         {
           "name": "sellsideEscrowTokenAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -672,6 +692,12 @@ export type Mmm = {
           {
             "name": "assetAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -700,6 +726,12 @@ export type Mmm = {
           {
             "name": "minPaymentAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -720,6 +752,12 @@ export type Mmm = {
           {
             "name": "buysideCreatorRoyaltyBp",
             "type": "u16"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -801,6 +839,12 @@ export type Mmm = {
           {
             "name": "assetAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1147,6 +1191,11 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1235,6 +1284,11 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1300,6 +1354,11 @@ export const IDL: Mmm = {
         {
           "name": "buysideSolEscrowAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -1373,6 +1432,11 @@ export const IDL: Mmm = {
         {
           "name": "sellsideEscrowTokenAccount",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
           "isSigner": false
         },
         {
@@ -1585,6 +1649,12 @@ export const IDL: Mmm = {
           {
             "name": "assetAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1613,6 +1683,12 @@ export const IDL: Mmm = {
           {
             "name": "minPaymentAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1633,6 +1709,12 @@ export const IDL: Mmm = {
           {
             "name": "buysideCreatorRoyaltyBp",
             "type": "u16"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1714,6 +1796,12 @@ export const IDL: Mmm = {
           {
             "name": "assetAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }

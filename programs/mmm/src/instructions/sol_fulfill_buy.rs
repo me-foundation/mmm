@@ -18,6 +18,7 @@ use crate::{
 pub struct SolFulfillBuyArgs {
     asset_amount: u64,
     min_payment_amount: u64,
+    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
@@ -80,6 +81,8 @@ pub struct SolFulfillBuy<'info> {
         associated_token::authority = owner,
     )]
     pub owner_token_account: Box<Account<'info, TokenAccount>>,
+    /// CHECK: will be used for allowlist checks
+    pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,

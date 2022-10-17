@@ -72,6 +72,7 @@ describe('mmm-fulfill', () => {
               1 * LAMPORTS_PER_SOL + expectedReferralFees,
             ),
             buysideCreatorRoyaltyBp: 0,
+            allowlistAux: '',
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -88,6 +89,7 @@ describe('mmm-fulfill', () => {
             assetMint: poolData.nft.mintAddress,
             sellsideEscrowTokenAccount: poolData.poolAtaNft,
             payerAssetAccount: buyerNftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -202,6 +204,7 @@ describe('mmm-fulfill', () => {
               4.3 * LAMPORTS_PER_SOL + expectedReferralFees,
             ),
             buysideCreatorRoyaltyBp: 0,
+            allowlistAux: '',
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -218,6 +221,7 @@ describe('mmm-fulfill', () => {
             assetMint: poolData.sft.mintAddress,
             sellsideEscrowTokenAccount: poolData.poolAtaSft,
             payerAssetAccount: buyerSftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -295,6 +299,7 @@ describe('mmm-fulfill', () => {
             assetAmount: new anchor.BN(1),
             maxPaymentAmount: new anchor.BN(4.3 * LAMPORTS_PER_SOL),
             buysideCreatorRoyaltyBp: 0,
+            allowlistAux: '',
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -311,6 +316,7 @@ describe('mmm-fulfill', () => {
             assetMint: poolData.sft.mintAddress,
             sellsideEscrowTokenAccount: poolData.poolAtaSft,
             payerAssetAccount: buyerSftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -424,6 +430,7 @@ describe('mmm-fulfill', () => {
             minPaymentAmount: new anchor.BN(
               2.7 * LAMPORTS_PER_SOL - expectedReferralFees,
             ),
+            allowlistAux: '',
           })
           .accountsStrict({
             payer: seller.publicKey,
@@ -441,6 +448,7 @@ describe('mmm-fulfill', () => {
             payerAssetAccount: poolData.sft.tokenAddress!,
             sellsideEscrowTokenAccount: poolData.poolAtaSft,
             ownerTokenAccount: ownerSftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -551,6 +559,7 @@ describe('mmm-fulfill', () => {
             minPaymentAmount: new anchor.BN(
               0.5 * LAMPORTS_PER_SOL - expectedReferralFees - expectedLpFees,
             ),
+            allowlistAux: '',
           })
           .accountsStrict({
             payer: seller.publicKey,
@@ -568,6 +577,7 @@ describe('mmm-fulfill', () => {
             payerAssetAccount: poolData.nft.tokenAddress!,
             sellsideEscrowTokenAccount: poolData.poolAtaNft,
             ownerTokenAccount: ownerNftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
