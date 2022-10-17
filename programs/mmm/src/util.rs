@@ -1,4 +1,4 @@
-use crate::{constants::POOL_PREFIX, errors::MMMErrorCode, state::*};
+use crate::{errors::MMMErrorCode, state::*};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 use mpl_token_metadata::{
@@ -248,9 +248,7 @@ pub fn get_sol_total_price_and_next_price(
 
 pub fn try_close_pool<'info>(
     pool: &Account<'info, Pool>,
-    pool_bump: u8,
     owner: AccountInfo<'info>,
-    system_program: AccountInfo<'info>,
     buyside_sol_escrow_balance: u64,
 ) -> Result<()> {
     if pool.sellside_orders_count != 0 {

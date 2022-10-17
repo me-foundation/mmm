@@ -75,9 +75,9 @@ impl Pool {
         8 + // i64
         1 +  // u8
         2 * 2 +  // u16
-        32 * 5 +  // Pubkey
+        32 * 5 + // Pubkey
         2 + // bool
         32 + // [u8; 32]
-        4 + (1+ 32) * ALLOWLIST_MAX_LEN + // Allowlist
+        4 + (1 + 32) * ALLOWLIST_MAX_LEN + // Allowlist
         400; // padding
 }

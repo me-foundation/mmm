@@ -232,7 +232,7 @@ pub fn handler<'info>(
         )?;
     }
 
-    if (pool.reinvest_fulfill_buy) {
+    if pool.reinvest_fulfill_buy {
         pool.sellside_orders_count = pool
             .sellside_orders_count
             .checked_add(args.asset_amount)
@@ -256,9 +256,7 @@ pub fn handler<'info>(
 
     try_close_pool(
         pool,
-        *ctx.bumps.get("pool").unwrap(),
         owner.to_account_info(),
-        system_program.to_account_info(),
         buyside_sol_escrow_account.lamports(),
     )?;
 
