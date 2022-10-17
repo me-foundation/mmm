@@ -28,8 +28,8 @@ describe('mmm-deposit', () => {
   const program = anchor.workspace.Mmm as Program<Mmm>;
   const cosigner = Keypair.generate();
 
-  describe('Can deposit buyside sol mmm', () => {
-    it('happy path', async () => {
+  describe('sol_deposit_buy', () => {
+    it('transfers users SOL into escrow account', async () => {
       const { poolKey } = await createPool(program, {
         owner: wallet.publicKey,
         cosigner,
@@ -133,8 +133,8 @@ describe('mmm-deposit', () => {
     });
   });
 
-  describe('Can deposit buy side', () => {
-    it('happy path - fvca only', async () => {
+  describe('deposit_sell', () => {
+    it('correctly verifies fvca-only allowlists when depositing items', async () => {
       const creator = Keypair.generate();
       const metaplexInstance = getMetaplexInstance(connection);
       const [{ poolKey }, nfts, sfts] = await Promise.all([
@@ -249,7 +249,7 @@ describe('mmm-deposit', () => {
       assert.deepEqual(sftAccount.owner, wallet.publicKey);
     });
 
-    it('happy path - mcc only', async () => {
+    it('correctly verifies mcc-only allowlists when depositing items', async () => {
       const metaplexInstance = getMetaplexInstance(connection);
       const { collection } = await mintCollection(connection, {
         numNfts: 0,
@@ -366,7 +366,7 @@ describe('mmm-deposit', () => {
       assert.deepEqual(sftAccount.owner, wallet.publicKey);
     });
 
-    it('happy path - mint only', async () => {
+    it('correctly verifies mint-only allowlists when depositing items', async () => {
       const metaplexInstance = getMetaplexInstance(connection);
       const [nfts, sfts] = await Promise.all([
         mintNfts(connection, {
