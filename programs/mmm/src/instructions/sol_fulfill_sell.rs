@@ -19,6 +19,7 @@ pub struct SolFulfillSellArgs {
     asset_amount: u64,
     max_payment_amount: u64,
     buyside_creator_royalty_bp: u16,
+    allowlist_aux: String, // TODO: use it for future allowlist_aux
 }
 
 // FulfillSell means a buyer wants to buy NFT/SFT from the pool
@@ -75,6 +76,8 @@ pub struct SolFulfillSell<'info> {
         associated_token::authority = payer,
     )]
     pub payer_asset_account: Box<Account<'info, TokenAccount>>,
+    /// CHECK: will be used for allowlist checks
+    pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,

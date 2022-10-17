@@ -101,7 +101,7 @@ describe('mmm-deposit', () => {
         true,
       );
       await program.methods
-        .depositSell({ assetAmount: new anchor.BN(1) })
+        .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
         .accountsStrict({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -117,6 +117,7 @@ describe('mmm-deposit', () => {
           assetMint: mintAddress1,
           assetTokenAccount: nfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta1,
+          allowlistAuxAccount: SystemProgram.programId,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -138,7 +139,7 @@ describe('mmm-deposit', () => {
         true,
       );
       await program.methods
-        .depositSell({ assetAmount: new anchor.BN(5) })
+        .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
         .accountsStrict({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -154,6 +155,7 @@ describe('mmm-deposit', () => {
           assetMint: mintAddress2,
           assetTokenAccount: sfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta2,
+          allowlistAuxAccount: SystemProgram.programId,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -216,7 +218,7 @@ describe('mmm-deposit', () => {
         true,
       );
       await program.methods
-        .depositSell({ assetAmount: new anchor.BN(1) })
+        .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
         .accountsStrict({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -232,6 +234,7 @@ describe('mmm-deposit', () => {
           assetMint: mintAddress1,
           assetTokenAccount: nfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta1,
+          allowlistAuxAccount: SystemProgram.programId,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -253,7 +256,7 @@ describe('mmm-deposit', () => {
         true,
       );
       await program.methods
-        .depositSell({ assetAmount: new anchor.BN(5) })
+        .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
         .accountsStrict({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -269,6 +272,7 @@ describe('mmm-deposit', () => {
           assetMint: mintAddress2,
           assetTokenAccount: sfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta2,
+          allowlistAuxAccount: SystemProgram.programId,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -322,7 +326,7 @@ describe('mmm-deposit', () => {
         true,
       );
       await program.methods
-        .depositSell({ assetAmount: new anchor.BN(1) })
+        .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
         .accountsStrict({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -338,6 +342,7 @@ describe('mmm-deposit', () => {
           assetMint: mintAddress1,
           assetTokenAccount: nfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta1,
+          allowlistAuxAccount: SystemProgram.programId,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -359,7 +364,7 @@ describe('mmm-deposit', () => {
         true,
       );
       await program.methods
-        .depositSell({ assetAmount: new anchor.BN(5) })
+        .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
         .accountsStrict({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -375,6 +380,7 @@ describe('mmm-deposit', () => {
           assetMint: mintAddress2,
           assetTokenAccount: sfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta2,
+          allowlistAuxAccount: SystemProgram.programId,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,

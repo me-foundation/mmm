@@ -9,6 +9,7 @@ use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_allowli
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositSellArgs {
     asset_amount: u64,
+    allowlist_aux: String, // TODO: use it for future allowlist_aux
 }
 
 #[derive(Accounts)]
@@ -43,6 +44,8 @@ pub struct DepositSell<'info> {
         associated_token::authority = pool,
     )]
     pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    /// CHECK: will be used for allowlist checks
+    pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
