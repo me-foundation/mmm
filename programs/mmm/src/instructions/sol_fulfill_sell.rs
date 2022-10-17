@@ -10,7 +10,7 @@ use crate::{
     state::Pool,
     util::{
         check_allowlists_for_mint, get_sol_lp_fee, get_sol_referral_fee,
-        get_sol_total_price_and_next_price, try_close_pool, pay_creator_fees_in_sol,
+        get_sol_total_price_and_next_price, pay_creator_fees_in_sol, try_close_pool,
     },
 };
 
@@ -81,7 +81,10 @@ pub struct SolFulfillSell<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, SolFulfillSell<'info>>, args: SolFulfillSellArgs) -> Result<()> {
+pub fn handler<'info>(
+    ctx: Context<'_, '_, '_, 'info, SolFulfillSell<'info>>,
+    args: SolFulfillSellArgs,
+) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
     let pool = &mut ctx.accounts.pool;
@@ -96,6 +99,12 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, SolFulfillSell<'info>>, ar
 
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        pool.owner.as_ref(),
+        pool.uuid.as_ref(),
+        &[*ctx.bumps.get("pool").unwrap()],
+    ]];
 
     check_allowlists_for_mint(
         &pool.allowlists,
@@ -137,13 +146,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, SolFulfillSell<'info>>, ar
                 to: payer_asset_account.to_account_info(),
                 authority: pool.to_account_info(),
             },
-            // seeds should be the PDA of 'pool'
-            &[&[
-                POOL_PREFIX.as_bytes(),
-                owner.key().as_ref(),
-                pool.uuid.key().as_ref(),
-                &[*ctx.bumps.get("pool").unwrap()],
-            ]],
+            pool_seeds,
         ),
         args.asset_amount,
     )?;
@@ -156,13 +159,7 @@ pub fn handler<'info>(ctx: Context<'_, '_, '_, 'info, SolFulfillSell<'info>>, ar
                 destination: owner.to_account_info(),
                 authority: pool.to_account_info(),
             },
-            // seeds should be the PDA of 'pool'
-            &[&[
-                POOL_PREFIX.as_bytes(),
-                owner.key().as_ref(),
-                pool.uuid.key().as_ref(),
-                &[*ctx.bumps.get("pool").unwrap()],
-            ]],
+            pool_seeds,
         ))?;
     }
 
