@@ -18,7 +18,7 @@ use crate::{
 pub struct SolFulfillBuyArgs {
     asset_amount: u64,
     min_payment_amount: u64,
-    allowlist_aux: String, // TODO: use it for future allowlist_aux
+    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool

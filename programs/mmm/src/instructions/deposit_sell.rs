@@ -9,7 +9,7 @@ use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_allowli
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositSellArgs {
     asset_amount: u64,
-    allowlist_aux: String, // TODO: use it for future allowlist_aux
+    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
 #[derive(Accounts)]

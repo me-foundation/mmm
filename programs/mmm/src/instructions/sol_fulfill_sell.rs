@@ -19,7 +19,7 @@ pub struct SolFulfillSellArgs {
     asset_amount: u64,
     max_payment_amount: u64,
     buyside_creator_royalty_bp: u16,
-    allowlist_aux: String, // TODO: use it for future allowlist_aux
+    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
 // FulfillSell means a buyer wants to buy NFT/SFT from the pool

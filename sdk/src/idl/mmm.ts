@@ -695,7 +695,9 @@ export type Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -727,7 +729,9 @@ export type Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -751,7 +755,9 @@ export type Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -836,7 +842,9 @@ export type Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1644,7 +1652,9 @@ export const IDL: Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1676,7 +1686,9 @@ export const IDL: Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1700,7 +1712,9 @@ export const IDL: Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -1785,7 +1799,9 @@ export const IDL: Mmm = {
           },
           {
             "name": "allowlistAux",
-            "type": "string"
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
