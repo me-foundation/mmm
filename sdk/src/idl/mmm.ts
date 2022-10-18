@@ -951,6 +951,21 @@ export type Mmm = {
       "code": 6016,
       "name": "NotEnoughBalance",
       "msg": "not enough balance"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidTokenOwner",
+      "msg": "invalid token owner"
+    },
+    {
+      "code": 6018,
+      "name": "PubkeyMismatch",
+      "msg": "pubkey mismatch"
+    },
+    {
+      "code": 6019,
+      "name": "UninitializedAccount",
+      "msg": "uninitialized account"
     }
   ]
 };
@@ -1908,6 +1923,21 @@ export const IDL: Mmm = {
       "code": 6016,
       "name": "NotEnoughBalance",
       "msg": "not enough balance"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidTokenOwner",
+      "msg": "invalid token owner"
+    },
+    {
+      "code": 6018,
+      "name": "PubkeyMismatch",
+      "msg": "pubkey mismatch"
+    },
+    {
+      "code": 6019,
+      "name": "UninitializedAccount",
+      "msg": "uninitialized account"
     }
   ]
 };
