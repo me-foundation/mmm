@@ -5,6 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
+    ata::init_if_needed_ata,
     constants::*,
     errors::MMMErrorCode,
     state::Pool,
@@ -67,20 +68,12 @@ pub struct SolFulfillBuy<'info> {
         token::authority = payer,
     )]
     pub payer_asset_account: Box<Account<'info, TokenAccount>>,
-    #[account(
-        init_if_needed,
-        payer = payer,
-        associated_token::mint = asset_mint,
-        associated_token::authority = pool,
-    )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(
-        init_if_needed,
-        payer = payer,
-        associated_token::mint = asset_mint,
-        associated_token::authority = owner,
-    )]
-    pub owner_token_account: Box<Account<'info, TokenAccount>>,
+    /// CHECK: check in init_if_needed_ata
+    #[account(mut)]
+    pub sellside_escrow_token_account: UncheckedAccount<'info>,
+    /// CHECK: check in init_if_needed_ata
+    #[account(mut)]
+    pub owner_token_account: UncheckedAccount<'info>,
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
@@ -95,26 +88,18 @@ pub fn handler<'info>(
 ) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
+    let associated_token_program = &ctx.accounts.associated_token_program;
+    let rent = &ctx.accounts.rent;
     let pool = &mut ctx.accounts.pool;
     let owner = &ctx.accounts.owner;
-    let owner_token_account = &ctx.accounts.owner_token_account;
     let referral = &ctx.accounts.referral;
-
     let payer = &ctx.accounts.payer;
     let payer_asset_account = &ctx.accounts.payer_asset_account;
     let asset_mint = &ctx.accounts.asset_mint;
     let payer_asset_metadata = &ctx.accounts.asset_metadata;
     let asset_master_edition = &ctx.accounts.asset_master_edition;
-
-    let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let pool_key = pool.key();
-    let pool_seeds: &[&[&[u8]]] = &[&[
-        POOL_PREFIX.as_bytes(),
-        pool.owner.as_ref(),
-        pool.uuid.as_ref(),
-        &[*ctx.bumps.get("pool").unwrap()],
-    ]];
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
         pool_key.as_ref(),
@@ -128,28 +113,59 @@ pub fn handler<'info>(
         asset_master_edition,
     )?;
 
+    if pool.reinvest_fulfill_buy {
+        let sellside_escrow_token_account =
+            ctx.accounts.sellside_escrow_token_account.to_account_info();
+        init_if_needed_ata(
+            sellside_escrow_token_account.to_account_info(),
+            payer.to_account_info(),
+            pool.to_account_info(),
+            asset_mint.to_account_info(),
+            associated_token_program.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            rent.to_account_info(),
+        )?;
+        anchor_spl::token::transfer(
+            CpiContext::new(
+                token_program.to_account_info(),
+                anchor_spl::token::Transfer {
+                    from: payer_asset_account.to_account_info(),
+                    to: sellside_escrow_token_account.to_account_info(),
+                    authority: payer.to_account_info(),
+                },
+            ),
+            args.asset_amount,
+        )?;
+    } else {
+        let owner_token_account = ctx.accounts.owner_token_account.to_account_info();
+        init_if_needed_ata(
+            owner_token_account.to_account_info(),
+            payer.to_account_info(),
+            owner.to_account_info(),
+            asset_mint.to_account_info(),
+            associated_token_program.to_account_info(),
+            token_program.to_account_info(),
+            system_program.to_account_info(),
+            rent.to_account_info(),
+        )?;
+        anchor_spl::token::transfer(
+            CpiContext::new(
+                token_program.to_account_info(),
+                anchor_spl::token::Transfer {
+                    from: payer_asset_account.to_account_info(),
+                    to: owner_token_account.to_account_info(),
+                    authority: payer.to_account_info(),
+                },
+            ),
+            args.asset_amount,
+        )?;
+    }
+
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
     let referral_fee = get_sol_referral_fee(pool, total_price)?;
-
-    let transfer_asset_to = if pool.reinvest_fulfill_buy {
-        sellside_escrow_token_account.to_account_info()
-    } else {
-        owner_token_account.to_account_info()
-    };
-
-    anchor_spl::token::transfer(
-        CpiContext::new(
-            token_program.to_account_info(),
-            anchor_spl::token::Transfer {
-                from: payer_asset_account.to_account_info(),
-                to: transfer_asset_to,
-                authority: payer.to_account_info(),
-            },
-        ),
-        args.asset_amount,
-    )?;
 
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
@@ -160,19 +176,6 @@ pub fn handler<'info>(
                 destination: payer.to_account_info(),
                 authority: payer.to_account_info(),
             },
-        ))?;
-    }
-
-    // we can also close the pool escrow token account if we don't reinvest and its balance is 0
-    if !pool.reinvest_fulfill_buy && sellside_escrow_token_account.amount == 0 {
-        anchor_spl::token::close_account(CpiContext::new_with_signer(
-            token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
-                account: sellside_escrow_token_account.to_account_info(),
-                destination: payer.to_account_info(),
-                authority: pool.to_account_info(),
-            },
-            pool_seeds,
         ))?;
     }
 

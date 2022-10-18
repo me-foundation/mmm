@@ -36,4 +36,10 @@ pub enum MMMErrorCode {
     InvalidCreatorAddress, // 0x177f
     #[msg("not enough balance")]
     NotEnoughBalance, // 0x1780
+    #[msg("invalid token owner")]
+    InvalidTokenOwner, // 0x1781
+    #[msg("pubkey mismatch")]
+    PubkeyMismatch, // 0x1782
+    #[msg("uninitialized account")]
+    UninitializedAccount, // 0x1783
 }

@@ -105,7 +105,7 @@ describe('mmm-fulfill', () => {
         const txId = await connection.sendRawTransaction(tx.serialize(), {
           skipPreflight: true,
         });
-        await connection.confirmTransaction(
+        const confirmedTx = await connection.confirmTransaction(
           {
             signature: txId,
             blockhash: blockhashData.blockhash,
@@ -113,6 +113,8 @@ describe('mmm-fulfill', () => {
           },
           'processed',
         );
+        console.log({ txId, err: confirmedTx.value.err });
+        assert.equal(confirmedTx.value.err, null);
       }
 
       const tokenAccountRent = await getTokenAccountRent(connection);
@@ -237,7 +239,7 @@ describe('mmm-fulfill', () => {
         const txId = await connection.sendRawTransaction(tx.serialize(), {
           skipPreflight: true,
         });
-        await connection.confirmTransaction(
+        const confirmedTx = await connection.confirmTransaction(
           {
             signature: txId,
             blockhash: blockhashData.blockhash,
@@ -245,6 +247,8 @@ describe('mmm-fulfill', () => {
           },
           'processed',
         );
+        console.log({ txId, err: confirmedTx.value.err });
+        assert.equal(confirmedTx.value.err, null);
       }
 
       {
@@ -332,7 +336,7 @@ describe('mmm-fulfill', () => {
         const txId = await connection.sendRawTransaction(tx.serialize(), {
           skipPreflight: true,
         });
-        await connection.confirmTransaction(
+        const confirmedTx = await connection.confirmTransaction(
           {
             signature: txId,
             blockhash: blockhashData.blockhash,
@@ -340,6 +344,8 @@ describe('mmm-fulfill', () => {
           },
           'processed',
         );
+        console.log({ txId, err: confirmedTx.value.err });
+        assert.equal(confirmedTx.value.err, null);
       }
 
       {
@@ -464,7 +470,7 @@ describe('mmm-fulfill', () => {
         const txId = await connection.sendRawTransaction(tx.serialize(), {
           skipPreflight: true,
         });
-        await connection.confirmTransaction(
+        const confirmedTx = await connection.confirmTransaction(
           {
             signature: txId,
             blockhash: blockhashData.blockhash,
@@ -472,12 +478,11 @@ describe('mmm-fulfill', () => {
           },
           'processed',
         );
+        console.log({ txId, err: confirmedTx.value.err });
+        assert.equal(confirmedTx.value.err, null);
       }
 
       const tokenAccountRent = await getTokenAccountRent(connection);
-      const expectedTxFees =
-        SIGNATURE_FEE_LAMPORTS * 2 + // cosigner + payer
-        tokenAccountRent; // owner sft tooken account
       {
         const expectedReferralFees = 2.7 * LAMPORTS_PER_SOL * 0.02;
         const [
@@ -497,7 +502,7 @@ describe('mmm-fulfill', () => {
           sellerBalance,
           initSellerBalance +
             2.7 * LAMPORTS_PER_SOL -
-            expectedTxFees -
+            (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent) -
             expectedReferralFees,
         );
         assert.equal(
@@ -593,7 +598,7 @@ describe('mmm-fulfill', () => {
         const txId = await connection.sendRawTransaction(tx.serialize(), {
           skipPreflight: true,
         });
-        await connection.confirmTransaction(
+        const confirmedTx = await connection.confirmTransaction(
           {
             signature: txId,
             blockhash: blockhashData.blockhash,
@@ -601,6 +606,8 @@ describe('mmm-fulfill', () => {
           },
           'processed',
         );
+        console.log({ txId, err: confirmedTx.value.err });
+        assert.equal(confirmedTx.value.err, null);
       }
 
       {
@@ -626,7 +633,7 @@ describe('mmm-fulfill', () => {
           initSellerBalance +
             0.01 * LAMPORTS_PER_SOL +
             0.5 * LAMPORTS_PER_SOL -
-            expectedTxFees -
+            (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent * 0) - // reinvest thus we don't need to pay the owner_token_account rent
             expectedReferralFees -
             expectedLpFees,
         );
