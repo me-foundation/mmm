@@ -16,16 +16,10 @@ export const getMMMPoolPDA = (
 export const getMMMSellStatePDA = (
   programId: PublicKey,
   pool: PublicKey,
-  owner: PublicKey,
   asset_mint: PublicKey,
 ) => {
   const [key, bump] = PublicKey.findProgramAddressSync(
-    [
-      Buffer.from(PREFIXES.SELL_STATE),
-      pool.toBuffer(),
-      owner.toBuffer(),
-      asset_mint.toBuffer(),
-    ],
+    [Buffer.from(PREFIXES.SELL_STATE), pool.toBuffer(), asset_mint.toBuffer()],
     programId,
   );
   return { key, bump };

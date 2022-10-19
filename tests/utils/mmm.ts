@@ -202,7 +202,6 @@ export const createPoolWithExampleDeposits = async (
     const { key: sellState1 } = getMMMSellStatePDA(
       program.programId,
       poolKey,
-      poolArgs.owner,
       mintAddress1,
     );
     await program.methods
@@ -235,7 +234,6 @@ export const createPoolWithExampleDeposits = async (
     const { key: sellState2 } = getMMMSellStatePDA(
       program.programId,
       poolKey,
-      poolArgs.owner,
       mintAddress2,
     );
     await program.methods

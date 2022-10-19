@@ -61,7 +61,6 @@ describe('mmm-fulfill', () => {
       const { key: sellState } = getMMMSellStatePDA(
         program.programId,
         poolData.poolKey,
-        wallet.publicKey,
         poolData.nft.mintAddress,
       );
       let initWalletBalance = await connection.getBalance(wallet.publicKey);
@@ -210,7 +209,6 @@ describe('mmm-fulfill', () => {
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          wallet.publicKey,
           poolData.sft.mintAddress,
         );
         const expectedReferralFees = 4.3 * LAMPORTS_PER_SOL * 0.03;
@@ -317,7 +315,6 @@ describe('mmm-fulfill', () => {
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          wallet.publicKey,
           poolData.sft.mintAddress,
         );
         const tx = await program.methods
@@ -456,7 +453,6 @@ describe('mmm-fulfill', () => {
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          wallet.publicKey,
           poolData.sft.mintAddress,
         );
         const tx = await program.methods
@@ -590,7 +586,6 @@ describe('mmm-fulfill', () => {
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          wallet.publicKey,
           poolData.nft.mintAddress,
         );
         const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;

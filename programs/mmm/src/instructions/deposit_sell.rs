@@ -55,7 +55,6 @@ pub struct DepositSell<'info> {
         seeds = [
             SELL_STATE_PREFIX.as_bytes(),
             pool.key().as_ref(),
-            owner.key().as_ref(),
             asset_mint.key().as_ref(),
         ],
         space = SellState::LEN,

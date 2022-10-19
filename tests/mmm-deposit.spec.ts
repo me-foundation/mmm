@@ -180,7 +180,6 @@ describe('mmm-deposit', () => {
       const { key: sellState1 } = getMMMSellStatePDA(
         program.programId,
         poolKey,
-        wallet.publicKey,
         mintAddress1,
       );
       await program.methods
@@ -225,7 +224,6 @@ describe('mmm-deposit', () => {
       let { key: sellState2 } = getMMMSellStatePDA(
         program.programId,
         poolKey,
-        wallet.publicKey,
         mintAddress2,
       );
       await program.methods
@@ -311,7 +309,6 @@ describe('mmm-deposit', () => {
       const { key: sellState1 } = getMMMSellStatePDA(
         program.programId,
         poolKey,
-        wallet.publicKey,
         mintAddress1,
       );
       await program.methods
@@ -356,7 +353,6 @@ describe('mmm-deposit', () => {
       const { key: sellState2 } = getMMMSellStatePDA(
         program.programId,
         poolKey,
-        wallet.publicKey,
         mintAddress2,
       );
       await program.methods
@@ -433,7 +429,6 @@ describe('mmm-deposit', () => {
       const { key: sellState1 } = getMMMSellStatePDA(
         program.programId,
         poolKey,
-        wallet.publicKey,
         mintAddress1,
       );
       await program.methods
@@ -478,7 +473,6 @@ describe('mmm-deposit', () => {
       const { key: sellState2 } = getMMMSellStatePDA(
         program.programId,
         poolKey,
-        wallet.publicKey,
         mintAddress2,
       );
       await program.methods
