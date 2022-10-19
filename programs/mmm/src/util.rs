@@ -203,7 +203,7 @@ pub fn get_sol_total_price_and_next_price(
                             p.checked_mul(2)
                                 .ok_or(MMMErrorCode::NumericOverflow)?
                                 .checked_add(
-                                    n.checked_sub(1)
+                                    n.checked_add(1)
                                         .ok_or(MMMErrorCode::NumericOverflow)?
                                         .checked_mul(delta)
                                         .ok_or(MMMErrorCode::NumericOverflow)?,
@@ -220,14 +220,9 @@ pub fn get_sol_total_price_and_next_price(
                     Ok((total_price, final_price))
                 }
                 CURVE_KIND_EXP => {
-                    // r = (1 + delta/10000)
-                    // p * (1-(1+r^n)/(1-r))
                     let mut total_price: u64 = 0;
                     let mut curr_price: u128 = p as u128;
                     for _ in 0..n {
-                        total_price = total_price
-                            .checked_add(curr_price as u64)
-                            .ok_or(MMMErrorCode::NumericOverflow)?;
                         curr_price = curr_price
                             .checked_mul(
                                 (delta as u128)
@@ -236,6 +231,9 @@ pub fn get_sol_total_price_and_next_price(
                             )
                             .ok_or(MMMErrorCode::NumericOverflow)?
                             .checked_div(10000)
+                            .ok_or(MMMErrorCode::NumericOverflow)?;
+                        total_price = total_price
+                            .checked_add(curr_price as u64)
                             .ok_or(MMMErrorCode::NumericOverflow)?;
                     }
                     Ok((total_price, curr_price as u64))

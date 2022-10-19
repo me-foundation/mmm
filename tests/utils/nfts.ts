@@ -61,7 +61,7 @@ export const mintNfts = async (
           {
             name: `TEST #${index}`,
             uri: `nft://${index}.json`,
-            sellerFeeBasisPoints: 123,
+            sellerFeeBasisPoints: 100,
             isCollection: config.isCollection,
             tokenOwner: config.recipient ?? getKeypair().publicKey,
             collection: config.collectionAddress,
