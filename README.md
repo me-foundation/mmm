@@ -31,7 +31,7 @@ We'd like to introduce the standard of AMM to maximize the liquidity for traders
   - Merkle Tree (coming soon)
 - cosign and cosigner annotations
 - buyside creator royalty setting
-- flexible reinvest options for both buyside and sellside 
+- flexible reinvest options for both buyside and sellside
 - multiple bonding curves
   - linear
   - exponential
@@ -76,8 +76,11 @@ Coming soon
 With the state account and IDL, it's useful to build up the getProgramAccounts filter params with the right size/offset.
 
 ```rust
-#[account]
-#[derive(Default)]
+// seeds = [
+//    POOL_PREFIX.as_bytes(),
+//    owner.key().as_ref(),
+//    pool.uuid.as_ref(),
+// ]
 pub struct Pool { // 8 bytes anchor discriminator
     pub spot_price: u64,
     pub curve_type: u8,
@@ -97,6 +100,19 @@ pub struct Pool { // 8 bytes anchor discriminator
     pub uuid: Pubkey,
     pub payment_mint: Pubkey,
     pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
+}
+
+// seeds = [
+//     SELL_STATE_PREFIX.as_bytes(),
+//     pool.key().as_ref(),
+//     asset_mint.key().as_ref(),
+// ]
+pub struct SellState {
+    pub pool: Pubkey,
+    pub pool_owner: Pubkey,
+    pub asset_mint: Pubkey,
+    pub asset_amount: u64,
+    pub cosigner_annotation: [u8; 32],
 }
 ```
 
