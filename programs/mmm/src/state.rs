@@ -102,7 +102,6 @@ pub struct SellState {
     // cosigner_annotation here.
     //
     // we can add more fields for better indexing later.
-
     pub pool: Pubkey,
     pub pool_owner: Pubkey,
     pub asset_mint: Pubkey,
