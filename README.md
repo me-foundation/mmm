@@ -29,6 +29,7 @@ We'd like to introduce the standard of AMM to maximize the liquidity for traders
   - Mint Address (for SFT, or single NFT)
   - MCC Collection Standard
   - Merkle Tree (coming soon)
+- designed for faster index via getProgramAccounts or geyser plugin for account changes
 - cosign and cosigner annotations
 - buyside creator royalty setting
 - flexible reinvest options for both buyside and sellside
