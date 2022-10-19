@@ -18,6 +18,7 @@ import {
   CurveKind,
   getMMMBuysideSolEscrowPDA,
   getMMMPoolPDA,
+  getMMMSellStatePDA,
   Mmm,
 } from '../../sdk/src';
 import { getEmptyAllowLists } from './generic';
@@ -198,6 +199,11 @@ export const createPoolWithExampleDeposits = async (
   const poolAta2 = await getAssociatedTokenAddress(mintAddress2, poolKey, true);
 
   if (side === 'both' || side === 'sell') {
+    const { key: sellState1 } = getMMMSellStatePDA(
+      program.programId,
+      poolKey,
+      mintAddress1,
+    );
     await program.methods
       .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
       .accountsStrict({
@@ -216,6 +222,7 @@ export const createPoolWithExampleDeposits = async (
         assetTokenAccount: nfts[0].tokenAddress!,
         sellsideEscrowTokenAccount: poolAta1,
         allowlistAuxAccount: SystemProgram.programId,
+        sellState: sellState1,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -224,6 +231,11 @@ export const createPoolWithExampleDeposits = async (
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc();
 
+    const { key: sellState2 } = getMMMSellStatePDA(
+      program.programId,
+      poolKey,
+      mintAddress2,
+    );
     await program.methods
       .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
       .accountsStrict({
@@ -242,6 +254,7 @@ export const createPoolWithExampleDeposits = async (
         assetTokenAccount: sfts[0].tokenAddress!,
         sellsideEscrowTokenAccount: poolAta2,
         allowlistAuxAccount: SystemProgram.programId,
+        sellState: sellState2,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,

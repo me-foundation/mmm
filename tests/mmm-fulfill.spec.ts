@@ -13,12 +13,13 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import { assert } from 'chai';
-import { Mmm, AllowlistKind, CurveKind } from '../sdk/src';
+import { Mmm, AllowlistKind, CurveKind, getMMMSellStatePDA } from '../sdk/src';
 import {
   airdrop,
   assertIsBetween,
   createPoolWithExampleDeposits,
   getMetaplexInstance,
+  getSellStatePDARent,
   getTokenAccountRent,
   LAMPORT_ERROR_RANGE,
   SIGNATURE_FEE_LAMPORTS,
@@ -57,6 +58,11 @@ describe('mmm-fulfill', () => {
         poolData.nft.mintAddress,
         buyer.publicKey,
       );
+      const { key: sellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        poolData.nft.mintAddress,
+      );
       let initWalletBalance = await connection.getBalance(wallet.publicKey);
       let initReferralBalance = await connection.getBalance(
         poolData.referral.publicKey,
@@ -90,6 +96,7 @@ describe('mmm-fulfill', () => {
             sellsideEscrowTokenAccount: poolData.poolAtaNft,
             payerAssetAccount: buyerNftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
+            sellState,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -118,6 +125,7 @@ describe('mmm-fulfill', () => {
       }
 
       const tokenAccountRent = await getTokenAccountRent(connection);
+      const sellStatePDARent = await getSellStatePDARent(connection);
 
       const expectedTxFees =
         SIGNATURE_FEE_LAMPORTS * 2 + // cosigner + payer
@@ -152,7 +160,7 @@ describe('mmm-fulfill', () => {
         assert.equal(poolEscrowBalance, 1 * LAMPORTS_PER_SOL);
         assertIsBetween(
           afterWalletBalance,
-          initWalletBalance + tokenAccountRent,
+          initWalletBalance + tokenAccountRent + sellStatePDARent,
           LAMPORT_ERROR_RANGE,
         );
 
@@ -198,6 +206,11 @@ describe('mmm-fulfill', () => {
           .rpc();
 
         initWalletBalance = await connection.getBalance(wallet.publicKey);
+        const { key: sellState } = getMMMSellStatePDA(
+          program.programId,
+          poolData.poolKey,
+          poolData.sft.mintAddress,
+        );
         const expectedReferralFees = 4.3 * LAMPORTS_PER_SOL * 0.03;
         const tx = await program.methods
           .solFulfillSell({
@@ -224,6 +237,7 @@ describe('mmm-fulfill', () => {
             sellsideEscrowTokenAccount: poolData.poolAtaSft,
             payerAssetAccount: buyerSftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
+            sellState,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -298,6 +312,11 @@ describe('mmm-fulfill', () => {
 
       {
         initWalletBalance = await connection.getBalance(wallet.publicKey);
+        const { key: sellState } = getMMMSellStatePDA(
+          program.programId,
+          poolData.poolKey,
+          poolData.sft.mintAddress,
+        );
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
@@ -321,6 +340,7 @@ describe('mmm-fulfill', () => {
             sellsideEscrowTokenAccount: poolData.poolAtaSft,
             payerAssetAccount: buyerSftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
+            sellState,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -430,6 +450,11 @@ describe('mmm-fulfill', () => {
 
       {
         const expectedReferralFees = 2.7 * LAMPORTS_PER_SOL * 0.02;
+        const { key: sellState } = getMMMSellStatePDA(
+          program.programId,
+          poolData.poolKey,
+          poolData.sft.mintAddress,
+        );
         const tx = await program.methods
           .solFulfillBuy({
             assetAmount: new anchor.BN(3),
@@ -455,6 +480,7 @@ describe('mmm-fulfill', () => {
             sellsideEscrowTokenAccount: poolData.poolAtaSft,
             ownerTokenAccount: ownerSftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
+            sellState,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -483,6 +509,7 @@ describe('mmm-fulfill', () => {
       }
 
       const tokenAccountRent = await getTokenAccountRent(connection);
+      const sellStatePDARent = await getSellStatePDARent(connection);
       {
         const expectedReferralFees = 2.7 * LAMPORTS_PER_SOL * 0.02;
         const [
@@ -502,7 +529,7 @@ describe('mmm-fulfill', () => {
           sellerBalance,
           initSellerBalance +
             2.7 * LAMPORTS_PER_SOL -
-            (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent) -
+            (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent + sellStatePDARent) -
             expectedReferralFees,
         );
         assert.equal(
@@ -511,7 +538,7 @@ describe('mmm-fulfill', () => {
         );
         assert.equal(poolAtaBalance, 0);
         assert.equal(poolEscrowBalance, 7.3 * LAMPORTS_PER_SOL);
-        assert.equal(afterWalletBalance, initWalletBalance);
+        assert.equal(afterWalletBalance, initWalletBalance + sellStatePDARent);
 
         initReferralBalance = referralBalance;
         initSellerBalance = sellerBalance;
@@ -556,6 +583,11 @@ describe('mmm-fulfill', () => {
           .rpc();
 
         initWalletBalance = await connection.getBalance(wallet.publicKey);
+        const { key: sellState } = getMMMSellStatePDA(
+          program.programId,
+          poolData.poolKey,
+          poolData.nft.mintAddress,
+        );
         const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;
         const expectedLpFees = 0.5 * LAMPORTS_PER_SOL * 0.02;
         const tx = await program.methods
@@ -583,6 +615,7 @@ describe('mmm-fulfill', () => {
             sellsideEscrowTokenAccount: poolData.poolAtaNft,
             ownerTokenAccount: ownerNftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
+            sellState,
             systemProgram: SystemProgram.programId,
             tokenProgram: TOKEN_PROGRAM_ID,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -633,7 +666,9 @@ describe('mmm-fulfill', () => {
           initSellerBalance +
             0.01 * LAMPORTS_PER_SOL +
             0.5 * LAMPORTS_PER_SOL -
-            (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent * 0) - // reinvest thus we don't need to pay the owner_token_account rent
+            (SIGNATURE_FEE_LAMPORTS * 2 +
+              tokenAccountRent * 0 +
+              sellStatePDARent) - // reinvest thus we don't need to pay the owner_token_account rent
             expectedReferralFees -
             expectedLpFees,
         );

@@ -4,7 +4,12 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::check_allowlists_for_mint};
+use crate::{
+    constants::*,
+    errors::MMMErrorCode,
+    state::{Pool, SellState},
+    util::check_allowlists_for_mint,
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositSellArgs {
@@ -44,6 +49,18 @@ pub struct DepositSell<'info> {
         associated_token::authority = pool,
     )]
     pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    #[account(
+        init_if_needed,
+        payer = owner,
+        seeds = [
+            SELL_STATE_PREFIX.as_bytes(),
+            pool.key().as_ref(),
+            asset_mint.key().as_ref(),
+        ],
+        space = SellState::LEN,
+        bump
+    )]
+    pub sell_state: Account<'info, SellState>,
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
@@ -61,6 +78,7 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let token_program = &ctx.accounts.token_program;
     let pool = &mut ctx.accounts.pool;
+    let sell_state = &mut ctx.accounts.sell_state;
 
     check_allowlists_for_mint(
         &pool.allowlists,
@@ -93,5 +111,15 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
     }
 
     pool.sellside_orders_count += args.asset_amount;
+
+    sell_state.pool = pool.key();
+    sell_state.pool_owner = owner.key();
+    sell_state.asset_mint = asset_mint.key();
+    sell_state.cosigner_annotation = pool.cosigner_annotation;
+    sell_state.asset_amount = sell_state
+        .asset_amount
+        .checked_add(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+
     Ok(())
 }

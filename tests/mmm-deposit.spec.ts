@@ -13,7 +13,12 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import { assert } from 'chai';
-import { Mmm, AllowlistKind, getMMMBuysideSolEscrowPDA } from '../sdk/src';
+import {
+  Mmm,
+  AllowlistKind,
+  getMMMBuysideSolEscrowPDA,
+  getMMMSellStatePDA,
+} from '../sdk/src';
 import {
   createPool,
   getEmptyAllowLists,
@@ -172,6 +177,11 @@ describe('mmm-deposit', () => {
         poolKey,
         true,
       );
+      const { key: sellState1 } = getMMMSellStatePDA(
+        program.programId,
+        poolKey,
+        mintAddress1,
+      );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
         .accountsStrict({
@@ -190,6 +200,7 @@ describe('mmm-deposit', () => {
           assetTokenAccount: nfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta1,
           allowlistAuxAccount: SystemProgram.programId,
+          sellState: sellState1,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -210,6 +221,11 @@ describe('mmm-deposit', () => {
         poolKey,
         true,
       );
+      let { key: sellState2 } = getMMMSellStatePDA(
+        program.programId,
+        poolKey,
+        mintAddress2,
+      );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
         .accountsStrict({
@@ -228,6 +244,7 @@ describe('mmm-deposit', () => {
           assetTokenAccount: sfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta2,
           allowlistAuxAccount: SystemProgram.programId,
+          sellState: sellState2,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -289,6 +306,11 @@ describe('mmm-deposit', () => {
         poolKey,
         true,
       );
+      const { key: sellState1 } = getMMMSellStatePDA(
+        program.programId,
+        poolKey,
+        mintAddress1,
+      );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
         .accountsStrict({
@@ -307,6 +329,7 @@ describe('mmm-deposit', () => {
           assetTokenAccount: nfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta1,
           allowlistAuxAccount: SystemProgram.programId,
+          sellState: sellState1,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -327,6 +350,11 @@ describe('mmm-deposit', () => {
         poolKey,
         true,
       );
+      const { key: sellState2 } = getMMMSellStatePDA(
+        program.programId,
+        poolKey,
+        mintAddress2,
+      );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
         .accountsStrict({
@@ -345,6 +373,7 @@ describe('mmm-deposit', () => {
           assetTokenAccount: sfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta2,
           allowlistAuxAccount: SystemProgram.programId,
+          sellState: sellState2,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -397,6 +426,11 @@ describe('mmm-deposit', () => {
         poolKey,
         true,
       );
+      const { key: sellState1 } = getMMMSellStatePDA(
+        program.programId,
+        poolKey,
+        mintAddress1,
+      );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
         .accountsStrict({
@@ -415,6 +449,7 @@ describe('mmm-deposit', () => {
           assetTokenAccount: nfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta1,
           allowlistAuxAccount: SystemProgram.programId,
+          sellState: sellState1,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -435,6 +470,11 @@ describe('mmm-deposit', () => {
         poolKey,
         true,
       );
+      const { key: sellState2 } = getMMMSellStatePDA(
+        program.programId,
+        poolKey,
+        mintAddress2,
+      );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
         .accountsStrict({
@@ -453,6 +493,7 @@ describe('mmm-deposit', () => {
           assetTokenAccount: sfts[0].tokenAddress!,
           sellsideEscrowTokenAccount: poolAta2,
           allowlistAuxAccount: SystemProgram.programId,
+          sellState: sellState2,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,

@@ -4,7 +4,12 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::try_close_pool};
+use crate::{
+    constants::*,
+    errors::MMMErrorCode,
+    state::{Pool, SellState},
+    util::{try_close_pool, try_close_sell_state},
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct WithdrawSellArgs {
@@ -49,6 +54,16 @@ pub struct WithdrawSell<'info> {
     pub buyside_sol_escrow_account: UncheckedAccount<'info>,
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
+    #[account(
+        mut,
+        seeds = [
+            SELL_STATE_PREFIX.as_bytes(),
+            pool.key().as_ref(),
+            asset_mint.key().as_ref(),
+        ],
+        bump
+    )]
+    pub sell_state: Account<'info, SellState>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -60,8 +75,9 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     let asset_token_account = &ctx.accounts.asset_token_account;
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let token_program = &ctx.accounts.token_program;
-    let pool = &mut ctx.accounts.pool;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
+    let pool = &mut ctx.accounts.pool;
+    let sell_state = &mut ctx.accounts.sell_state;
 
     // Note that check_allowlists_for_mint is optional for withdraw_sell
     // because sometimes the nft or sft might be moved out of the collection
@@ -106,6 +122,12 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     }
 
     pool.sellside_orders_count -= args.asset_amount;
+
+    sell_state.asset_amount = sell_state
+        .asset_amount
+        .checked_sub(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    try_close_sell_state(sell_state, owner.to_account_info())?;
 
     try_close_pool(
         pool,
