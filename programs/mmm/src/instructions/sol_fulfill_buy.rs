@@ -127,6 +127,11 @@ pub fn handler<'info>(
         asset_master_edition,
     )?;
 
+    let (total_price, next_price) =
+        get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
+    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
+    let referral_fee = get_sol_referral_fee(pool, total_price)?;
+
     if pool.reinvest_fulfill_buy {
         let sellside_escrow_token_account =
             ctx.accounts.sellside_escrow_token_account.to_account_info();
@@ -151,6 +156,10 @@ pub fn handler<'info>(
             ),
             args.asset_amount,
         )?;
+        pool.sellside_orders_count = pool
+            .sellside_orders_count
+            .checked_add(args.asset_amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?;
         sell_state.pool = pool.key();
         sell_state.pool_owner = owner.key();
         sell_state.asset_mint = asset_mint.key();
@@ -184,11 +193,6 @@ pub fn handler<'info>(
         )?;
         try_close_sell_state(sell_state, owner.to_account_info())?;
     }
-
-    let (total_price, next_price) =
-        get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
-    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
-    let referral_fee = get_sol_referral_fee(pool, total_price)?;
 
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
@@ -258,12 +262,6 @@ pub fn handler<'info>(
         )?;
     }
 
-    if pool.reinvest_fulfill_buy {
-        pool.sellside_orders_count = pool
-            .sellside_orders_count
-            .checked_add(args.asset_amount)
-            .ok_or(MMMErrorCode::NumericOverflow)?;
-    }
     pool.lp_fee_earned = pool
         .lp_fee_earned
         .checked_add(lp_fee)
