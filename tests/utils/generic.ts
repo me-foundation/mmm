@@ -42,6 +42,17 @@ export const getTokenAccountRent = async (conn: Connection) => {
   return tokenAccountRent;
 };
 
+let sellStatePDARent = 0;
+export const getSellStatePDARent = async (conn: Connection) => {
+  if (sellStatePDARent) {
+    return sellStatePDARent;
+  }
+  sellStatePDARent = await conn.getMinimumBalanceForRentExemption(
+    344, // see SellState::LEN
+  );
+  return sellStatePDARent;
+};
+
 export const getEmptyAllowLists = (num: number) => {
   const emptyAllowList = {
     kind: AllowlistKind.empty,

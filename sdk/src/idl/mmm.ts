@@ -239,6 +239,11 @@ export type Mmm = {
           "isSigner": false
         },
         {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -332,6 +337,11 @@ export type Mmm = {
           "isSigner": false
         },
         {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -405,6 +415,11 @@ export type Mmm = {
           "isSigner": false
         },
         {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -474,6 +489,11 @@ export type Mmm = {
         },
         {
           "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
           "isMut": true,
           "isSigner": false
         },
@@ -600,6 +620,39 @@ export type Mmm = {
                   "defined": "Allowlist"
                 },
                 6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "sellState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "publicKey"
+          },
+          {
+            "name": "poolOwner",
+            "type": "publicKey"
+          },
+          {
+            "name": "assetMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "assetAmount",
+            "type": "u64"
+          },
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
               ]
             }
           }
@@ -1211,6 +1264,11 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1304,6 +1362,11 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1377,6 +1440,11 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -1446,6 +1514,11 @@ export const IDL: Mmm = {
         },
         {
           "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
           "isMut": true,
           "isSigner": false
         },
@@ -1572,6 +1645,39 @@ export const IDL: Mmm = {
                   "defined": "Allowlist"
                 },
                 6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "sellState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "pool",
+            "type": "publicKey"
+          },
+          {
+            "name": "poolOwner",
+            "type": "publicKey"
+          },
+          {
+            "name": "assetMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "assetAmount",
+            "type": "u64"
+          },
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
               ]
             }
           }

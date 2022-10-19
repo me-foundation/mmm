@@ -7,10 +7,11 @@ use anchor_spl::{
 use crate::{
     constants::*,
     errors::MMMErrorCode,
-    state::Pool,
+    state::{Pool, SellState},
     util::{
         check_allowlists_for_mint, get_sol_lp_fee, get_sol_referral_fee,
         get_sol_total_price_and_next_price, pay_creator_fees_in_sol, try_close_pool,
+        try_close_sell_state,
     },
 };
 
@@ -78,6 +79,17 @@ pub struct SolFulfillSell<'info> {
     pub payer_asset_account: Box<Account<'info, TokenAccount>>,
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
+    #[account(
+        mut,
+        seeds = [
+            SELL_STATE_PREFIX.as_bytes(),
+            pool.key().as_ref(),
+            owner.key().as_ref(),
+            asset_mint.key().as_ref(),
+        ],
+        bump
+    )]
+    pub sell_state: Account<'info, SellState>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -90,9 +102,10 @@ pub fn handler<'info>(
 ) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
-    let pool = &mut ctx.accounts.pool;
     let owner = &ctx.accounts.owner;
     let referral = &ctx.accounts.referral;
+    let pool = &mut ctx.accounts.pool;
+    let sell_state = &mut ctx.accounts.sell_state;
 
     let payer = &ctx.accounts.payer;
     let payer_asset_account = &ctx.accounts.payer_asset_account;
@@ -225,6 +238,12 @@ pub fn handler<'info>(
     if payment_amount > args.max_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }
+
+    sell_state.asset_amount = sell_state
+        .asset_amount
+        .checked_sub(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    try_close_sell_state(sell_state, owner.to_account_info())?;
 
     try_close_pool(
         pool,

@@ -13,6 +13,24 @@ export const getMMMPoolPDA = (
   return { key, bump };
 };
 
+export const getMMMSellStatePDA = (
+  programId: PublicKey,
+  pool: PublicKey,
+  owner: PublicKey,
+  asset_mint: PublicKey,
+) => {
+  const [key, bump] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(PREFIXES.SELL_STATE),
+      pool.toBuffer(),
+      owner.toBuffer(),
+      asset_mint.toBuffer(),
+    ],
+    programId,
+  );
+  return { key, bump };
+};
+
 export const getMMMBuysideSolEscrowPDA = (
   programId: PublicKey,
   pool: PublicKey,

@@ -37,6 +37,11 @@ impl Allowlist {
     }
 }
 
+// seeds = [
+//    POOL_PREFIX.as_bytes(),
+//    owner.key().as_ref(),
+//    pool.uuid.as_ref(),
+// ]
 #[account]
 #[derive(Default)]
 pub struct Pool {
@@ -80,4 +85,35 @@ impl Pool {
         32 + // [u8; 32]
         4 + (1 + 32) * ALLOWLIST_MAX_LEN + // Allowlist
         400; // padding
+}
+
+// seeds = [
+//     SELL_STATE_PREFIX.as_bytes(),
+//     pool.key().as_ref(),
+//     owner.key().as_ref(),
+//     asset_mint.key().as_ref(),
+// ],
+#[account]
+#[derive(Default)]
+pub struct SellState {
+    // we are trying to normalize the info as much as possible
+    // which means for indexing the SellState, we might need to
+    // query the pool, but for convenience purpose, we added
+    // cosigner_annotation here.
+    //
+    // we can add more fields for better indexing later.
+
+    pub pool: Pubkey,
+    pub pool_owner: Pubkey,
+    pub asset_mint: Pubkey,
+    pub asset_amount: u64,
+    pub cosigner_annotation: [u8; 32],
+}
+
+impl SellState {
+    pub const LEN: usize = 8 +
+        8 + // u64
+        32 * 3 + // Pubkey
+        32 + // [u8; 32]
+        200; // padding
 }

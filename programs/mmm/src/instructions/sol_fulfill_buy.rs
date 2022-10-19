@@ -8,10 +8,11 @@ use crate::{
     ata::init_if_needed_ata,
     constants::*,
     errors::MMMErrorCode,
-    state::Pool,
+    state::{Pool, SellState},
     util::{
         check_allowlists_for_mint, get_sol_lp_fee, get_sol_referral_fee,
         get_sol_total_price_and_next_price, pay_creator_fees_in_sol, try_close_pool,
+        try_close_sell_state,
     },
 };
 
@@ -76,6 +77,19 @@ pub struct SolFulfillBuy<'info> {
     pub owner_token_account: UncheckedAccount<'info>,
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
+    #[account(
+        init_if_needed,
+        payer = payer,
+        seeds = [
+            SELL_STATE_PREFIX.as_bytes(),
+            pool.key().as_ref(),
+            owner.key().as_ref(),
+            asset_mint.key().as_ref(),
+        ],
+        space = SellState::LEN,
+        bump
+    )]
+    pub sell_state: Account<'info, SellState>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -91,6 +105,7 @@ pub fn handler<'info>(
     let associated_token_program = &ctx.accounts.associated_token_program;
     let rent = &ctx.accounts.rent;
     let pool = &mut ctx.accounts.pool;
+    let sell_state = &mut ctx.accounts.sell_state;
     let owner = &ctx.accounts.owner;
     let referral = &ctx.accounts.referral;
     let payer = &ctx.accounts.payer;
@@ -137,6 +152,14 @@ pub fn handler<'info>(
             ),
             args.asset_amount,
         )?;
+        sell_state.pool = pool.key();
+        sell_state.pool_owner = owner.key();
+        sell_state.asset_mint = asset_mint.key();
+        sell_state.cosigner_annotation = pool.cosigner_annotation;
+        sell_state.asset_amount = sell_state
+            .asset_amount
+            .checked_add(args.asset_amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?;
     } else {
         let owner_token_account = ctx.accounts.owner_token_account.to_account_info();
         init_if_needed_ata(
@@ -160,6 +183,7 @@ pub fn handler<'info>(
             ),
             args.asset_amount,
         )?;
+        try_close_sell_state(sell_state, owner.to_account_info())?;
     }
 
     let (total_price, next_price) =

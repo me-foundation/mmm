@@ -1,6 +1,7 @@
 export const PREFIXES = {
   POOL: 'mmm_pool',
   BUYSIDE_SOL_ESCROW: 'mmm_buyside_sol_escrow_account',
+  SELL_STATE: 'mmm_sell_state',
 };
 
 export enum CurveKind {

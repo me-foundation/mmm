@@ -270,6 +270,26 @@ pub fn try_close_pool<'info>(
     Ok(())
 }
 
+pub fn try_close_sell_state<'info>(
+    sell_state: &Account<'info, SellState>,
+    owner: AccountInfo<'info>,
+) -> Result<()> {
+    if sell_state.asset_amount != 0 {
+        return Ok(());
+    }
+
+    sell_state
+        .to_account_info()
+        .data
+        .borrow_mut()
+        .copy_from_slice(&[0; SellState::LEN]);
+
+    let curr_lamports = sell_state.to_account_info().lamports();
+    **sell_state.to_account_info().lamports.borrow_mut() = 0;
+    **owner.lamports.borrow_mut() = owner.lamports().checked_add(curr_lamports).unwrap();
+    Ok(())
+}
+
 pub fn pay_creator_fees_in_sol<'info>(
     buyside_creator_royalty_bp: u16,
     total_price: u64,
