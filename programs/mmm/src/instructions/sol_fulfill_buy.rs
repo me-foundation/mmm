@@ -156,8 +156,8 @@ pub fn handler<'info>(
             ),
             args.asset_amount,
         )?;
-        pool.sellside_orders_count = pool
-            .sellside_orders_count
+        pool.sellside_asset_amount = pool
+            .sellside_asset_amount
             .checked_add(args.asset_amount)
             .ok_or(MMMErrorCode::NumericOverflow)?;
         sell_state.pool = pool.key();
@@ -278,11 +278,8 @@ pub fn handler<'info>(
         system_program.to_account_info(),
     )?;
 
-    try_close_pool(
-        pool,
-        owner.to_account_info(),
-        buyside_sol_escrow_account.lamports(),
-    )?;
+    pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    try_close_pool(pool, owner.to_account_info())?;
 
     msg!(
         "{{\"royalty_paid\":{},\"total_price\":{}}}",

@@ -76,7 +76,7 @@ describe('mmm-admin', () => {
         poolAccountInfo.cosignerAnnotation,
         new Array(32).fill(0),
       );
-      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 0);
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
       assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
       assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
       assert.deepEqual(poolAccountInfo.cosigner, cosigner.publicKey);
@@ -165,7 +165,7 @@ describe('mmm-admin', () => {
         poolAccountInfo.cosignerAnnotation,
         new Array(32).fill(0).map((_, index) => index),
       );
-      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 0);
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
       assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
       assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
       assert.deepEqual(poolAccountInfo.cosigner, cosigner.publicKey);

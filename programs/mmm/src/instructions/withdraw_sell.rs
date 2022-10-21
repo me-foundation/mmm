@@ -121,19 +121,18 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
         ))?;
     }
 
-    pool.sellside_orders_count -= args.asset_amount;
-
+    pool.sellside_asset_amount = pool
+        .sellside_asset_amount
+        .checked_sub(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
     sell_state.asset_amount = sell_state
         .asset_amount
         .checked_sub(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
-    try_close_pool(
-        pool,
-        owner.to_account_info(),
-        buyside_sol_escrow_account.lamports(),
-    )?;
+    pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())
 }

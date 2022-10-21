@@ -94,13 +94,14 @@ pub struct Pool { // 8 bytes anchor discriminator
     pub referral_bp: u16,
     pub buyside_creator_royalty_bp: u16,
     pub cosigner_annotation: [u8; 32],
-    pub sellside_orders_count: u64,
+    pub sellside_asset_amount: u64,
     pub lp_fee_earned: u64,
     pub owner: Pubkey,
     pub cosigner: Pubkey,
     pub uuid: Pubkey,
     pub payment_mint: Pubkey,
     pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
+    pub buyside_payment_amount: u64,
 }
 
 // seeds = [
