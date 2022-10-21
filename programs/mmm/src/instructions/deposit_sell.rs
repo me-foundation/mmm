@@ -110,7 +110,10 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         ))?;
     }
 
-    pool.sellside_orders_count += args.asset_amount;
+    pool.sellside_asset_amount = pool
+        .sellside_asset_amount
+        .checked_add(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
 
     sell_state.pool = pool.key();
     sell_state.pool_owner = owner.key();

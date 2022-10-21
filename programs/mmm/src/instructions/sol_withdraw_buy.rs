@@ -35,7 +35,7 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
     let owner = &ctx.accounts.owner;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
-    let pool = &ctx.accounts.pool;
+    let pool = &mut ctx.accounts.pool;
 
     anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::system_instruction::transfer(
@@ -56,11 +56,7 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
         ]],
     )?;
 
-    try_close_pool(
-        pool,
-        owner.to_account_info(),
-        buyside_sol_escrow_account.lamports(),
-    )?;
-
+    pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    try_close_pool(pool, owner.to_account_info())?;
     Ok(())
 }

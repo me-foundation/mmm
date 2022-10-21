@@ -63,7 +63,7 @@ pub struct Pool {
     pub cosigner_annotation: [u8; 32],
 
     // mutable state data
-    pub sellside_orders_count: u64,
+    pub sellside_asset_amount: u64,
     pub lp_fee_earned: u64,
 
     // immutable
@@ -72,11 +72,12 @@ pub struct Pool {
     pub uuid: Pubkey, // randomly generated keypair
     pub payment_mint: Pubkey,
     pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
+    pub buyside_payment_amount: u64,
 }
 
 impl Pool {
     pub const LEN: usize = 8 +
-        8 * 4 + // u64
+        8 * 5 + // u64
         8 + // i64
         1 +  // u8
         2 * 2 +  // u16
@@ -84,7 +85,7 @@ impl Pool {
         2 + // bool
         32 + // [u8; 32]
         4 + (1 + 32) * ALLOWLIST_MAX_LEN + // Allowlist
-        400; // padding
+        392; // padding
 }
 
 // seeds = [

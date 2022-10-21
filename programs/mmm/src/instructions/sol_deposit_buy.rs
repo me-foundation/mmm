@@ -15,6 +15,7 @@ pub struct SolDepositBuy<'info> {
     pub owner: Signer<'info>,
     pub cosigner: Signer<'info>,
     #[account(
+        mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
@@ -36,6 +37,7 @@ pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<(
     let owner = &ctx.accounts.owner;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
+    let pool = &mut ctx.accounts.pool;
 
     anchor_lang::solana_program::program::invoke(
         &anchor_lang::solana_program::system_instruction::transfer(
@@ -50,5 +52,6 @@ pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<(
         ],
     )?;
 
+    pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
     Ok(())
 }

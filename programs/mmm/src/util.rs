@@ -114,7 +114,7 @@ pub fn get_sol_lp_fee(
     buyside_sol_escrow_balance: u64,
     total_sol_price: u64,
 ) -> Result<u64> {
-    if pool.sellside_orders_count < 1 {
+    if pool.sellside_asset_amount < 1 {
         return Ok(0);
     }
 
@@ -245,16 +245,12 @@ pub fn get_sol_total_price_and_next_price(
     }
 }
 
-pub fn try_close_pool<'info>(
-    pool: &Account<'info, Pool>,
-    owner: AccountInfo<'info>,
-    buyside_sol_escrow_balance: u64,
-) -> Result<()> {
-    if pool.sellside_orders_count != 0 {
+pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'info>) -> Result<()> {
+    if pool.sellside_asset_amount != 0 {
         return Ok(());
     }
 
-    if buyside_sol_escrow_balance != 0 {
+    if pool.buyside_payment_amount != 0 {
         return Ok(());
     }
 

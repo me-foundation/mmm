@@ -11,7 +11,7 @@ pub struct SolClosePool<'info> {
         mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
-        constraint = pool.sellside_orders_count == 0 @ MMMErrorCode::NotEmptySellSideOrdersCount,
+        constraint = pool.sellside_asset_amount == 0 @ MMMErrorCode::NotEmptySellsideAssetAmount,
         bump,
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,

@@ -24,8 +24,8 @@ pub enum MMMErrorCode {
     InvalidRequestedPrice, // 0x1779
     #[msg("not empty escrow account")]
     NotEmptyEscrowAccount, // 0x177a
-    #[msg("not empty sell side orders count")]
-    NotEmptySellSideOrdersCount, // 0x177b
+    #[msg("not empty sell side asset amount")]
+    NotEmptySellsideAssetAmount, // 0x177b
     #[msg("invalid referral")]
     InvalidReferral, // 0x177c
     #[msg("invalid master edition")]

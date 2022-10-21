@@ -109,7 +109,7 @@ export type Mmm = {
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -589,7 +589,7 @@ export type Mmm = {
             }
           },
           {
-            "name": "sellsideOrdersCount",
+            "name": "sellsideAssetAmount",
             "type": "u64"
           },
           {
@@ -622,6 +622,10 @@ export type Mmm = {
                 6
               ]
             }
+          },
+          {
+            "name": "buysidePaymentAmount",
+            "type": "u64"
           }
         ]
       }
@@ -977,8 +981,8 @@ export type Mmm = {
     },
     {
       "code": 6011,
-      "name": "NotEmptySellSideOrdersCount",
-      "msg": "not empty sell side orders count"
+      "name": "NotEmptySellsideAssetAmount",
+      "msg": "not empty sell side asset amount"
     },
     {
       "code": 6012,
@@ -1134,7 +1138,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "pool",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1614,7 +1618,7 @@ export const IDL: Mmm = {
             }
           },
           {
-            "name": "sellsideOrdersCount",
+            "name": "sellsideAssetAmount",
             "type": "u64"
           },
           {
@@ -1647,6 +1651,10 @@ export const IDL: Mmm = {
                 6
               ]
             }
+          },
+          {
+            "name": "buysidePaymentAmount",
+            "type": "u64"
           }
         ]
       }
@@ -2002,8 +2010,8 @@ export const IDL: Mmm = {
     },
     {
       "code": 6011,
-      "name": "NotEmptySellSideOrdersCount",
-      "msg": "not empty sell side orders count"
+      "name": "NotEmptySellsideAssetAmount",
+      "msg": "not empty sell side asset amount"
     },
     {
       "code": 6012,
