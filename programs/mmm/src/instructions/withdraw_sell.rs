@@ -121,8 +121,10 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
         ))?;
     }
 
-    pool.sellside_asset_amount -= args.asset_amount;
-
+    pool.sellside_asset_amount = pool
+        .sellside_asset_amount
+        .checked_sub(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
     sell_state.asset_amount = sell_state
         .asset_amount
         .checked_sub(args.asset_amount)
