@@ -1,41 +1,28 @@
-import { withdrawFromFeeAccountOperationHandler } from '@metaplex-foundation/js';
+import { Metaplex } from '@metaplex-foundation/js';
 import * as anchor from '@project-serum/anchor';
 import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
+  TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
+import {
   Connection,
-  PublicKey,
-  Transaction,
   Keypair,
-  TransactionInstruction,
-  LAMPORTS_PER_SOL,
+  PublicKey,
   SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+  Transaction,
+  TransactionInstruction,
 } from '@solana/web3.js';
-import { AllowlistKind, CurveKind } from './constants';
-import { Mmm, IDL } from './idl/mmm';
-import { getMMMBuysideSolEscrowPDA, getMMMPoolPDA } from './pda';
+import { AllowlistKind } from './constants';
+import { IDL, Mmm } from './idl/mmm';
+import {
+  getMMMBuysideSolEscrowPDA,
+  getMMMPoolPDA,
+  getMMMSellStatePDA,
+} from './pda';
 
-interface Wallet {
-  signTransaction(tx: Transaction): Promise<Transaction>;
-  signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
-  publicKey: PublicKey;
-}
-
-class AnchorCompliantWallet {
-  wallet: Wallet;
-  constructor(wallet: Wallet) {
-    this.wallet = wallet;
-  }
-  async signTransaction(tx: Transaction): Promise<Transaction> {
-    return this.wallet.signTransaction(tx);
-  }
-  async signAllTransactions(txs: Transaction[]): Promise<Transaction[]> {
-    return this.wallet.signAllTransactions(txs);
-  }
-  get publicKey(): PublicKey {
-    return this.wallet!!.publicKey!;
-  }
-}
-
-const getEmptyAllowLists = (num: number) => {
+export const getEmptyAllowLists = (num: number) => {
   const emptyAllowList = {
     kind: AllowlistKind.empty,
     value: PublicKey.default,
@@ -47,27 +34,50 @@ export const MMMProgramID = new PublicKey(
   'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc',
 );
 
-export class MMMClient {
-  private readonly conn: Connection;
-  private readonly provider: anchor.Provider;
-  private readonly wallet: Wallet;
-  private readonly program: anchor.Program<Mmm>;
-  private poolData: (anchor.IdlAccounts<Mmm>['pool'] & {pool: PublicKey}) | undefined;
+const dummyKeypair = new anchor.Wallet(new anchor.web3.Keypair());
 
+export class MMMClient {
   static ErrPoolDataEmpty = new Error('pool data is empty');
 
-  constructor(conn: Connection, wallet?: Wallet) {
+  private readonly conn: Connection;
+  private readonly provider: anchor.Provider;
+  private readonly program: anchor.Program<Mmm>;
+  private readonly mpl: Metaplex;
+  private readonly cosigner: Keypair | undefined = undefined;
+
+  private poolData:
+    | (anchor.IdlAccounts<Mmm>['pool'] & { pool: PublicKey })
+    | undefined;
+
+  constructor(conn: Connection, cosigner?: Keypair) {
     this.conn = conn;
-    this.wallet = wallet ?? new anchor.Wallet(new anchor.web3.Keypair());
-    this.provider = new anchor.AnchorProvider(
-      this.conn,
-      new AnchorCompliantWallet(this.wallet),
-      {
-        preflightCommitment: conn.commitment,
-        commitment: conn.commitment,
-      },
-    );
+    this.provider = new anchor.AnchorProvider(this.conn, dummyKeypair, {
+      preflightCommitment: conn.commitment,
+      commitment: conn.commitment,
+    });
     this.program = new anchor.Program<Mmm>(IDL, MMMProgramID, this.provider);
+    if (cosigner) this.cosigner = cosigner;
+    this.mpl = new Metaplex(conn);
+  }
+
+  signTx(insArr: TransactionInstruction[]): Transaction {
+    const tx = new Transaction();
+    tx.add(...insArr);
+    if (this.cosigner) tx.partialSign(this.cosigner);
+    return tx;
+  }
+
+  signTxSerialize(insArr: TransactionInstruction[]): Buffer {
+    return this.signTx(insArr).serialize({
+      requireAllSignatures: false,
+      verifySignatures: false,
+    });
+  }
+
+  async withPool(pool: PublicKey): Promise<MMMClient> {
+    this.poolData = await this.program.account.pool.fetch(pool);
+    this.poolData.pool = pool;
+    return this;
   }
 
   async getInsCreatePool(
@@ -83,12 +93,6 @@ export class MMMClient {
       systemProgram: SystemProgram.programId,
     });
     return await builder.instruction();
-  }
-
-  async withPool(pool: PublicKey): Promise<MMMClient> {
-    this.poolData = await this.program.account.pool.fetch(pool);
-    this.poolData.pool = pool;
-    return this;
   }
 
   async getInsUpdatePool(
@@ -144,21 +148,191 @@ export class MMMClient {
     payer: PublicKey,
     assetMint: PublicKey,
     assetTokenAccount: PublicKey,
+    allowlistAuxAccount?: PublicKey,
   ): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
       MMMProgramID,
       this.poolData.pool,
     );
+    const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
+    const assetMasterEdition = this.mpl
+      .nfts()
+      .pdas()
+      .masterEdition({ mint: assetMint });
+
+    const ownerTokenAccount = await getAssociatedTokenAddress(
+      assetMint,
+      this.poolData.owner,
+    );
+    const { key: sellState } = await getMMMSellStatePDA(
+      MMMProgramID,
+      this.poolData.pool,
+      assetMint,
+    );
+    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+      assetMint,
+      this.poolData.pool,
+    );
+
     let builder = this.program.methods.solFulfillBuy(args).accountsStrict({
       payer,
       owner: this.poolData.owner,
       buysideSolEscrowAccount,
       pool: this.poolData.pool,
+      assetMint,
+      assetMasterEdition,
+      assetMetadata,
       referral: this.poolData.referral,
       cosigner: this.poolData.cosigner,
-      buysideSolEscrowAccount: buysideSolEscrowAccount,
       payerAssetAccount: assetTokenAccount,
+      ownerTokenAccount,
+      sellState,
+      sellsideEscrowTokenAccount,
+      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
       systemProgram: SystemProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      rent: SYSVAR_RENT_PUBKEY,
+    });
+    return await builder.instruction();
+  }
+
+  async getInsSolFulfillSell(
+    args: anchor.IdlTypes<Mmm>['SolFulfillSellArgs'],
+    payer: PublicKey,
+    assetMint: PublicKey,
+    allowlistAuxAccount?: PublicKey,
+  ): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      this.poolData.pool,
+    );
+    const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
+    const assetMasterEdition = this.mpl
+      .nfts()
+      .pdas()
+      .masterEdition({ mint: assetMint });
+
+    const { key: sellState } = getMMMSellStatePDA(
+      MMMProgramID,
+      this.poolData.pool,
+      assetMint,
+    );
+    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+      assetMint,
+      this.poolData.pool,
+    );
+    const payerAssetAccount = await getAssociatedTokenAddress(assetMint, payer);
+
+    let builder = this.program.methods.solFulfillSell(args).accountsStrict({
+      payer,
+      owner: this.poolData.owner,
+      buysideSolEscrowAccount,
+      pool: this.poolData.pool,
+      assetMint,
+      assetMasterEdition,
+      assetMetadata,
+      referral: this.poolData.referral,
+      cosigner: this.poolData.cosigner,
+      payerAssetAccount,
+      sellState,
+      sellsideEscrowTokenAccount,
+      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+      systemProgram: SystemProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      rent: SYSVAR_RENT_PUBKEY,
+    });
+    return await builder.instruction();
+  }
+
+  async getInsDepositSell(
+    args: anchor.IdlTypes<Mmm>['DepositSellArgs'],
+    assetMint: PublicKey,
+    allowlistAuxAccount?: PublicKey,
+  ): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
+    const assetMasterEdition = this.mpl
+      .nfts()
+      .pdas()
+      .masterEdition({ mint: assetMint });
+
+    const { key: sellState } = getMMMSellStatePDA(
+      MMMProgramID,
+      this.poolData.pool,
+      assetMint,
+    );
+    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+      assetMint,
+      this.poolData.pool,
+    );
+    const assetTokenAccount = await getAssociatedTokenAddress(
+      assetMint,
+      this.poolData.owner,
+    );
+
+    let builder = this.program.methods.depositSell(args).accountsStrict({
+      owner: this.poolData.owner,
+      pool: this.poolData.pool,
+      assetMint,
+      assetMasterEdition,
+      assetMetadata,
+      assetTokenAccount,
+      cosigner: this.poolData.cosigner,
+      sellState,
+      sellsideEscrowTokenAccount,
+      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+      systemProgram: SystemProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      rent: SYSVAR_RENT_PUBKEY,
+    });
+    return await builder.instruction();
+  }
+
+  async getInsWithdrawSell(
+    args: anchor.IdlTypes<Mmm>['WithdrawSellArgs'],
+    assetMint: PublicKey,
+    allowlistAuxAccount?: PublicKey,
+  ): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+
+    const { key: sellState } = getMMMSellStatePDA(
+      MMMProgramID,
+      this.poolData.pool,
+      assetMint,
+    );
+    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+      assetMint,
+      this.poolData.pool,
+    );
+    const assetTokenAccount = await getAssociatedTokenAddress(
+      assetMint,
+      this.poolData.owner,
+    );
+
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      this.poolData.pool,
+    );
+
+    let builder = this.program.methods.withdrawSell(args).accountsStrict({
+      owner: this.poolData.owner,
+      pool: this.poolData.pool,
+      assetMint,
+      assetTokenAccount,
+      cosigner: this.poolData.cosigner,
+      sellState,
+      sellsideEscrowTokenAccount,
+      buysideSolEscrowAccount,
+      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+      systemProgram: SystemProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      rent: SYSVAR_RENT_PUBKEY,
     });
     return await builder.instruction();
   }
