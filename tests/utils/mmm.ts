@@ -42,6 +42,7 @@ export const createPool = async (
     cosignerAnnotation?: number[];
     uuid?: PublicKey;
     paymentMint?: PublicKey;
+    buysideCreatorRoyaltyBp?: number;
   },
 ) => {
   const referral = Keypair.generate();
@@ -83,11 +84,7 @@ export const createPool = async (
     systemProgram: SystemProgram.programId,
   });
   if (args.cosigner) {
-    builder = builder
-      .remainingAccounts([
-        { pubkey: args.cosigner.publicKey, isSigner: true, isWritable: false },
-      ])
-      .signers([args.cosigner]);
+    builder = builder.signers([args.cosigner]);
   }
   await builder.rpc();
 
@@ -100,13 +97,20 @@ export const createPoolWithExampleDeposits = async (
   kind: AllowlistKind,
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
-  nftRecipient?: PublicKey, // recipient of nfts, only use if side === 'buy'
+  nftRecipient?: PublicKey,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
-  const [nfts, sfts, allowlistValue] = await (async () => {
+  const [nfts, sfts, extraNft, extraSft, allowlistValue] = await(async () => {
     switch (kind) {
       case AllowlistKind.mint:
         return Promise.all([
+          mintNfts(connection, {
+            numNfts: 1,
+          }),
+          mintNfts(connection, {
+            numNfts: 1,
+            sftAmount: 10,
+          }),
           mintNfts(connection, {
             numNfts: 1,
             recipient: nftRecipient,
@@ -121,6 +125,19 @@ export const createPoolWithExampleDeposits = async (
       case AllowlistKind.fvca:
         const creator = Keypair.generate();
         return Promise.all([
+          mintNfts(connection, {
+            numNfts: 1,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
+          }),
+          mintNfts(connection, {
+            numNfts: 1,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
+            sftAmount: 10,
+          }),
           mintNfts(connection, {
             numNfts: 1,
             creators: [
@@ -149,6 +166,17 @@ export const createPoolWithExampleDeposits = async (
             numNfts: 1,
             collectionAddress: collection.mintAddress,
             verifyCollection: true,
+          }),
+          mintNfts(connection, {
+            numNfts: 1,
+            sftAmount: 10,
+            collectionAddress: collection.mintAddress,
+            verifyCollection: true,
+          }),
+          mintNfts(connection, {
+            numNfts: 1,
+            collectionAddress: collection.mintAddress,
+            verifyCollection: true,
             recipient: nftRecipient,
           }),
           mintNfts(connection, {
@@ -165,8 +193,8 @@ export const createPoolWithExampleDeposits = async (
     }
   })();
 
-  const mintAddress1 = nfts[0].mintAddress;
-  const mintAddress2 = sfts[0].mintAddress;
+  const mintAddressNft = nfts[0].mintAddress;
+  const mintAddressSft = sfts[0].mintAddress;
 
   const allowlists = (() => {
     switch (kind) {
@@ -182,9 +210,11 @@ export const createPoolWithExampleDeposits = async (
         ];
       case AllowlistKind.mint:
         return [
-          { kind: AllowlistKind.mint, value: mintAddress1 },
-          { kind: AllowlistKind.mint, value: mintAddress2 },
-          ...getEmptyAllowLists(4),
+          { kind: AllowlistKind.mint, value: mintAddressNft },
+          { kind: AllowlistKind.mint, value: mintAddressSft },
+          { kind: AllowlistKind.mint, value: extraNft[0].mintAddress },
+          { kind: AllowlistKind.mint, value: extraSft[0].mintAddress },
+          ...getEmptyAllowLists(2),
         ];
     }
   })();
@@ -195,14 +225,32 @@ export const createPoolWithExampleDeposits = async (
   });
   const poolKey = poolData.poolKey;
 
-  const poolAta1 = await getAssociatedTokenAddress(mintAddress1, poolKey, true);
-  const poolAta2 = await getAssociatedTokenAddress(mintAddress2, poolKey, true);
+  const poolAtaNft = await getAssociatedTokenAddress(
+    mintAddressNft,
+    poolKey,
+    true,
+  );
+  const poolAtaSft = await getAssociatedTokenAddress(
+    mintAddressSft,
+    poolKey,
+    true,
+  );
+  const poolAtaExtraNft = await getAssociatedTokenAddress(
+    extraNft[0].mintAddress,
+    poolKey,
+    true,
+  );
+  const poolAtaExtraSft = await getAssociatedTokenAddress(
+    extraSft[0].mintAddress,
+    poolKey,
+    true,
+  );
 
   if (side === 'both' || side === 'sell') {
     const { key: sellState1 } = getMMMSellStatePDA(
       program.programId,
       poolKey,
-      mintAddress1,
+      mintAddressNft,
     );
     await program.methods
       .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
@@ -213,16 +261,16 @@ export const createPoolWithExampleDeposits = async (
         assetMetadata: metaplexInstance
           .nfts()
           .pdas()
-          .metadata({ mint: mintAddress1 }),
+          .metadata({ mint: mintAddressNft }),
         assetMasterEdition: metaplexInstance
           .nfts()
           .pdas()
-          .masterEdition({ mint: mintAddress1 }),
-        assetMint: mintAddress1,
+          .masterEdition({ mint: mintAddressNft }),
+        assetMint: mintAddressNft,
         assetTokenAccount: nfts[0].tokenAddress!,
-        sellsideEscrowTokenAccount: poolAta1,
         allowlistAuxAccount: SystemProgram.programId,
         sellState: sellState1,
+        sellsideEscrowTokenAccount: poolAtaNft,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -234,7 +282,7 @@ export const createPoolWithExampleDeposits = async (
     const { key: sellState2 } = getMMMSellStatePDA(
       program.programId,
       poolKey,
-      mintAddress2,
+      mintAddressSft,
     );
     await program.methods
       .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
@@ -245,16 +293,16 @@ export const createPoolWithExampleDeposits = async (
         assetMetadata: metaplexInstance
           .nfts()
           .pdas()
-          .metadata({ mint: mintAddress2 }),
+          .metadata({ mint: mintAddressSft }),
         assetMasterEdition: metaplexInstance
           .nfts()
           .pdas()
-          .masterEdition({ mint: mintAddress2 }),
-        assetMint: mintAddress2,
+          .masterEdition({ mint: mintAddressSft }),
+        assetMint: mintAddressSft,
         assetTokenAccount: sfts[0].tokenAddress!,
-        sellsideEscrowTokenAccount: poolAta2,
         allowlistAuxAccount: SystemProgram.programId,
         sellState: sellState2,
+        sellsideEscrowTokenAccount: poolAtaSft,
         systemProgram: SystemProgram.programId,
         tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -285,8 +333,12 @@ export const createPoolWithExampleDeposits = async (
   return {
     nft: nfts[0],
     sft: sfts[0],
-    poolAtaNft: poolAta1,
-    poolAtaSft: poolAta2,
+    extraNft: extraNft[0],
+    extraSft: extraSft[0],
+    poolAtaNft,
+    poolAtaSft,
+    poolAtaExtraSft,
+    poolAtaExtraNft,
     poolPaymentEscrow: solEscrowKey,
     ...poolData,
   };

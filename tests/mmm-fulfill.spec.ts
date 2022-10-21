@@ -70,12 +70,12 @@ describe('mmm-fulfill', () => {
       let initBuyerBalance = await connection.getBalance(buyer.publicKey);
 
       {
-        const expectedReferralFees = 1 * LAMPORTS_PER_SOL * 0.03;
+        const expectedReferralFees = 1.1 * LAMPORTS_PER_SOL * 0.03;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
             maxPaymentAmount: new anchor.BN(
-              1 * LAMPORTS_PER_SOL + expectedReferralFees,
+              1.1 * LAMPORTS_PER_SOL + expectedReferralFees,
             ),
             buysideCreatorRoyaltyBp: 0,
             allowlistAux: '',
@@ -131,24 +131,26 @@ describe('mmm-fulfill', () => {
         SIGNATURE_FEE_LAMPORTS * 2 + // cosigner + payer
         tokenAccountRent; // token account
       {
-        const expectedReferralFees = 1 * LAMPORTS_PER_SOL * 0.03;
+        const expectedReferralFees = 1.1 * LAMPORTS_PER_SOL * 0.03;
         const [
           buyerBalance,
           referralBalance,
           poolAtaBalance,
           poolEscrowBalance,
           afterWalletBalance,
+          sellStateBalance,
         ] = await Promise.all([
           connection.getBalance(buyer.publicKey),
           connection.getBalance(poolData.referral.publicKey),
           connection.getBalance(poolData.poolAtaNft),
           connection.getBalance(poolData.poolPaymentEscrow),
           connection.getBalance(wallet.publicKey),
+          connection.getBalance(sellState),
         ]);
         assert.equal(
           buyerBalance,
           initBuyerBalance -
-            1 * LAMPORTS_PER_SOL -
+            1.1 * LAMPORTS_PER_SOL -
             expectedTxFees -
             expectedReferralFees,
         );
@@ -157,12 +159,13 @@ describe('mmm-fulfill', () => {
           initReferralBalance + expectedReferralFees,
         );
         assert.equal(poolAtaBalance, 0);
-        assert.equal(poolEscrowBalance, 1 * LAMPORTS_PER_SOL);
+        assert.equal(poolEscrowBalance, 1.1 * LAMPORTS_PER_SOL);
         assertIsBetween(
           afterWalletBalance,
           initWalletBalance + tokenAccountRent + sellStatePDARent,
           LAMPORT_ERROR_RANGE,
         );
+        assert.equal(sellStateBalance, 0);
 
         initReferralBalance = referralBalance;
         initBuyerBalance = buyerBalance;
@@ -211,12 +214,12 @@ describe('mmm-fulfill', () => {
           poolData.poolKey,
           poolData.sft.mintAddress,
         );
-        const expectedReferralFees = 4.3 * LAMPORTS_PER_SOL * 0.03;
+        const expectedReferralFees = 4.5 * LAMPORTS_PER_SOL * 0.03;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(2),
             maxPaymentAmount: new anchor.BN(
-              4.3 * LAMPORTS_PER_SOL + expectedReferralFees,
+              4.5 * LAMPORTS_PER_SOL + expectedReferralFees,
             ),
             buysideCreatorRoyaltyBp: 0,
             allowlistAux: '',
@@ -266,7 +269,7 @@ describe('mmm-fulfill', () => {
       }
 
       {
-        const expectedReferralFees = 4.3 * LAMPORTS_PER_SOL * 0.03;
+        const expectedReferralFees = 4.5 * LAMPORTS_PER_SOL * 0.03;
         const [
           buyerBalance,
           referralBalance,
@@ -283,7 +286,7 @@ describe('mmm-fulfill', () => {
         assert.equal(
           buyerBalance,
           initBuyerBalance -
-            4.3 * LAMPORTS_PER_SOL -
+            4.5 * LAMPORTS_PER_SOL -
             expectedTxFees -
             expectedReferralFees,
         );
@@ -292,14 +295,34 @@ describe('mmm-fulfill', () => {
           initReferralBalance + expectedReferralFees,
         );
         assert.equal(poolAtaBalance, tokenAccountRent);
-        assert.equal(poolEscrowBalance, 1 * LAMPORTS_PER_SOL);
+        assert.equal(poolEscrowBalance, 1.1 * LAMPORTS_PER_SOL);
         assert.equal(
           afterWalletBalance,
-          initWalletBalance + 4.3 * LAMPORTS_PER_SOL,
+          initWalletBalance + 4.5 * LAMPORTS_PER_SOL,
         );
 
         initReferralBalance = referralBalance;
         initBuyerBalance = buyerBalance;
+      }
+
+      {
+        const { key: sellState } = getMMMSellStatePDA(
+          program.programId,
+          poolData.poolKey,
+          poolData.sft.mintAddress,
+        );
+        const sellStateAccountInfo = await program.account.sellState.fetch(
+          sellState,
+        );
+        assert.equal(
+          sellStateAccountInfo.pool.toBase58(),
+          poolData.poolKey.toBase58(),
+        );
+        assert.equal(
+          sellStateAccountInfo.assetMint.toBase58(),
+          poolData.sft.mintAddress.toBase58(),
+        );
+        assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 3);
       }
 
       poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
@@ -317,10 +340,13 @@ describe('mmm-fulfill', () => {
           poolData.poolKey,
           poolData.sft.mintAddress,
         );
+        const expectedReferralFees = 2.4 * LAMPORTS_PER_SOL * 0.03;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
-            maxPaymentAmount: new anchor.BN(4.3 * LAMPORTS_PER_SOL),
+            maxPaymentAmount: new anchor.BN(
+              2.4 * LAMPORTS_PER_SOL + expectedReferralFees,
+            ),
             buysideCreatorRoyaltyBp: 0,
             allowlistAux: '',
           })
@@ -369,7 +395,7 @@ describe('mmm-fulfill', () => {
       }
 
       {
-        const expectedReferralFees = 2.3 * LAMPORTS_PER_SOL * 0.03;
+        const expectedReferralFees = 2.4 * LAMPORTS_PER_SOL * 0.03;
         const [
           buyerBalance,
           referralBalance,
@@ -386,7 +412,7 @@ describe('mmm-fulfill', () => {
         assert.equal(
           buyerBalance,
           initBuyerBalance -
-            2.3 * LAMPORTS_PER_SOL -
+            2.4 * LAMPORTS_PER_SOL -
             (expectedTxFees - tokenAccountRent) - // token account has already been created
             expectedReferralFees,
         );
@@ -395,10 +421,10 @@ describe('mmm-fulfill', () => {
           initReferralBalance + expectedReferralFees,
         );
         assert.equal(poolAtaBalance, tokenAccountRent);
-        assert.equal(poolEscrowBalance, 1 * LAMPORTS_PER_SOL);
+        assert.equal(poolEscrowBalance, 1.1 * LAMPORTS_PER_SOL);
         assert.equal(
           afterWalletBalance,
-          initWalletBalance + 2.3 * LAMPORTS_PER_SOL,
+          initWalletBalance + 2.4 * LAMPORTS_PER_SOL,
         );
 
         initReferralBalance = referralBalance;
@@ -438,8 +464,8 @@ describe('mmm-fulfill', () => {
         airdrop(connection, seller.publicKey, 10),
       ]);
 
-      const ownerSftAtaAddress = await getAssociatedTokenAddress(
-        poolData.sft.mintAddress,
+      const ownerExtraSftAtaAddress = await getAssociatedTokenAddress(
+        poolData.extraSft.mintAddress,
         wallet.publicKey,
       );
       let initWalletBalance = await connection.getBalance(wallet.publicKey);
@@ -453,7 +479,7 @@ describe('mmm-fulfill', () => {
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.sft.mintAddress,
+          poolData.extraSft.mintAddress,
         );
         const tx = await program.methods
           .solFulfillBuy({
@@ -470,15 +496,15 @@ describe('mmm-fulfill', () => {
             referral: poolData.referral.publicKey,
             pool: poolData.poolKey,
             buysideSolEscrowAccount: poolData.poolPaymentEscrow,
-            assetMetadata: poolData.sft.metadataAddress,
+            assetMetadata: poolData.extraSft.metadataAddress,
             assetMasterEdition: metaplexInstance
               .nfts()
               .pdas()
-              .masterEdition({ mint: poolData.sft.mintAddress }),
-            assetMint: poolData.sft.mintAddress,
-            payerAssetAccount: poolData.sft.tokenAddress!,
-            sellsideEscrowTokenAccount: poolData.poolAtaSft,
-            ownerTokenAccount: ownerSftAtaAddress,
+              .masterEdition({ mint: poolData.extraSft.mintAddress }),
+            assetMint: poolData.extraSft.mintAddress,
+            payerAssetAccount: poolData.extraSft.tokenAddress!,
+            sellsideEscrowTokenAccount: poolData.poolAtaExtraSft,
+            ownerTokenAccount: ownerExtraSftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
             sellState,
             systemProgram: SystemProgram.programId,
@@ -506,6 +532,7 @@ describe('mmm-fulfill', () => {
         );
         console.log({ txId, err: confirmedTx.value.err });
         assert.equal(confirmedTx.value.err, null);
+        assert.equal(await connection.getBalance(sellState), 0);
       }
 
       const tokenAccountRent = await getTokenAccountRent(connection);
@@ -552,8 +579,8 @@ describe('mmm-fulfill', () => {
       assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 0);
 
-      const ownerNftAtaAddress = await getAssociatedTokenAddress(
-        poolData.nft.mintAddress,
+      const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+        poolData.extraNft.mintAddress,
         wallet.publicKey,
       );
 
@@ -586,7 +613,7 @@ describe('mmm-fulfill', () => {
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.nft.mintAddress,
+          poolData.extraNft.mintAddress,
         );
         const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;
         const expectedLpFees = 0.5 * LAMPORTS_PER_SOL * 0.02;
@@ -605,15 +632,15 @@ describe('mmm-fulfill', () => {
             referral: poolData.referral.publicKey,
             pool: poolData.poolKey,
             buysideSolEscrowAccount: poolData.poolPaymentEscrow,
-            assetMetadata: poolData.nft.metadataAddress,
+            assetMetadata: poolData.extraNft.metadataAddress,
             assetMasterEdition: metaplexInstance
               .nfts()
               .pdas()
-              .masterEdition({ mint: poolData.nft.mintAddress }),
-            assetMint: poolData.nft.mintAddress,
-            payerAssetAccount: poolData.nft.tokenAddress!,
-            sellsideEscrowTokenAccount: poolData.poolAtaNft,
-            ownerTokenAccount: ownerNftAtaAddress,
+              .masterEdition({ mint: poolData.extraNft.mintAddress }),
+            assetMint: poolData.extraNft.mintAddress,
+            payerAssetAccount: poolData.extraNft.tokenAddress!,
+            sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
+            ownerTokenAccount: ownerExtraNftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
             sellState,
             systemProgram: SystemProgram.programId,
@@ -656,10 +683,10 @@ describe('mmm-fulfill', () => {
         ] = await Promise.all([
           connection.getBalance(seller.publicKey),
           connection.getBalance(poolData.referral.publicKey),
-          connection.getBalance(poolData.poolAtaNft),
+          connection.getBalance(poolData.poolAtaExtraNft),
           connection.getBalance(poolData.poolPaymentEscrow),
           connection.getBalance(wallet.publicKey),
-          getTokenAccount(connection, poolData.poolAtaNft),
+          getTokenAccount(connection, poolData.poolAtaExtraNft),
         ]);
         assert.equal(
           sellerBalance,
@@ -683,14 +710,34 @@ describe('mmm-fulfill', () => {
           initWalletBalance + expectedLpFees - 0.01 * LAMPORTS_PER_SOL,
         );
         assert.equal(Number(poolAta.amount), 1);
-        assert.deepEqual(poolAta.owner.toBase58(), poolData.poolKey.toBase58());
-        assert.deepEqual(
+        assert.equal(poolAta.owner.toBase58(), poolData.poolKey.toBase58());
+        assert.equal(
           poolAta.mint.toBase58(),
-          poolData.nft.mintAddress.toBase58(),
+          poolData.extraNft.mintAddress.toBase58(),
         );
 
         initReferralBalance = referralBalance;
         initSellerBalance = sellerBalance;
+      }
+
+      {
+        const { key: sellState } = getMMMSellStatePDA(
+          program.programId,
+          poolData.poolKey,
+          poolData.extraNft.mintAddress,
+        );
+        const sellStateAccountInfo = await program.account.sellState.fetch(
+          sellState,
+        );
+        assert.equal(
+          sellStateAccountInfo.pool.toBase58(),
+          poolData.poolKey.toBase58(),
+        );
+        assert.equal(
+          sellStateAccountInfo.assetMint.toBase58(),
+          poolData.extraNft.mintAddress.toBase58(),
+        );
+        assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 1);
       }
 
       poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
@@ -699,6 +746,246 @@ describe('mmm-fulfill', () => {
         0.4 * LAMPORTS_PER_SOL,
       );
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
+    });
+
+    it('Two sides', async () => {
+      const seller = Keypair.generate();
+      const buyer = Keypair.generate();
+      const metaplexInstance = getMetaplexInstance(connection);
+      const [poolData] = await Promise.all([
+        createPoolWithExampleDeposits(
+          program,
+          connection,
+          AllowlistKind.mint,
+          {
+            owner: wallet.publicKey,
+            cosigner,
+            curveType: CurveKind.linear,
+            curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(5)), // 0.1 SOL
+            expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
+            referralBp: 100,
+            lpFeeBp: 200,
+          },
+          'both',
+          seller.publicKey,
+        ),
+        airdrop(connection, seller.publicKey, 10),
+        airdrop(connection, buyer.publicKey, 10),
+      ]);
+
+      const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+        poolData.extraNft.mintAddress,
+        wallet.publicKey,
+      );
+      const { key: extraNftSellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        poolData.extraNft.mintAddress,
+      );
+      let [initReferralBalance, initSellerBalance, initBuyerBalance] =
+        await Promise.all([
+          connection.getBalance(poolData.referral.publicKey),
+          connection.getBalance(seller.publicKey),
+          connection.getBalance(buyer.publicKey),
+        ]);
+
+      const expectedLpFees = LAMPORTS_PER_SOL * 0.02;
+      const expectedReferralFees = LAMPORTS_PER_SOL * 0.01;
+      {
+        const tx = await program.methods
+          .solFulfillBuy({
+            assetAmount: new anchor.BN(1),
+            minPaymentAmount: new anchor.BN(
+              LAMPORTS_PER_SOL - expectedLpFees - expectedReferralFees,
+            ),
+            allowlistAux: null,
+          })
+          .accountsStrict({
+            payer: seller.publicKey,
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            referral: poolData.referral.publicKey,
+            pool: poolData.poolKey,
+            buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+            assetMetadata: poolData.extraNft.metadataAddress,
+            assetMasterEdition: metaplexInstance
+              .nfts()
+              .pdas()
+              .masterEdition({ mint: poolData.extraNft.mintAddress }),
+            assetMint: poolData.extraNft.mintAddress,
+            payerAssetAccount: poolData.extraNft.tokenAddress!,
+            sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
+            ownerTokenAccount: ownerExtraNftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+            sellState: extraNftSellState,
+          })
+          .transaction();
+
+        const blockhashData = await connection.getLatestBlockhash();
+        tx.feePayer = seller.publicKey;
+        tx.recentBlockhash = blockhashData.blockhash;
+        tx.partialSign(cosigner, seller);
+
+        const txId = await connection.sendRawTransaction(tx.serialize(), {
+          skipPreflight: true,
+        });
+        const confirmedTx = await connection.confirmTransaction(
+          {
+            signature: txId,
+            blockhash: blockhashData.blockhash,
+            lastValidBlockHeight: blockhashData.lastValidBlockHeight,
+          },
+          'processed',
+        );
+        assert.equal(confirmedTx.value.err, null);
+      }
+
+      const tokenAccountRent = await getTokenAccountRent(connection);
+      const sellStatePDARent = await getSellStatePDARent(connection);
+
+      const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer
+      {
+        const [sellerBalance, referralBalance, poolAta] = await Promise.all([
+          connection.getBalance(seller.publicKey),
+          connection.getBalance(poolData.referral.publicKey),
+          getTokenAccount(connection, poolData.poolAtaExtraNft),
+        ]);
+
+        assert.equal(
+          sellerBalance,
+          initSellerBalance +
+            LAMPORTS_PER_SOL -
+            expectedLpFees -
+            expectedReferralFees -
+            expectedTxFees -
+            sellStatePDARent, // no token account rent bc seller ata was closed and pool ata opened
+        );
+        assert.equal(
+          referralBalance,
+          initReferralBalance + expectedReferralFees,
+        );
+        assert.equal(Number(poolAta.amount), 1);
+        initReferralBalance = referralBalance;
+      }
+
+      let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+      assert.equal(
+        poolAccountInfo.spotPrice.toNumber(),
+        0.8 * LAMPORTS_PER_SOL,
+      );
+      assert.equal(
+        poolAccountInfo.lpFeeEarned.toNumber(),
+        0.02 * LAMPORTS_PER_SOL,
+      );
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 7);
+
+      const buyerNftAtaAddress = await getAssociatedTokenAddress(
+        poolData.nft.mintAddress,
+        buyer.publicKey,
+      );
+      const { key: nftSellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        poolData.nft.mintAddress,
+      );
+
+      {
+        const tx = await program.methods
+          .solFulfillSell({
+            assetAmount: new anchor.BN(1),
+            maxPaymentAmount: new anchor.BN(
+              LAMPORTS_PER_SOL + expectedReferralFees + expectedLpFees,
+            ),
+            buysideCreatorRoyaltyBp: 0,
+            allowlistAux: '',
+          })
+          .accountsStrict({
+            payer: buyer.publicKey,
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            referral: poolData.referral.publicKey,
+            pool: poolData.poolKey,
+            buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+            assetMetadata: poolData.nft.metadataAddress,
+            assetMasterEdition: metaplexInstance
+              .nfts()
+              .pdas()
+              .masterEdition({ mint: poolData.nft.mintAddress }),
+            assetMint: poolData.nft.mintAddress,
+            sellsideEscrowTokenAccount: poolData.poolAtaNft,
+            payerAssetAccount: buyerNftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
+            sellState: nftSellState,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+          })
+          .transaction();
+
+        const blockhashData = await connection.getLatestBlockhash();
+        tx.feePayer = buyer.publicKey;
+        tx.recentBlockhash = blockhashData.blockhash;
+        tx.partialSign(cosigner, buyer);
+
+        const txId = await connection.sendRawTransaction(tx.serialize(), {
+          skipPreflight: true,
+        });
+        const confirmedTx = await connection.confirmTransaction(
+          {
+            signature: txId,
+            blockhash: blockhashData.blockhash,
+            lastValidBlockHeight: blockhashData.lastValidBlockHeight,
+          },
+          'processed',
+        );
+        assert.equal(confirmedTx.value.err, null);
+      }
+
+      {
+        const [buyerBalance, referralBalance, buyerAta] = await Promise.all([
+          connection.getBalance(buyer.publicKey),
+          connection.getBalance(poolData.referral.publicKey),
+          getTokenAccount(connection, buyerNftAtaAddress),
+        ]);
+
+        assert.equal(
+          buyerBalance,
+          initBuyerBalance -
+            LAMPORTS_PER_SOL -
+            expectedLpFees -
+            expectedReferralFees -
+            expectedTxFees -
+            tokenAccountRent, // no token account rent bc seller ata was closed and pool ata opened
+        );
+        assert.equal(
+          referralBalance,
+          initReferralBalance + expectedReferralFees,
+        );
+        assert.equal(Number(buyerAta.amount), 1);
+      }
+
+      poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+      assert.equal(poolAccountInfo.spotPrice.toNumber(), 1 * LAMPORTS_PER_SOL);
+      assert.equal(
+        poolAccountInfo.lpFeeEarned.toNumber(),
+        0.04 * LAMPORTS_PER_SOL,
+      );
+      assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 6);
+
+      const [finalSellerBalance, finalBuyerBalance] = await Promise.all([
+        connection.getBalance(seller.publicKey),
+        connection.getBalance(buyer.publicKey),
+      ]);
+
+      assert.isAtMost(
+        finalBuyerBalance + finalSellerBalance,
+        initBuyerBalance + initSellerBalance,
+      );
     });
   });
 });

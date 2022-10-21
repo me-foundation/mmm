@@ -53,9 +53,6 @@ describe('mmm-deposit', () => {
           buysideSolEscrowAccount: solEscrowKey,
           systemProgram: SystemProgram.programId,
         })
-        .remainingAccounts([
-          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
-        ])
         .signers([cosigner])
         .rpc();
 
@@ -86,9 +83,6 @@ describe('mmm-deposit', () => {
           buysideSolEscrowAccount: solEscrowKey,
           systemProgram: SystemProgram.programId,
         })
-        .remainingAccounts([
-          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
-        ])
         .signers([cosigner])
         .rpc();
 
@@ -106,9 +100,6 @@ describe('mmm-deposit', () => {
           buysideSolEscrowAccount: solEscrowKey,
           systemProgram: SystemProgram.programId,
         })
-        .remainingAccounts([
-          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
-        ])
         .signers([cosigner])
         .rpc();
 
@@ -127,9 +118,6 @@ describe('mmm-deposit', () => {
           buysideSolEscrowAccount: solEscrowKey,
           systemProgram: SystemProgram.programId,
         })
-        .remainingAccounts([
-          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
-        ])
         .signers([cosigner])
         .rpc();
 
@@ -216,6 +204,24 @@ describe('mmm-deposit', () => {
       assert.equal(poolAccountInfo.sellsideOrdersCount.toNumber(), 1);
       assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
 
+      const sellState1AccountInfo = await program.account.sellState.fetch(
+        sellState1,
+      );
+      assert.equal(sellState1AccountInfo.pool.toBase58(), poolKey.toBase58());
+      assert.equal(
+        sellState1AccountInfo.poolOwner.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
+      assert.equal(
+        sellState1AccountInfo.assetMint.toBase58(),
+        mintAddress1.toBase58(),
+      );
+      assert.equal(sellState1AccountInfo.assetAmount.toNumber(), 1);
+      assert.deepEqual(
+        sellState1AccountInfo.cosignerAnnotation,
+        new Array(32).fill(0),
+      );
+
       const poolAta2 = await getAssociatedTokenAddress(
         mintAddress2,
         poolKey,
@@ -264,6 +270,24 @@ describe('mmm-deposit', () => {
       );
       assert.equal(Number(sftAccount.amount), 5);
       assert.deepEqual(sftAccount.owner, wallet.publicKey);
+
+      const sellState2AccountInfo = await program.account.sellState.fetch(
+        sellState2,
+      );
+      assert.equal(sellState2AccountInfo.pool.toBase58(), poolKey.toBase58());
+      assert.equal(
+        sellState2AccountInfo.poolOwner.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
+      assert.equal(
+        sellState2AccountInfo.assetMint.toBase58(),
+        mintAddress2.toBase58(),
+      );
+      assert.equal(sellState2AccountInfo.assetAmount.toNumber(), 5);
+      assert.deepEqual(
+        sellState2AccountInfo.cosignerAnnotation,
+        new Array(32).fill(0),
+      );
     });
 
     it('correctly verifies mcc-only allowlists when depositing items', async () => {

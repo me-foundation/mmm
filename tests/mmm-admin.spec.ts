@@ -148,9 +148,6 @@ describe('mmm-admin', () => {
           cosigner: cosigner.publicKey,
           pool: poolKey,
         })
-        .remainingAccounts([
-          { pubkey: cosigner.publicKey, isSigner: true, isWritable: false },
-        ])
         .signers([cosigner])
         .rpc();
 
