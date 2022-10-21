@@ -195,9 +195,10 @@ pub fn get_sol_total_price_and_next_price(
             }
         }
         false => {
+            // for sales, all prices will be one "step" away from the spot price to prevent pool drain
             match pool.curve_type {
                 CURVE_KIND_LINEAR => {
-                    // n*(2*p+(n-1)*delta)/2
+                    // n*(2*p+(n+1)*delta)/2
                     let total_price = n
                         .checked_mul(
                             p.checked_mul(2)
