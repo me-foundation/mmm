@@ -80,6 +80,13 @@ export class MMMClient {
     return this;
   }
 
+  withMockPool(
+    poolData: anchor.IdlAccounts<Mmm>['pool'] & { pool: PublicKey },
+  ): MMMClient {
+    this.poolData = poolData;
+    return this;
+  }
+
   async getInsCreatePool(
     args: anchor.IdlTypes<Mmm>['CreatePoolArgs'],
     owner: PublicKey,
