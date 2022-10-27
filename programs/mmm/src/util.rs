@@ -319,6 +319,11 @@ pub fn pay_creator_fees_in_sol<'info>(
         return Err(MMMErrorCode::NotEnoughBalance.into());
     }
 
+    // hardcoded the max threshold for InvalidMetadataCreatorRoyalty
+    if metadata.data.seller_fee_basis_points > 3000 {
+        return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
+    }
+
     match metadata.data.creators {
         None => {
             return Ok(0);
