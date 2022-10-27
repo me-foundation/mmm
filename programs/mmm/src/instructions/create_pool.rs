@@ -44,6 +44,7 @@ pub struct CreatePool<'info> {
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.referral_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.buyside_creator_royalty_bp <= 10000 @ MMMErrorCode::InvalidBP,
+        constraint = args.spot_price > 0 @ MMMErrorCode::InvalidSpotPrice,
     )]
     pub pool: Box<Account<'info, Pool>>,
     pub system_program: Program<'info, System>,

@@ -42,4 +42,8 @@ pub enum MMMErrorCode {
     PubkeyMismatch, // 0x1782
     #[msg("uninitialized account")]
     UninitializedAccount, // 0x1783
+    #[msg("invalid spot_price")]
+    InvalidSpotPrice, // 0x1784
+    #[msg("invalid metadata creator royalty")]
+    InvalidMetadataCreatorRoyalty, // 0x1785
 }
