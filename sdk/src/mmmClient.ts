@@ -45,9 +45,7 @@ export class MMMClient {
   private readonly mpl: Metaplex;
   private readonly cosigner: Keypair | undefined = undefined;
 
-  private poolData:
-    | (anchor.IdlAccounts<Mmm>['pool'] & { pool: PublicKey })
-    | undefined;
+  poolData: (anchor.IdlAccounts<Mmm>['pool'] & { pool: PublicKey }) | undefined;
 
   constructor(conn: Connection, cosigner?: Keypair) {
     this.conn = conn;
