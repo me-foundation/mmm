@@ -70,15 +70,17 @@ describe('mmm-fulfill', () => {
       let initBuyerBalance = await connection.getBalance(buyer.publicKey);
 
       {
-        const expectedReferralFees = 1.1 * LAMPORTS_PER_SOL * 0.03;
+        const expectedTakerFees = 1.1 * LAMPORTS_PER_SOL * 0.01;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
             maxPaymentAmount: new anchor.BN(
-              1.1 * LAMPORTS_PER_SOL + expectedReferralFees,
+              1.1 * LAMPORTS_PER_SOL + expectedTakerFees,
             ),
             buysideCreatorRoyaltyBp: 0,
             allowlistAux: '',
+            takerFeeBp: 100,
+            makerFeeBp: 0,
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -131,7 +133,8 @@ describe('mmm-fulfill', () => {
         SIGNATURE_FEE_LAMPORTS * 2 + // cosigner + payer
         tokenAccountRent; // token account
       {
-        const expectedReferralFees = 1.1 * LAMPORTS_PER_SOL * 0.03;
+        const expectedTakerFees = 1.1 * LAMPORTS_PER_SOL * 0.01;
+        const expectedReferralFees = expectedTakerFees;
         const [
           buyerBalance,
           referralBalance,
@@ -152,7 +155,7 @@ describe('mmm-fulfill', () => {
           initBuyerBalance -
             1.1 * LAMPORTS_PER_SOL -
             expectedTxFees -
-            expectedReferralFees,
+            expectedTakerFees,
         );
         assert.equal(
           referralBalance,
@@ -200,7 +203,6 @@ describe('mmm-fulfill', () => {
             expiry: new anchor.BN(0),
             lpFeeBp: 200,
             referral: poolData.referral.publicKey,
-            referralBp: 300,
             cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
             buysideCreatorRoyaltyBp: 0,
           })
@@ -218,15 +220,17 @@ describe('mmm-fulfill', () => {
           poolData.poolKey,
           poolData.sft.mintAddress,
         );
-        const expectedReferralFees = 4.5 * LAMPORTS_PER_SOL * 0.03;
+        const expectedTakerFees = 4.5 * LAMPORTS_PER_SOL * 0.015;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(2),
             maxPaymentAmount: new anchor.BN(
-              4.5 * LAMPORTS_PER_SOL + expectedReferralFees,
+              4.5 * LAMPORTS_PER_SOL + expectedTakerFees,
             ),
             buysideCreatorRoyaltyBp: 0,
             allowlistAux: '',
+            takerFeeBp: 150,
+            makerFeeBp: 200,
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -273,7 +277,9 @@ describe('mmm-fulfill', () => {
       }
 
       {
-        const expectedReferralFees = 4.5 * LAMPORTS_PER_SOL * 0.03;
+        const expectedTakerFees = 4.5 * LAMPORTS_PER_SOL * 0.015;
+        const expectedMakerFees = 4.5 * LAMPORTS_PER_SOL * 0.02;
+        const expectedReferralFees = expectedMakerFees + expectedTakerFees;
         const [
           buyerBalance,
           referralBalance,
@@ -292,7 +298,7 @@ describe('mmm-fulfill', () => {
           initBuyerBalance -
             4.5 * LAMPORTS_PER_SOL -
             expectedTxFees -
-            expectedReferralFees,
+            expectedTakerFees,
         );
         assert.equal(
           referralBalance,
@@ -302,7 +308,7 @@ describe('mmm-fulfill', () => {
         assert.equal(poolEscrowBalance, 1.1 * LAMPORTS_PER_SOL);
         assert.equal(
           afterWalletBalance,
-          initWalletBalance + 4.5 * LAMPORTS_PER_SOL,
+          initWalletBalance + 4.5 * LAMPORTS_PER_SOL - expectedMakerFees,
         );
 
         initReferralBalance = referralBalance;
@@ -348,15 +354,14 @@ describe('mmm-fulfill', () => {
           poolData.poolKey,
           poolData.sft.mintAddress,
         );
-        const expectedReferralFees = 2.4 * LAMPORTS_PER_SOL * 0.03;
         const tx = await program.methods
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
-            maxPaymentAmount: new anchor.BN(
-              2.4 * LAMPORTS_PER_SOL + expectedReferralFees,
-            ),
+            maxPaymentAmount: new anchor.BN(2.4 * LAMPORTS_PER_SOL),
             buysideCreatorRoyaltyBp: 0,
             allowlistAux: '',
+            makerFeeBp: 400,
+            takerFeeBp: 0,
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -403,7 +408,8 @@ describe('mmm-fulfill', () => {
       }
 
       {
-        const expectedReferralFees = 2.4 * LAMPORTS_PER_SOL * 0.03;
+        const expectedMakerFees = 2.4 * LAMPORTS_PER_SOL * 0.04;
+        const expectedReferralFees = expectedMakerFees;
         const [
           buyerBalance,
           referralBalance,
@@ -421,8 +427,7 @@ describe('mmm-fulfill', () => {
           buyerBalance,
           initBuyerBalance -
             2.4 * LAMPORTS_PER_SOL -
-            (expectedTxFees - tokenAccountRent) - // token account has already been created
-            expectedReferralFees,
+            (expectedTxFees - tokenAccountRent), // token account has already been created
         );
         assert.equal(
           referralBalance,
@@ -432,7 +437,7 @@ describe('mmm-fulfill', () => {
         assert.equal(poolEscrowBalance, 1.1 * LAMPORTS_PER_SOL);
         assert.equal(
           afterWalletBalance,
-          initWalletBalance + 2.4 * LAMPORTS_PER_SOL,
+          initWalletBalance + 2.4 * LAMPORTS_PER_SOL - expectedMakerFees,
         );
 
         initReferralBalance = referralBalance;
@@ -485,9 +490,10 @@ describe('mmm-fulfill', () => {
         poolData.referral.publicKey,
       );
       let initSellerBalance = await connection.getBalance(seller.publicKey);
+      let totalMakerFees = 0;
 
       {
-        const expectedReferralFees = 2.7 * LAMPORTS_PER_SOL * 0.02;
+        const expectedTakerFees = 2.7 * LAMPORTS_PER_SOL * 0.04;
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
@@ -497,9 +503,11 @@ describe('mmm-fulfill', () => {
           .solFulfillBuy({
             assetAmount: new anchor.BN(3),
             minPaymentAmount: new anchor.BN(
-              2.7 * LAMPORTS_PER_SOL - expectedReferralFees,
+              2.7 * LAMPORTS_PER_SOL - expectedTakerFees,
             ),
             allowlistAux: '',
+            takerFeeBp: 400,
+            makerFeeBp: 100,
           })
           .accountsStrict({
             payer: seller.publicKey,
@@ -550,7 +558,10 @@ describe('mmm-fulfill', () => {
       const tokenAccountRent = await getTokenAccountRent(connection);
       const sellStatePDARent = await getSellStatePDARent(connection);
       {
-        const expectedReferralFees = 2.7 * LAMPORTS_PER_SOL * 0.02;
+        const expectedTakerFees = 2.7 * LAMPORTS_PER_SOL * 0.04;
+        const expectedMakerFees = 2.7 * LAMPORTS_PER_SOL * 0.01;
+        const expectedReferralFees = expectedTakerFees + expectedMakerFees;
+        totalMakerFees += expectedMakerFees;
         const [
           sellerBalance,
           referralBalance,
@@ -569,14 +580,17 @@ describe('mmm-fulfill', () => {
           initSellerBalance +
             2.7 * LAMPORTS_PER_SOL -
             (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent + sellStatePDARent) -
-            expectedReferralFees,
+            expectedTakerFees,
         );
         assert.equal(
           referralBalance,
           initReferralBalance + expectedReferralFees,
         );
         assert.equal(poolAtaBalance, 0);
-        assert.equal(poolEscrowBalance, 7.3 * LAMPORTS_PER_SOL);
+        assert.equal(
+          poolEscrowBalance,
+          7.3 * LAMPORTS_PER_SOL - totalMakerFees,
+        );
         assert.equal(afterWalletBalance, initWalletBalance + sellStatePDARent);
 
         initReferralBalance = referralBalance;
@@ -592,7 +606,7 @@ describe('mmm-fulfill', () => {
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
       assert.equal(
         poolAccountInfo.buysidePaymentAmount.toNumber(),
-        7.3 * LAMPORTS_PER_SOL,
+        7.3 * LAMPORTS_PER_SOL - totalMakerFees,
       );
 
       const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
@@ -613,7 +627,6 @@ describe('mmm-fulfill', () => {
             expiry: new anchor.BN(0),
             lpFeeBp: 200,
             referral: poolData.referral.publicKey,
-            referralBp: 300,
             cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
             buysideCreatorRoyaltyBp: 0,
           })
@@ -631,15 +644,13 @@ describe('mmm-fulfill', () => {
           poolData.poolKey,
           poolData.extraNft.mintAddress,
         );
-        const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;
-        const expectedLpFees = 0.5 * LAMPORTS_PER_SOL * 0.02;
         const tx = await program.methods
           .solFulfillBuy({
             assetAmount: new anchor.BN(1),
-            minPaymentAmount: new anchor.BN(
-              0.5 * LAMPORTS_PER_SOL - expectedReferralFees - expectedLpFees,
-            ),
+            minPaymentAmount: new anchor.BN(0.5 * LAMPORTS_PER_SOL),
             allowlistAux: '',
+            makerFeeBp: 150,
+            takerFeeBp: 0,
           })
           .accountsStrict({
             payer: seller.publicKey,
@@ -687,8 +698,9 @@ describe('mmm-fulfill', () => {
       }
 
       {
-        const expectedReferralFees = 0.5 * LAMPORTS_PER_SOL * 0.03;
-        const expectedLpFees = 0.5 * LAMPORTS_PER_SOL * 0.02;
+        const expectedMakerFees = 0.5 * LAMPORTS_PER_SOL * 0.015;
+        const expectedReferralFees = expectedMakerFees;
+        totalMakerFees += expectedMakerFees;
         const [
           sellerBalance,
           referralBalance,
@@ -707,24 +719,21 @@ describe('mmm-fulfill', () => {
         assert.equal(
           sellerBalance,
           initSellerBalance +
-            0.01 * LAMPORTS_PER_SOL +
             0.5 * LAMPORTS_PER_SOL -
             (SIGNATURE_FEE_LAMPORTS * 2 +
               tokenAccountRent * 0 +
-              sellStatePDARent) - // reinvest thus we don't need to pay the owner_token_account rent
-            expectedReferralFees -
-            expectedLpFees,
+              sellStatePDARent), // reinvest thus we don't need to pay the owner_token_account rent
         );
         assert.equal(
           referralBalance,
           initReferralBalance + expectedReferralFees,
         );
         assert.equal(poolAtaBalance, tokenAccountRent);
-        assert.equal(poolEscrowBalance, 6.8 * LAMPORTS_PER_SOL);
         assert.equal(
-          afterWalletBalance,
-          initWalletBalance + expectedLpFees - 0.01 * LAMPORTS_PER_SOL,
+          poolEscrowBalance,
+          6.8 * LAMPORTS_PER_SOL - totalMakerFees,
         );
+        assert.equal(afterWalletBalance, initWalletBalance);
         assert.equal(Number(poolAta.amount), 1);
         assert.equal(poolAta.owner.toBase58(), poolData.poolKey.toBase58());
         assert.equal(
@@ -764,7 +773,7 @@ describe('mmm-fulfill', () => {
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
       assert.equal(
         poolAccountInfo.buysidePaymentAmount.toNumber(),
-        6.8 * LAMPORTS_PER_SOL,
+        6.8 * LAMPORTS_PER_SOL - totalMakerFees,
       );
     });
 
@@ -810,15 +819,17 @@ describe('mmm-fulfill', () => {
         ]);
 
       const expectedLpFees = LAMPORTS_PER_SOL * 0.02;
-      const expectedReferralFees = LAMPORTS_PER_SOL * 0.01;
+      const expectedTakerFees = LAMPORTS_PER_SOL * 0.01;
       {
         const tx = await program.methods
           .solFulfillBuy({
             assetAmount: new anchor.BN(1),
             minPaymentAmount: new anchor.BN(
-              LAMPORTS_PER_SOL - expectedLpFees - expectedReferralFees,
+              LAMPORTS_PER_SOL - expectedLpFees - expectedTakerFees,
             ),
             allowlistAux: null,
+            takerFeeBp: 100,
+            makerFeeBp: 0,
           })
           .accountsStrict({
             payer: seller.publicKey,
@@ -880,14 +891,11 @@ describe('mmm-fulfill', () => {
           initSellerBalance +
             LAMPORTS_PER_SOL -
             expectedLpFees -
-            expectedReferralFees -
+            expectedTakerFees -
             expectedTxFees -
             sellStatePDARent, // no token account rent bc seller ata was closed and pool ata opened
         );
-        assert.equal(
-          referralBalance,
-          initReferralBalance + expectedReferralFees,
-        );
+        assert.equal(referralBalance, initReferralBalance + expectedTakerFees);
         assert.equal(Number(poolAta.amount), 1);
         initReferralBalance = referralBalance;
       }
@@ -918,10 +926,12 @@ describe('mmm-fulfill', () => {
           .solFulfillSell({
             assetAmount: new anchor.BN(1),
             maxPaymentAmount: new anchor.BN(
-              LAMPORTS_PER_SOL + expectedReferralFees + expectedLpFees,
+              LAMPORTS_PER_SOL + expectedTakerFees + expectedLpFees,
             ),
             buysideCreatorRoyaltyBp: 0,
             allowlistAux: '',
+            takerFeeBp: 100,
+            makerFeeBp: 100,
           })
           .accountsStrict({
             payer: buyer.publicKey,
@@ -967,6 +977,8 @@ describe('mmm-fulfill', () => {
       }
 
       {
+        const expectedMakerFees = LAMPORTS_PER_SOL * 0.01;
+        const expectedReferralFees = expectedTakerFees + expectedMakerFees;
         const [buyerBalance, referralBalance, buyerAta] = await Promise.all([
           connection.getBalance(buyer.publicKey),
           connection.getBalance(poolData.referral.publicKey),
@@ -978,7 +990,7 @@ describe('mmm-fulfill', () => {
           initBuyerBalance -
             LAMPORTS_PER_SOL -
             expectedLpFees -
-            expectedReferralFees -
+            expectedTakerFees -
             expectedTxFees -
             tokenAccountRent, // no token account rent bc seller ata was closed and pool ata opened
         );

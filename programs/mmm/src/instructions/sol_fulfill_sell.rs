@@ -245,7 +245,7 @@ pub fn handler<'info>(
     let payment_amount = total_price
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_add(referral_fee)
+        .checked_add(taker_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_add(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;

@@ -224,7 +224,7 @@ pub fn handler<'info>(
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_sub(maker_fee)
+        .checked_sub(taker_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
