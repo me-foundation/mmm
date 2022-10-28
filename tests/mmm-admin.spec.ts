@@ -11,7 +11,7 @@ import { Mmm, CurveKind, AllowlistKind, getMMMPoolPDA } from '../sdk/src';
 import { getEmptyAllowLists } from './utils';
 
 describe('mmm-admin', () => {
-  const { wallet, connection, opts } = anchor.AnchorProvider.env();
+  const { wallet, opts } = anchor.AnchorProvider.env();
   opts.commitment = 'processed';
   const program = anchor.workspace.Mmm as Program<Mmm>;
   const cosigner = Keypair.generate();
@@ -42,7 +42,6 @@ describe('mmm-admin', () => {
           expiry: new anchor.BN(42),
           lpFeeBp: 200,
           referral: referral.publicKey,
-          referralBp: 300,
           cosignerAnnotation: new Array(32).fill(0),
           buysideCreatorRoyaltyBp: 0,
 
@@ -112,7 +111,6 @@ describe('mmm-admin', () => {
           expiry: new anchor.BN(42),
           lpFeeBp: 200,
           referral: referral.publicKey,
-          referralBp: 300,
           cosignerAnnotation: new Array(32).fill(0),
           buysideCreatorRoyaltyBp: 0,
 
@@ -139,7 +137,6 @@ describe('mmm-admin', () => {
           expiry: new anchor.BN(0),
           lpFeeBp: 150,
           referral: PublicKey.default,
-          referralBp: 200,
           cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
           buysideCreatorRoyaltyBp: 0,
         })

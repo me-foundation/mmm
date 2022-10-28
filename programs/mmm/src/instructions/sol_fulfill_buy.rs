@@ -10,9 +10,8 @@ use crate::{
     errors::MMMErrorCode,
     state::{Pool, SellState},
     util::{
-        check_allowlists_for_mint, get_sol_lp_fee, get_sol_referral_fee,
-        get_sol_total_price_and_next_price, pay_creator_fees_in_sol, try_close_pool,
-        try_close_sell_state,
+        check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
+        pay_creator_fees_in_sol, try_close_pool, try_close_sell_state,
     },
 };
 
@@ -21,6 +20,8 @@ pub struct SolFulfillBuyArgs {
     asset_amount: u64,
     min_payment_amount: u64,
     allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
+    maker_fee_bp: u16,             // will be checked by cosigner
+    taker_fee_bp: u16,             // will be checked by cosigner
 }
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
@@ -130,7 +131,20 @@ pub fn handler<'info>(
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
-    let referral_fee = get_sol_referral_fee(pool, total_price)?;
+
+    if args
+        .maker_fee_bp
+        .checked_add(args.taker_fee_bp)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        > MAX_REFERRAL_FEE_BP
+    {
+        return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
+    }
+    let maker_fee = get_sol_fee(total_price, args.maker_fee_bp)?;
+    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)?;
+    let referral_fee = maker_fee
+        .checked_add(taker_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
 
     if pool.reinvest_fulfill_buy {
         let sellside_escrow_token_account =
@@ -210,7 +224,7 @@ pub fn handler<'info>(
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_sub(referral_fee)
+        .checked_sub(maker_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
@@ -245,7 +259,6 @@ pub fn handler<'info>(
             buyside_sol_escrow_account_seeds,
         )?;
     }
-
     if referral_fee > 0 {
         anchor_lang::solana_program::program::invoke_signed(
             &anchor_lang::solana_program::system_instruction::transfer(

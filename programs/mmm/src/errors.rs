@@ -46,4 +46,6 @@ pub enum MMMErrorCode {
     InvalidSpotPrice, // 0x1784
     #[msg("invalid metadata creator royalty")]
     InvalidMetadataCreatorRoyalty, // 0x1785
+    #[msg("invalid maker or taker bp")]
+    InvalidMakerOrTakerFeeBP, // 0x1786
 }
