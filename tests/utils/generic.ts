@@ -1,4 +1,5 @@
 import { AccountLayout } from '@solana/spl-token';
+import * as anchor from '@project-serum/anchor';
 import {
   Connection,
   Keypair,
@@ -12,6 +13,7 @@ import { AllowlistKind } from '../../sdk/src';
 
 export const SIGNATURE_FEE_LAMPORTS = 5000;
 export const LAMPORT_ERROR_RANGE = 500;
+export const PRICE_ERROR_RANGE = 50;
 const KEYPAIR_PATH = path.join(process.env.HOME!, '/.config/solana/id.json');
 
 let keypair;
@@ -70,4 +72,14 @@ export const airdrop = async (
     ...(await connection.getLatestBlockhash()),
     signature: await connection.requestAirdrop(to, amount * LAMPORTS_PER_SOL),
   });
+};
+
+export const assertTx = (
+  txHash: string,
+  tx: anchor.web3.RpcResponseAndContext<anchor.web3.SignatureResult>,
+) => {
+  assert.isNull(
+    tx.value.err,
+    `transaction failed ${JSON.stringify({ txHash, err: tx.value.err })}`,
+  );
 };

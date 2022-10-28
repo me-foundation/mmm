@@ -1,5 +1,4 @@
 import * as anchor from '@project-serum/anchor';
-import { Program } from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAccount as getTokenAccount,
@@ -13,8 +12,16 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import { assert } from 'chai';
-import { Mmm, AllowlistKind, CurveKind, getMMMSellStatePDA } from '../sdk/src';
 import {
+  Mmm,
+  AllowlistKind,
+  CurveKind,
+  getMMMSellStatePDA,
+  IDL,
+  MMMProgramID,
+} from '../sdk/src';
+import {
+  airdrop,
   assertIsBetween,
   createPoolWithExampleDeposits,
   LAMPORT_ERROR_RANGE,
@@ -22,10 +29,21 @@ import {
 } from './utils';
 
 describe('mmm-withdraw', () => {
-  const { wallet, connection, opts } = anchor.AnchorProvider.env();
-  opts.commitment = 'processed';
-  const program = anchor.workspace.Mmm as Program<Mmm>;
+  const { connection } = anchor.AnchorProvider.env();
+  const wallet = new anchor.Wallet(Keypair.generate());
+  const provider = new anchor.AnchorProvider(connection, wallet, {
+    commitment: 'processed',
+  });
+  const program = new anchor.Program(
+    IDL,
+    MMMProgramID,
+    provider,
+  ) as anchor.Program<Mmm>;
   const cosigner = Keypair.generate();
+
+  beforeEach(async () => {
+    await airdrop(connection, wallet.publicKey, 50);
+  });
 
   it('Withdraw payment', async () => {
     const poolData = await createPoolWithExampleDeposits(
