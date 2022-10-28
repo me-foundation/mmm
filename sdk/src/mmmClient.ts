@@ -100,6 +100,22 @@ export class MMMClient {
     return await builder.instruction();
   }
 
+  async getInsSolClosePool(): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      this.poolData.pool,
+    );
+    let builder = this.program.methods.solClosePool().accountsStrict({
+      pool: this.poolData.pool,
+      owner: this.poolData.owner,
+      cosigner: this.poolData.cosigner,
+      buysideSolEscrowAccount,
+      systemProgram: SystemProgram.programId,
+    });
+    return await builder.instruction();
+  }
+
   async getInsUpdatePool(
     args: anchor.IdlTypes<Mmm>['UpdatePoolArgs'],
   ): Promise<TransactionInstruction> {
@@ -178,6 +194,7 @@ export class MMMClient {
     const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
       assetMint,
       this.poolData.pool,
+      true,
     );
 
     let builder = this.program.methods.solFulfillBuy(args).accountsStrict({
@@ -228,6 +245,7 @@ export class MMMClient {
     const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
       assetMint,
       this.poolData.pool,
+      true,
     );
     const payerAssetAccount = await getAssociatedTokenAddress(assetMint, payer);
 
@@ -273,6 +291,7 @@ export class MMMClient {
     const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
       assetMint,
       this.poolData.pool,
+      true,
     );
     const assetTokenAccount = await getAssociatedTokenAddress(
       assetMint,
@@ -313,6 +332,7 @@ export class MMMClient {
     const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
       assetMint,
       this.poolData.pool,
+      true,
     );
     const assetTokenAccount = await getAssociatedTokenAddress(
       assetMint,
