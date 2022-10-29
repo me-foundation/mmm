@@ -1,4 +1,10 @@
-import { Metaplex } from '@metaplex-foundation/js';
+import {
+  Metadata,
+  Metaplex,
+  sol,
+  toMetadata,
+  toMetadataAccount,
+} from '@metaplex-foundation/js';
 import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -83,6 +89,23 @@ export class MMMClient {
   ): MMMClient {
     this.poolData = poolData;
     return this;
+  }
+
+  async getNftMetadata(tokenMint: PublicKey): Promise<Metadata> {
+    const metadataPda = this.mpl.nfts().pdas().metadata({ mint: tokenMint });
+    const metadataAccount = await this.conn.getAccountInfo(metadataPda);
+    if (!metadataAccount) {
+      throw new Error(
+        `No metadata account found for mint ${tokenMint.toBase58()}`,
+      );
+    }
+    return toMetadata(
+      toMetadataAccount({
+        publicKey: metadataPda,
+        ...metadataAccount,
+        lamports: sol(metadataAccount.lamports),
+      }),
+    );
   }
 
   async getInsCreatePool(
@@ -217,6 +240,19 @@ export class MMMClient {
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       rent: SYSVAR_RENT_PUBKEY,
     });
+
+    if (this.poolData.buysideCreatorRoyaltyBp > 0) {
+      const metadata = await this.getNftMetadata(assetMint);
+      if (metadata.creators.length > 0) {
+        builder = builder.remainingAccounts(
+          metadata.creators.map((v) => ({
+            pubkey: v.address,
+            isSigner: false,
+            isWritable: true,
+          })),
+        );
+      }
+    }
     return await builder.instruction();
   }
 
@@ -225,6 +261,7 @@ export class MMMClient {
     payer: PublicKey,
     assetMint: PublicKey,
     allowlistAuxAccount?: PublicKey,
+    creatorKeys?: PublicKey[],
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
@@ -268,6 +305,19 @@ export class MMMClient {
       associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       rent: SYSVAR_RENT_PUBKEY,
     });
+
+    if (args.buysideCreatorRoyaltyBp > 0) {
+      const metadata = await this.getNftMetadata(assetMint);
+      if (metadata.creators.length > 0) {
+        builder = builder.remainingAccounts(
+          metadata.creators.map((v) => ({
+            pubkey: v.address,
+            isSigner: false,
+            isWritable: true,
+          })),
+        );
+      }
+    }
     return await builder.instruction();
   }
 
