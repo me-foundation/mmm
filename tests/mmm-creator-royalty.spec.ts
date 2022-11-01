@@ -47,7 +47,7 @@ describe('mmm-creator-royalty', () => {
     await airdrop(connection, wallet.publicKey, 50);
   });
 
-  it.only('correctly pays creator royalty', async () => {
+  it('correctly pays creator royalty', async () => {
     const seller = Keypair.generate();
     const buyer = Keypair.generate();
     const metaplexInstance = getMetaplexInstance(connection);
