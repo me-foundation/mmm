@@ -54,7 +54,7 @@ pub struct Pool {
     pub expiry: i64,
     pub lp_fee_bp: u16,
     pub referral: Pubkey,
-    pub referral_bp: u16,
+    pub referral_bp: u16, // deprecated
     pub buyside_creator_royalty_bp: u16,
 
     // cosigner_annotation: it's set by the cosigner, could be the hash of the certain

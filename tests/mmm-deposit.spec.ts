@@ -1,5 +1,4 @@
 import * as anchor from '@project-serum/anchor';
-import { Program } from '@project-serum/anchor';
 import {
   getAssociatedTokenAddress,
   getAccount as getTokenAccount,
@@ -18,8 +17,11 @@ import {
   AllowlistKind,
   getMMMBuysideSolEscrowPDA,
   getMMMSellStatePDA,
+  IDL,
+  MMMProgramID,
 } from '../sdk/src';
 import {
+  airdrop,
   createPool,
   getEmptyAllowLists,
   getMetaplexInstance,
@@ -28,10 +30,21 @@ import {
 } from './utils';
 
 describe('mmm-deposit', () => {
-  const { wallet, connection, opts } = anchor.AnchorProvider.env();
-  opts.commitment = 'processed';
-  const program = anchor.workspace.Mmm as Program<Mmm>;
+  const { connection } = anchor.AnchorProvider.env();
+  const wallet = new anchor.Wallet(Keypair.generate());
+  const provider = new anchor.AnchorProvider(connection, wallet, {
+    commitment: 'processed',
+  });
+  const program = new anchor.Program(
+    IDL,
+    MMMProgramID,
+    provider,
+  ) as anchor.Program<Mmm>;
   const cosigner = Keypair.generate();
+
+  beforeEach(async () => {
+    await airdrop(connection, wallet.publicKey, 50);
+  });
 
   describe('sol_deposit_buy', () => {
     it('transfers users SOL into escrow account', async () => {
@@ -150,6 +163,7 @@ describe('mmm-deposit', () => {
           creators: [
             { address: creator.publicKey, share: 100, authority: creator },
           ],
+          recipient: wallet.publicKey,
         }),
         mintNfts(connection, {
           numNfts: 1,
@@ -157,6 +171,7 @@ describe('mmm-deposit', () => {
             { address: creator.publicKey, share: 100, authority: creator },
           ],
           sftAmount: 10,
+          recipient: wallet.publicKey,
         }),
       ]);
 
@@ -316,12 +331,14 @@ describe('mmm-deposit', () => {
           numNfts: 1,
           collectionAddress: collection.mintAddress,
           verifyCollection: true,
+          recipient: wallet.publicKey,
         }),
         mintNfts(connection, {
           numNfts: 1,
           sftAmount: 10,
           collectionAddress: collection.mintAddress,
           verifyCollection: true,
+          recipient: wallet.publicKey,
         }),
       ]);
 
@@ -430,10 +447,12 @@ describe('mmm-deposit', () => {
       const [nfts, sfts] = await Promise.all([
         mintNfts(connection, {
           numNfts: 1,
+          recipient: wallet.publicKey,
         }),
         mintNfts(connection, {
           numNfts: 1,
           sftAmount: 10,
+          recipient: wallet.publicKey,
         }),
       ]);
       const mintAddress1 = nfts[0].mintAddress;

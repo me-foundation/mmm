@@ -100,36 +100,51 @@ export const createPoolWithExampleDeposits = async (
   nftRecipient?: PublicKey,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
+  const creator = Keypair.generate();
   const [nfts, sfts, extraNft, extraSft, allowlistValue] = await(async () => {
     switch (kind) {
       case AllowlistKind.mint:
         return Promise.all([
           mintNfts(connection, {
             numNfts: 1,
+            recipient: poolArgs.owner,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           mintNfts(connection, {
             numNfts: 1,
             sftAmount: 10,
+            recipient: poolArgs.owner,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           mintNfts(connection, {
             numNfts: 1,
             recipient: nftRecipient,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           mintNfts(connection, {
             numNfts: 1,
             sftAmount: 10,
             recipient: nftRecipient,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           null,
         ]);
       case AllowlistKind.fvca:
-        const creator = Keypair.generate();
         return Promise.all([
           mintNfts(connection, {
             numNfts: 1,
             creators: [
               { address: creator.publicKey, share: 100, authority: creator },
             ],
+            recipient: poolArgs.owner,
           }),
           mintNfts(connection, {
             numNfts: 1,
@@ -137,6 +152,7 @@ export const createPoolWithExampleDeposits = async (
               { address: creator.publicKey, share: 100, authority: creator },
             ],
             sftAmount: 10,
+            recipient: poolArgs.owner,
           }),
           mintNfts(connection, {
             numNfts: 1,
@@ -166,18 +182,29 @@ export const createPoolWithExampleDeposits = async (
             numNfts: 1,
             collectionAddress: collection.mintAddress,
             verifyCollection: true,
+            recipient: poolArgs.owner,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           mintNfts(connection, {
             numNfts: 1,
             sftAmount: 10,
             collectionAddress: collection.mintAddress,
             verifyCollection: true,
+            recipient: poolArgs.owner,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           mintNfts(connection, {
             numNfts: 1,
             collectionAddress: collection.mintAddress,
             verifyCollection: true,
             recipient: nftRecipient,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           mintNfts(connection, {
             numNfts: 1,
@@ -185,6 +212,9 @@ export const createPoolWithExampleDeposits = async (
             collectionAddress: collection.mintAddress,
             verifyCollection: true,
             recipient: nftRecipient,
+            creators: [
+              { address: creator.publicKey, share: 100, authority: creator },
+            ],
           }),
           collection.mintAddress,
         ]);
@@ -340,6 +370,7 @@ export const createPoolWithExampleDeposits = async (
     poolAtaExtraSft,
     poolAtaExtraNft,
     poolPaymentEscrow: solEscrowKey,
+    nftCreator: creator,
     ...poolData,
   };
 };

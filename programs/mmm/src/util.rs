@@ -1,4 +1,4 @@
-use crate::{errors::MMMErrorCode, state::*};
+use crate::{constants::MAX_METADATA_CREATOR_ROYALTY_BP, errors::MMMErrorCode, state::*};
 use anchor_lang::prelude::*;
 use anchor_spl::token::Mint;
 use mpl_token_metadata::{
@@ -129,9 +129,9 @@ pub fn get_sol_lp_fee(
         .ok_or(MMMErrorCode::NumericOverflow)?) as u64)
 }
 
-pub fn get_sol_referral_fee(pool: &Pool, total_sol_price: u64) -> Result<u64> {
+pub fn get_sol_fee(total_sol_price: u64, fee_bp: u16) -> Result<u64> {
     Ok((total_sol_price as u128)
-        .checked_mul(pool.referral_bp as u128)
+        .checked_mul(fee_bp as u128)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_div(10000)
         .ok_or(MMMErrorCode::NumericOverflow)? as u64)
@@ -320,7 +320,7 @@ pub fn pay_creator_fees_in_sol<'info>(
     }
 
     // hardcoded the max threshold for InvalidMetadataCreatorRoyalty
-    if metadata.data.seller_fee_basis_points > 3000 {
+    if metadata.data.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
         return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
     }
 

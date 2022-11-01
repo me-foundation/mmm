@@ -91,7 +91,7 @@ pub struct Pool { // 8 bytes anchor discriminator
     pub expiry: i64,
     pub lp_fee_bp: u16,
     pub referral: Pubkey,
-    pub referral_bp: u16,
+    pub referral_bp: u16, // deprecated, please use maker_fee_bp and taker_fee_bp in fulfill functions
     pub buyside_creator_royalty_bp: u16,
     pub cosigner_annotation: [u8; 32],
     pub sellside_asset_amount: u64,

@@ -703,10 +703,6 @@ export type Mmm = {
             "type": "publicKey"
           },
           {
-            "name": "referralBp",
-            "type": "u16"
-          },
-          {
             "name": "cosignerAnnotation",
             "type": {
               "array": [
@@ -789,6 +785,14 @@ export type Mmm = {
             "type": {
               "option": "string"
             }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "u16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "u16"
           }
         ]
       }
@@ -815,6 +819,14 @@ export type Mmm = {
             "type": {
               "option": "string"
             }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "u16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "u16"
           }
         ]
       }
@@ -867,10 +879,6 @@ export type Mmm = {
           {
             "name": "referral",
             "type": "publicKey"
-          },
-          {
-            "name": "referralBp",
-            "type": "u16"
           },
           {
             "name": "cosignerAnnotation",
@@ -1023,6 +1031,21 @@ export type Mmm = {
       "code": 6019,
       "name": "UninitializedAccount",
       "msg": "uninitialized account"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidSpotPrice",
+      "msg": "invalid spot_price"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidMetadataCreatorRoyalty",
+      "msg": "invalid metadata creator royalty"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidMakerOrTakerFeeBP",
+      "msg": "invalid maker or taker bp"
     }
   ]
 };
@@ -1732,10 +1755,6 @@ export const IDL: Mmm = {
             "type": "publicKey"
           },
           {
-            "name": "referralBp",
-            "type": "u16"
-          },
-          {
             "name": "cosignerAnnotation",
             "type": {
               "array": [
@@ -1818,6 +1837,14 @@ export const IDL: Mmm = {
             "type": {
               "option": "string"
             }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "u16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "u16"
           }
         ]
       }
@@ -1844,6 +1871,14 @@ export const IDL: Mmm = {
             "type": {
               "option": "string"
             }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "u16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "u16"
           }
         ]
       }
@@ -1896,10 +1931,6 @@ export const IDL: Mmm = {
           {
             "name": "referral",
             "type": "publicKey"
-          },
-          {
-            "name": "referralBp",
-            "type": "u16"
           },
           {
             "name": "cosignerAnnotation",
@@ -2052,6 +2083,21 @@ export const IDL: Mmm = {
       "code": 6019,
       "name": "UninitializedAccount",
       "msg": "uninitialized account"
+    },
+    {
+      "code": 6020,
+      "name": "InvalidSpotPrice",
+      "msg": "invalid spot_price"
+    },
+    {
+      "code": 6021,
+      "name": "InvalidMetadataCreatorRoyalty",
+      "msg": "invalid metadata creator royalty"
+    },
+    {
+      "code": 6022,
+      "name": "InvalidMakerOrTakerFeeBP",
+      "msg": "invalid maker or taker bp"
     }
   ]
 };

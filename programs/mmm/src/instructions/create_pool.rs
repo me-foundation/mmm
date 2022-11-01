@@ -18,7 +18,6 @@ pub struct CreatePoolArgs {
     pub expiry: i64,
     pub lp_fee_bp: u16,
     pub referral: Pubkey,
-    pub referral_bp: u16,
     pub cosigner_annotation: [u8; 32],
     pub buyside_creator_royalty_bp: u16,
 
@@ -42,7 +41,6 @@ pub struct CreatePool<'info> {
         bump,
         space = Pool::LEN,
         constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidBP,
-        constraint = args.referral_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.buyside_creator_royalty_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.spot_price > 0 @ MMMErrorCode::InvalidSpotPrice,
     )]
@@ -67,7 +65,6 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
     pool.expiry = args.expiry;
     pool.lp_fee_bp = args.lp_fee_bp;
     pool.referral = args.referral;
-    pool.referral_bp = args.referral_bp;
     pool.cosigner_annotation = args.cosigner_annotation;
     pool.buyside_creator_royalty_bp = args.buyside_creator_royalty_bp;
 
