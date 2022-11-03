@@ -273,10 +273,9 @@ pub fn try_close_escrow<'info>(
 ) -> Result<()> {
     let min_rent = Rent::get()?.minimum_balance(0);
     let escrow_lamports = escrow.lamports();
-    msg!("{}, {}", escrow_lamports, min_rent);
-    if escrow_lamports > min_rent {
-        return Ok(());
-    } else if escrow_lamports > 0 {
+    if escrow_lamports == 0 || escrow_lamports > min_rent {
+        Ok(())
+    } else {
         anchor_lang::solana_program::program::invoke_signed(
             &anchor_lang::solana_program::system_instruction::transfer(
                 escrow.key,
@@ -290,8 +289,8 @@ pub fn try_close_escrow<'info>(
             ],
             escrow_seeds,
         )?;
+        Ok(())
     }
-    Ok(())
 }
 
 pub fn try_close_sell_state<'info>(
