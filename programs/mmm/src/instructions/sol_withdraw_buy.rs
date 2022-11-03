@@ -1,4 +1,9 @@
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::try_close_pool};
+use crate::{
+    constants::*,
+    errors::MMMErrorCode,
+    state::Pool,
+    util::{try_close_escrow, try_close_pool},
+};
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -36,6 +41,12 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
     let pool = &mut ctx.accounts.pool;
+    let pool_key = pool.key();
+    let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
+        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
+        pool_key.as_ref(),
+        &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
+    ]];
 
     anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::system_instruction::transfer(
@@ -49,11 +60,14 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
             system_program.to_account_info(),
         ],
         // seeds should be the PDA of 'buyside_sol_escrow_account'
-        &[&[
-            BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-            pool.key().as_ref(),
-            &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
-        ]],
+        buyside_sol_escrow_account_seeds,
+    )?;
+
+    try_close_escrow(
+        &buyside_sol_escrow_account.to_account_info(),
+        pool,
+        system_program,
+        buyside_sol_escrow_account_seeds,
     )?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
