@@ -11,7 +11,7 @@ use crate::{
     state::{Pool, SellState},
     util::{
         check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
-        pay_creator_fees_in_sol, try_close_pool, try_close_sell_state,
+        pay_creator_fees_in_sol, try_close_escrow, try_close_pool, try_close_sell_state,
     },
 };
 
@@ -289,6 +289,13 @@ pub fn handler<'info>(
         buyside_sol_escrow_account.to_account_info(),
         buyside_sol_escrow_account_seeds,
         system_program.to_account_info(),
+    )?;
+
+    try_close_escrow(
+        &buyside_sol_escrow_account.to_account_info(),
+        pool,
+        system_program,
+        buyside_sol_escrow_account_seeds,
     )?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();

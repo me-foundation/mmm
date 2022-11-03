@@ -19,10 +19,13 @@ import {
   getMMMSellStatePDA,
   IDL,
   MMMProgramID,
+  CurveKind,
 } from '../sdk/src';
 import {
   airdrop,
+  assertTx,
   createPool,
+  createPoolWithExampleDeposits,
   getEmptyAllowLists,
   getMetaplexInstance,
   mintCollection,
@@ -142,6 +145,154 @@ describe('mmm-deposit', () => {
 
       assert.equal(await connection.getBalance(solEscrowKey), 0);
       assert.equal(await connection.getBalance(poolKey), 0);
+    });
+
+    describe('closes pool when the sol escrow has less than required rent', () => {
+      it('fulfill buy', async () => {
+        const seller = Keypair.generate();
+        const metaplexInstance = getMetaplexInstance(connection);
+        const [poolData] = await Promise.all([
+          createPoolWithExampleDeposits(
+            program,
+            connection,
+            AllowlistKind.mcc,
+            {
+              owner: wallet.publicKey,
+              cosigner,
+              // set spot price to 10 lamports under the 10 SOL that is deposited
+              spotPrice: new anchor.BN(10 * LAMPORTS_PER_SOL).sub(
+                new anchor.BN(10),
+              ),
+              curveType: CurveKind.linear,
+              curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(
+                new anchor.BN(10),
+              ),
+              expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
+              reinvestFulfillBuy: false,
+              reinvestFulfillSell: false,
+            },
+            'buy',
+            seller.publicKey,
+          ),
+          airdrop(connection, seller.publicKey, 10),
+        ]);
+
+        const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+          poolData.extraNft.mintAddress,
+          wallet.publicKey,
+        );
+
+        {
+          const { key: sellState } = getMMMSellStatePDA(
+            program.programId,
+            poolData.poolKey,
+            poolData.extraNft.mintAddress,
+          );
+          const tx = await program.methods
+            .solFulfillBuy({
+              assetAmount: new anchor.BN(1),
+              minPaymentAmount: new anchor.BN(9.99 * LAMPORTS_PER_SOL),
+              allowlistAux: '',
+              makerFeeBp: 0,
+              takerFeeBp: 0,
+            })
+            .accountsStrict({
+              payer: seller.publicKey,
+              owner: wallet.publicKey,
+              cosigner: cosigner.publicKey,
+              referral: poolData.referral.publicKey,
+              pool: poolData.poolKey,
+              buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+              assetMetadata: poolData.extraNft.metadataAddress,
+              assetMasterEdition: metaplexInstance
+                .nfts()
+                .pdas()
+                .masterEdition({ mint: poolData.extraNft.mintAddress }),
+              assetMint: poolData.extraNft.mintAddress,
+              payerAssetAccount: poolData.extraNft.tokenAddress!,
+              sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
+              ownerTokenAccount: ownerExtraNftAtaAddress,
+              allowlistAuxAccount: SystemProgram.programId,
+              sellState,
+              systemProgram: SystemProgram.programId,
+              tokenProgram: TOKEN_PROGRAM_ID,
+              associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+              rent: SYSVAR_RENT_PUBKEY,
+            })
+            .transaction();
+
+          const blockhashData = await connection.getLatestBlockhash();
+          tx.feePayer = seller.publicKey;
+          tx.recentBlockhash = blockhashData.blockhash;
+          tx.partialSign(cosigner, seller);
+
+          const txId = await connection.sendRawTransaction(tx.serialize(), {
+            skipPreflight: true,
+          });
+          const confirmedTx = await connection.confirmTransaction(
+            {
+              signature: txId,
+              blockhash: blockhashData.blockhash,
+              lastValidBlockHeight: blockhashData.lastValidBlockHeight,
+            },
+            'processed',
+          );
+          assertTx(txId, confirmedTx);
+        }
+
+        assert.equal(
+          await connection.getBalance(poolData.poolPaymentEscrow),
+          0,
+        );
+        assert.equal(await connection.getBalance(poolData.poolKey), 0);
+      });
+
+      it('withdraw buy', async () => {
+        const { poolKey } = await createPool(program, {
+          owner: wallet.publicKey,
+          cosigner,
+        });
+
+        const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+          program.programId,
+          poolKey,
+        );
+        await program.methods
+          .solDepositBuy({ paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL) })
+          .accountsStrict({
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            pool: poolKey,
+            buysideSolEscrowAccount: solEscrowKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([cosigner])
+          .rpc();
+
+        assert.equal(
+          await connection.getBalance(solEscrowKey),
+          2 * LAMPORTS_PER_SOL,
+        );
+
+        await program.methods
+          .solWithdrawBuy({
+            paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL).sub(
+              new anchor.BN(200),
+            ),
+          })
+          .accountsStrict({
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            pool: poolKey,
+            buysideSolEscrowAccount: solEscrowKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([cosigner])
+          .rpc();
+
+        assert.equal(await connection.getBalance(solEscrowKey), 0);
+        assert.equal(await connection.getBalance(poolKey), 0);
+      });
     });
   });
 
