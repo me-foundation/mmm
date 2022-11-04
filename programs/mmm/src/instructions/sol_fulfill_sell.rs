@@ -263,7 +263,8 @@ pub fn handler<'info>(
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!(
-        "{{\"royalty_paid\":{},\"total_price\":{}}}",
+        "{{\"lp_fee\":{},\"royalty_paid\":{},\"total_price\":{}}}",
+        lp_fee,
         royalty_paid,
         total_price,
     );

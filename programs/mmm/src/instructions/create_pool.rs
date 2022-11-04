@@ -40,7 +40,7 @@ pub struct CreatePool<'info> {
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), args.uuid.as_ref()],
         bump,
         space = Pool::LEN,
-        constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidBP,
+        constraint = args.lp_fee_bp <= MAX_LP_FEE_BP @ MMMErrorCode::InvalidBP,
         constraint = args.buyside_creator_royalty_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.spot_price > 0 @ MMMErrorCode::InvalidSpotPrice,
     )]
