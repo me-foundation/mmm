@@ -29,7 +29,7 @@ pub struct UpdatePool<'info> {
         bump,
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
-        constraint = args.lp_fee_bp <= 10000 @ MMMErrorCode::InvalidBP,
+        constraint = args.lp_fee_bp <= MAX_LP_FEE_BP @ MMMErrorCode::InvalidBP,
         constraint = args.buyside_creator_royalty_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.spot_price > 0 @ MMMErrorCode::InvalidSpotPrice,
     )]
