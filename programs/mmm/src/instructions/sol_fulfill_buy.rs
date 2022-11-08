@@ -22,6 +22,7 @@ pub struct SolFulfillBuyArgs {
     allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
     maker_fee_bp: u16,             // will be checked by cosigner
     taker_fee_bp: u16,             // will be checked by cosigner
+    sellside_creator_royalty_bp: u16,
 }
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
@@ -48,6 +49,7 @@ pub struct SolFulfillBuy<'info> {
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         constraint = pool.expiry == 0 || pool.expiry > Clock::get().unwrap().unix_timestamp @ MMMErrorCode::Expired,
+        constraint = args.sellside_creator_royalty_bp <= 10000 @ MMMErrorCode::InvalidBP,
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
@@ -220,11 +222,24 @@ pub fn handler<'info>(
         ))?;
     }
 
+    // pay creator royalties
+    let royalty_paid = pay_creator_fees_in_sol(
+        args.sellside_creator_royalty_bp,
+        total_price,
+        payer_asset_metadata.to_account_info(),
+        ctx.remaining_accounts,
+        buyside_sol_escrow_account.to_account_info(),
+        buyside_sol_escrow_account_seeds,
+        system_program.to_account_info(),
+    )?;
+
     // prevent frontrun by pool config changes
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(taker_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
@@ -280,16 +295,6 @@ pub fn handler<'info>(
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     pool.spot_price = next_price;
-
-    let royalty_paid = pay_creator_fees_in_sol(
-        pool.buyside_creator_royalty_bp,
-        total_price,
-        payer_asset_metadata.to_account_info(),
-        ctx.remaining_accounts,
-        buyside_sol_escrow_account.to_account_info(),
-        buyside_sol_escrow_account_seeds,
-        system_program.to_account_info(),
-    )?;
 
     try_close_escrow(
         &buyside_sol_escrow_account.to_account_info(),
