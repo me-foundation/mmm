@@ -19,10 +19,10 @@ use crate::{
 pub struct SolFulfillBuyArgs {
     asset_amount: u64,
     min_payment_amount: u64,
-    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
-    maker_fee_bp: u16,             // will be checked by cosigner
-    taker_fee_bp: u16,             // will be checked by cosigner
-    sellside_creator_royalty_bp: u16,
+    allowlist_aux: Option<String>, // TODO: use it for the future allowlist_aux
+    maker_fee_bp: u16,             // will be checked by the cosigner
+    taker_fee_bp: u16,             // will be checked by the cosigner
+    sellside_creator_royalty_bp: u16, // will be set by the seller, and checked by the cosigner
 }
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
