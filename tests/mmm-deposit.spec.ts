@@ -195,6 +195,7 @@ describe('mmm-deposit', () => {
               allowlistAux: '',
               makerFeeBp: 0,
               takerFeeBp: 0,
+              sellsideCreatorRoyaltyBp: 0,
             })
             .accountsStrict({
               payer: seller.publicKey,

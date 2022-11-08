@@ -712,10 +712,6 @@ export type Mmm = {
             }
           },
           {
-            "name": "buysideCreatorRoyaltyBp",
-            "type": "u16"
-          },
-          {
             "name": "uuid",
             "type": "publicKey"
           },
@@ -792,6 +788,10 @@ export type Mmm = {
           },
           {
             "name": "takerFeeBp",
+            "type": "u16"
+          },
+          {
+            "name": "sellsideCreatorRoyaltyBp",
             "type": "u16"
           }
         ]
@@ -888,10 +888,6 @@ export type Mmm = {
                 32
               ]
             }
-          },
-          {
-            "name": "buysideCreatorRoyaltyBp",
-            "type": "u16"
           }
         ]
       }
@@ -1764,10 +1760,6 @@ export const IDL: Mmm = {
             }
           },
           {
-            "name": "buysideCreatorRoyaltyBp",
-            "type": "u16"
-          },
-          {
             "name": "uuid",
             "type": "publicKey"
           },
@@ -1844,6 +1836,10 @@ export const IDL: Mmm = {
           },
           {
             "name": "takerFeeBp",
+            "type": "u16"
+          },
+          {
+            "name": "sellsideCreatorRoyaltyBp",
             "type": "u16"
           }
         ]
@@ -1940,10 +1936,6 @@ export const IDL: Mmm = {
                 32
               ]
             }
-          },
-          {
-            "name": "buysideCreatorRoyaltyBp",
-            "type": "u16"
           }
         ]
       }

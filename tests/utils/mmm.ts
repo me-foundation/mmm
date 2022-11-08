@@ -101,7 +101,7 @@ export const createPoolWithExampleDeposits = async (
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   const creator = Keypair.generate();
-  const [nfts, sfts, extraNft, extraSft, allowlistValue] = await(async () => {
+  const [nfts, sfts, extraNft, extraSft, allowlistValue] = await (async () => {
     switch (kind) {
       case AllowlistKind.mint:
         return Promise.all([

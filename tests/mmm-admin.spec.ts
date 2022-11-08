@@ -60,8 +60,6 @@ describe('mmm-admin', () => {
           lpFeeBp: 200,
           referral: referral.publicKey,
           cosignerAnnotation: new Array(32).fill(0),
-          buysideCreatorRoyaltyBp: 0,
-
           uuid: uuid.publicKey,
           paymentMint: PublicKey.default,
           allowlists,
@@ -129,8 +127,6 @@ describe('mmm-admin', () => {
           lpFeeBp: 200,
           referral: referral.publicKey,
           cosignerAnnotation: new Array(32).fill(0),
-          buysideCreatorRoyaltyBp: 0,
-
           uuid: uuid.publicKey,
           paymentMint: PublicKey.default,
           allowlists,
@@ -155,7 +151,6 @@ describe('mmm-admin', () => {
           lpFeeBp: 150,
           referral: PublicKey.default,
           cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
-          buysideCreatorRoyaltyBp: 0,
         })
         .accountsStrict({
           owner: wallet.publicKey,

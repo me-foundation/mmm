@@ -214,7 +214,6 @@ describe('mmm-fulfill-linear', () => {
           lpFeeBp: 200,
           referral: poolData.referral.publicKey,
           cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
-          buysideCreatorRoyaltyBp: 0,
         })
         .accountsStrict({
           owner: wallet.publicKey,
@@ -504,6 +503,7 @@ describe('mmm-fulfill-linear', () => {
           allowlistAux: '',
           takerFeeBp: 400,
           makerFeeBp: 100,
+          sellsideCreatorRoyaltyBp: 0,
         })
         .accountsStrict({
           payer: seller.publicKey,
@@ -614,7 +614,6 @@ describe('mmm-fulfill-linear', () => {
           lpFeeBp: 200,
           referral: poolData.referral.publicKey,
           cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
-          buysideCreatorRoyaltyBp: 0,
         })
         .accountsStrict({
           owner: wallet.publicKey,
@@ -637,6 +636,7 @@ describe('mmm-fulfill-linear', () => {
           allowlistAux: '',
           makerFeeBp: 150,
           takerFeeBp: 0,
+          sellsideCreatorRoyaltyBp: 0,
         })
         .accountsStrict({
           payer: seller.publicKey,
@@ -806,6 +806,7 @@ describe('mmm-fulfill-linear', () => {
           allowlistAux: null,
           takerFeeBp: 100,
           makerFeeBp: 0,
+          sellsideCreatorRoyaltyBp: 0,
         })
         .accountsStrict({
           payer: seller.publicKey,
