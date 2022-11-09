@@ -220,11 +220,26 @@ pub fn handler<'info>(
         ))?;
     }
 
+    // pool owner as buyer is going to pay the royalties
+    let royalty_paid = pay_creator_fees_in_sol(
+        pool.buyside_creator_royalty_bp,
+        total_price,
+        payer_asset_metadata.to_account_info(),
+        ctx.remaining_accounts,
+        buyside_sol_escrow_account.to_account_info(),
+        buyside_sol_escrow_account_seeds,
+        system_program.to_account_info(),
+    )?;
+
     // prevent frontrun by pool config changes
+    // the royalties are paid by the buyer, but the seller will see the price
+    // after adjusting the royalties.
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(taker_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
@@ -280,16 +295,6 @@ pub fn handler<'info>(
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     pool.spot_price = next_price;
-
-    let royalty_paid = pay_creator_fees_in_sol(
-        pool.buyside_creator_royalty_bp,
-        total_price,
-        payer_asset_metadata.to_account_info(),
-        ctx.remaining_accounts,
-        buyside_sol_escrow_account.to_account_info(),
-        buyside_sol_escrow_account_seeds,
-        system_program.to_account_info(),
-    )?;
 
     try_close_escrow(
         &buyside_sol_escrow_account.to_account_info(),

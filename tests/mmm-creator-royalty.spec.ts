@@ -99,11 +99,15 @@ describe('mmm-creator-royalty', () => {
     {
       const expectedLpFees = LAMPORTS_PER_SOL * 0.02;
       const expectedTakerFees = LAMPORTS_PER_SOL * 0.01;
+      const expectedCreatorFees = LAMPORTS_PER_SOL * 0.01 * 0.5;
       const tx = await program.methods
         .solFulfillBuy({
           assetAmount: new anchor.BN(1),
           minPaymentAmount: new anchor.BN(
-            LAMPORTS_PER_SOL - expectedLpFees - expectedTakerFees,
+            LAMPORTS_PER_SOL -
+              expectedLpFees -
+              expectedTakerFees -
+              expectedCreatorFees,
           ),
           allowlistAux: null,
           takerFeeBp: 100,
@@ -189,13 +193,14 @@ describe('mmm-creator-royalty', () => {
           expectedLpFees -
           expectedTakerFees -
           expectedTxFees -
+          expectedCreatorFees -
           sellStatePDARent, // no token account rent bc seller ata was closed and pool ata opened
       );
       assert.equal(referralBalance, initReferralBalance + expectedTakerFees);
       assert.equal(Number(poolAta.amount), 1);
       assert.equal(
         poolEscrowBalance,
-        initPaymentEscrowBalance - LAMPORTS_PER_SOL - expectedCreatorFees,
+        initPaymentEscrowBalance - LAMPORTS_PER_SOL,
       );
       assert.equal(creatorBalance, initCreatorBalance + expectedCreatorFees);
       initReferralBalance = referralBalance;
