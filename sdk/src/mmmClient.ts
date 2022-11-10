@@ -261,7 +261,6 @@ export class MMMClient {
     payer: PublicKey,
     assetMint: PublicKey,
     allowlistAuxAccount?: PublicKey,
-    creatorKeys?: PublicKey[],
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
