@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::log_pool};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolDepositBuyArgs {
@@ -53,5 +53,6 @@ pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<(
     )?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    log_pool("post_sol_deposit_buy", pool)?;
     Ok(())
 }

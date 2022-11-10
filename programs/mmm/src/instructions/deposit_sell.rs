@@ -8,7 +8,7 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     state::{Pool, SellState},
-    util::check_allowlists_for_mint,
+    util::{check_allowlists_for_mint, log_pool},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -123,6 +123,7 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         .asset_amount
         .checked_add(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
+    log_pool("post_deposit_sell", pool)?;
 
     Ok(())
 }

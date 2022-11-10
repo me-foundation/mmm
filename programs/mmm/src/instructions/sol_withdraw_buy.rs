@@ -2,7 +2,7 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     state::Pool,
-    util::{try_close_escrow, try_close_pool},
+    util::{log_pool, try_close_escrow, try_close_pool},
 };
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
@@ -71,6 +71,7 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
     )?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    log_pool("post_sol_withdraw_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
     Ok(())
 }
