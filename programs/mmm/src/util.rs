@@ -1,5 +1,5 @@
 use crate::{constants::MAX_METADATA_CREATOR_ROYALTY_BP, errors::MMMErrorCode, state::*};
-use anchor_lang::prelude::*;
+use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token::Mint;
 use mpl_token_metadata::{
     id as token_metadata_program_key,
@@ -387,4 +387,10 @@ pub fn pay_creator_fees_in_sol<'info>(
         }
     }
     Ok(royalty)
+}
+
+pub fn log_pool(prefix: &str, pool: &Pool) -> Result<()> {
+    msg!(prefix);
+    sol_log_data(&[&pool.try_to_vec()?]);
+    Ok(())
 }

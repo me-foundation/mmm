@@ -51,6 +51,7 @@ pub fn handler(ctx: Context<UpdatePool>, args: UpdatePoolArgs) -> Result<()> {
     pool.referral = args.referral;
     pool.cosigner_annotation = args.cosigner_annotation;
     pool.buyside_creator_royalty_bp = args.buyside_creator_royalty_bp;
+    log_pool("post_update_pool", pool)?;
 
     Ok(())
 }

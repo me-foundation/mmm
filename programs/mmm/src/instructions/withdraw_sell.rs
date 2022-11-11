@@ -8,7 +8,7 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     state::{Pool, SellState},
-    util::{try_close_pool, try_close_sell_state},
+    util::{log_pool, try_close_pool, try_close_sell_state},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -132,6 +132,7 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    log_pool("post_withdraw_sell", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())

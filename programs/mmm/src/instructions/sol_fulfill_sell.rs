@@ -10,7 +10,7 @@ use crate::{
     state::{Pool, SellState},
     util::{
         check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
-        pay_creator_fees_in_sol, try_close_pool, try_close_sell_state,
+        log_pool, pay_creator_fees_in_sol, try_close_pool, try_close_sell_state,
     },
 };
 
@@ -260,6 +260,7 @@ pub fn handler<'info>(
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    log_pool("post_sol_fulfill_sell", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!(

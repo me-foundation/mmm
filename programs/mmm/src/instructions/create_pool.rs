@@ -80,5 +80,7 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
     pool.payment_mint = args.payment_mint;
     pool.allowlists = args.allowlists;
 
+    log_pool("post_create_pool", pool)?;
+
     Ok(())
 }
