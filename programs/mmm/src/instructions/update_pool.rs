@@ -32,6 +32,7 @@ pub struct UpdatePool<'info> {
         constraint = args.lp_fee_bp <= MAX_LP_FEE_BP @ MMMErrorCode::InvalidBP,
         constraint = args.buyside_creator_royalty_bp <= 10000 @ MMMErrorCode::InvalidBP,
         constraint = args.spot_price > 0 @ MMMErrorCode::InvalidSpotPrice,
+        constraint = args.referral.ne(owner.key) @ MMMErrorCode::InvalidReferral,
     )]
     pub pool: Box<Account<'info, Pool>>,
 }
