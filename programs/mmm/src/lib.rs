@@ -56,4 +56,26 @@ pub mod mmm {
     pub fn deposit_sell(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         instructions::deposit_sell::handler(ctx, args)
     }
+
+    pub fn ocp_deposit_sell(ctx: Context<OcpDepositSell>, args: DepositSellArgs) -> Result<()> {
+        instructions::ocp_deposit_sell::handler(ctx, args)
+    }
+
+    pub fn sol_ocp_fulfill_buy<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolOcpFulfillBuy<'info>>,
+        args: SolFulfillBuyArgs,
+    ) -> Result<()> {
+        instructions::sol_ocp_fulfill_buy::handler(ctx, args)
+    }
+
+    pub fn sol_ocp_fulfill_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolOcpFulfillSell<'info>>,
+        args: SolOcpFulfillSellArgs,
+    ) -> Result<()> {
+        instructions::sol_ocp_fulfill_sell::handler(ctx, args)
+    }
+
+    pub fn ocp_withdraw_sell(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<()> {
+        instructions::ocp_withdraw_sell::handler(ctx, args)
+    }
 }

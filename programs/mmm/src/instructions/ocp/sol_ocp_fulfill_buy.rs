@@ -1,13 +1,15 @@
-use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
+use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
+use open_creator_protocol::state::Policy;
 
 use crate::{
-    ata::init_if_needed_ata,
+    ata::init_if_needed_ocp_ata,
     constants::*,
     errors::MMMErrorCode,
+    instructions::sol_fulfill_buy::SolFulfillBuyArgs,
     state::{Pool, SellState},
     util::{
         check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
@@ -15,22 +17,13 @@ use crate::{
     },
 };
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct SolFulfillBuyArgs {
-    asset_amount: u64,
-    min_payment_amount: u64,
-    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
-    maker_fee_bp: u16,             // will be checked by cosigner
-    taker_fee_bp: u16,             // will be checked by cosigner
-}
-
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
 // where the pool has some buyside payment liquidity. Therefore,
 // the seller expects a min_payment_amount that goes back to the
 // seller's wallet for the asset_amount that the seller wants to sell.
 #[derive(Accounts)]
 #[instruction(args:SolFulfillBuyArgs)]
-pub struct SolFulfillBuy<'info> {
+pub struct SolOcpFulfillBuy<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK: we will check the owner field that matches the pool owner
@@ -60,14 +53,16 @@ pub struct SolFulfillBuy<'info> {
     pub buyside_sol_escrow_account: UncheckedAccount<'info>,
     /// CHECK: we will check the metadata in check_allowlists_for_mint()
     pub asset_metadata: UncheckedAccount<'info>,
-    /// CHECK: we will check the master_edtion in check_allowlists_for_mint()
-    pub asset_master_edition: UncheckedAccount<'info>,
-    /// CHECK: check_allowlists_for_mint
+    #[account(
+        constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidOcpAssetParams,
+    )]
     pub asset_mint: Account<'info, Mint>,
     #[account(
         mut,
         token::mint = asset_mint,
         token::authority = payer,
+        constraint = payer_asset_account.amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
+        constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
     pub payer_asset_account: Box<Account<'info, TokenAccount>>,
     /// CHECK: check in init_if_needed_ata
@@ -90,6 +85,24 @@ pub struct SolFulfillBuy<'info> {
         bump
     )]
     pub sell_state: Account<'info, SellState>,
+
+    /// CHECK: check in cpi
+    #[account(mut)]
+    ocp_mint_state: UncheckedAccount<'info>,
+    /// CHECK: check in cpi
+    ocp_policy: Box<Account<'info, Policy>>,
+    /// CHECK: check in cpi
+    ocp_freeze_authority: UncheckedAccount<'info>,
+    /// CHECK: check in cpi
+    #[account(address = open_creator_protocol::id())]
+    ocp_program: UncheckedAccount<'info>,
+    /// CHECK: check in cpi
+    #[account(address = community_managed_token::id())]
+    cmt_program: UncheckedAccount<'info>,
+    /// CHECK: check in cpi
+    #[account(address = sysvar::instructions::id())]
+    instructions: UncheckedAccount<'info>,
+
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
@@ -97,13 +110,12 @@ pub struct SolFulfillBuy<'info> {
 }
 
 pub fn handler<'info>(
-    ctx: Context<'_, '_, '_, 'info, SolFulfillBuy<'info>>,
+    ctx: Context<'_, '_, '_, 'info, SolOcpFulfillBuy<'info>>,
     args: SolFulfillBuyArgs,
 ) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
     let associated_token_program = &ctx.accounts.associated_token_program;
-    let rent = &ctx.accounts.rent;
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
     let owner = &ctx.accounts.owner;
@@ -112,8 +124,8 @@ pub fn handler<'info>(
     let payer_asset_account = &ctx.accounts.payer_asset_account;
     let asset_mint = &ctx.accounts.asset_mint;
     let payer_asset_metadata = &ctx.accounts.asset_metadata;
-    let asset_master_edition = &ctx.accounts.asset_master_edition;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
+    let ocp_policy = &ctx.accounts.ocp_policy;
     let pool_key = pool.key();
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
@@ -121,12 +133,7 @@ pub fn handler<'info>(
         &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
     ]];
 
-    check_allowlists_for_mint(
-        &pool.allowlists,
-        asset_mint,
-        payer_asset_metadata,
-        asset_master_edition,
-    )?;
+    check_allowlists_for_mint(&pool.allowlists, asset_mint, payer_asset_metadata, None)?;
 
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
@@ -145,31 +152,56 @@ pub fn handler<'info>(
     let referral_fee = maker_fee
         .checked_add(taker_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
+    let (target_token_account, target_authority) = if pool.reinvest_fulfill_buy {
+        (
+            ctx.accounts.sellside_escrow_token_account.to_account_info(),
+            pool.to_account_info(),
+        )
+    } else {
+        (
+            ctx.accounts.owner_token_account.to_account_info(),
+            owner.to_account_info(),
+        )
+    };
+
+    init_if_needed_ocp_ata(
+        ctx.accounts.ocp_program.to_account_info(),
+        open_creator_protocol::cpi::accounts::InitAccountCtx {
+            policy: ocp_policy.to_account_info(),
+            mint: asset_mint.to_account_info(),
+            metadata: payer_asset_metadata.to_account_info(),
+            mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
+            from: target_authority.to_account_info(),
+            from_account: target_token_account.to_account_info(),
+            cmt_program: ctx.accounts.cmt_program.to_account_info(),
+            instructions: ctx.accounts.instructions.to_account_info(),
+            freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
+            token_program: token_program.to_account_info(),
+            system_program: ctx.accounts.system_program.to_account_info(),
+            associated_token_program: associated_token_program.to_account_info(),
+            payer: payer.to_account_info(),
+        },
+    )?;
+
+    open_creator_protocol::cpi::transfer(CpiContext::new(
+        ctx.accounts.ocp_program.to_account_info(),
+        open_creator_protocol::cpi::accounts::TransferCtx {
+            policy: ocp_policy.to_account_info(),
+            mint: asset_mint.to_account_info(),
+            metadata: payer_asset_metadata.to_account_info(),
+            mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
+            from: payer.to_account_info(),
+            from_account: payer_asset_account.to_account_info(),
+            cmt_program: ctx.accounts.cmt_program.to_account_info(),
+            instructions: ctx.accounts.instructions.to_account_info(),
+            freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
+            token_program: ctx.accounts.token_program.to_account_info(),
+            to: target_authority.to_account_info(),
+            to_account: target_token_account.to_account_info(),
+        },
+    ))?;
 
     if pool.reinvest_fulfill_buy {
-        let sellside_escrow_token_account =
-            ctx.accounts.sellside_escrow_token_account.to_account_info();
-        init_if_needed_ata(
-            sellside_escrow_token_account.to_account_info(),
-            payer.to_account_info(),
-            pool.to_account_info(),
-            asset_mint.to_account_info(),
-            associated_token_program.to_account_info(),
-            token_program.to_account_info(),
-            system_program.to_account_info(),
-            rent.to_account_info(),
-        )?;
-        anchor_spl::token::transfer(
-            CpiContext::new(
-                token_program.to_account_info(),
-                anchor_spl::token::Transfer {
-                    from: payer_asset_account.to_account_info(),
-                    to: sellside_escrow_token_account.to_account_info(),
-                    authority: payer.to_account_info(),
-                },
-            ),
-            args.asset_amount,
-        )?;
         pool.sellside_asset_amount = pool
             .sellside_asset_amount
             .checked_add(args.asset_amount)
@@ -183,50 +215,36 @@ pub fn handler<'info>(
             .checked_add(args.asset_amount)
             .ok_or(MMMErrorCode::NumericOverflow)?;
     } else {
-        let owner_token_account = ctx.accounts.owner_token_account.to_account_info();
-        init_if_needed_ata(
-            owner_token_account.to_account_info(),
-            payer.to_account_info(),
-            owner.to_account_info(),
-            asset_mint.to_account_info(),
-            associated_token_program.to_account_info(),
-            token_program.to_account_info(),
-            system_program.to_account_info(),
-            rent.to_account_info(),
-        )?;
-        anchor_spl::token::transfer(
-            CpiContext::new(
-                token_program.to_account_info(),
-                anchor_spl::token::Transfer {
-                    from: payer_asset_account.to_account_info(),
-                    to: owner_token_account.to_account_info(),
-                    authority: payer.to_account_info(),
-                },
-            ),
-            args.asset_amount,
-        )?;
         try_close_sell_state(sell_state, owner.to_account_info())?;
     }
 
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
-            token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
-                account: payer_asset_account.to_account_info(),
-                destination: payer.to_account_info(),
-                authority: payer.to_account_info(),
+        open_creator_protocol::cpi::close(CpiContext::new(
+            ctx.accounts.cmt_program.to_account_info(),
+            open_creator_protocol::cpi::accounts::CloseCtx {
+                policy: ocp_policy.to_account_info(),
+                freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
+                mint: asset_mint.to_account_info(),
+                metadata: payer_asset_metadata.to_account_info(),
+                mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
+                from: payer.to_account_info(),
+                from_account: payer_asset_account.to_account_info(),
+                token_program: token_program.to_account_info(),
+                cmt_program: ctx.accounts.cmt_program.to_account_info(),
+                instructions: ctx.accounts.instructions.to_account_info(),
             },
         ))?;
     }
 
     // pool owner as buyer is going to pay the royalties
     let royalty_paid = pay_creator_fees_in_sol(
-        pool.buyside_creator_royalty_bp,
+        10000,
         total_price,
         payer_asset_metadata.to_account_info(),
         ctx.remaining_accounts,
         buyside_sol_escrow_account.to_account_info(),
+        Some(ocp_policy),
         buyside_sol_escrow_account_seeds,
         system_program.to_account_info(),
     )?;
@@ -304,7 +322,7 @@ pub fn handler<'info>(
     )?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_sol_fulfill_buy", pool)?;
+    log_pool("post_sol_ocp_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!(

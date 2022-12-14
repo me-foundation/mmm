@@ -5,6 +5,7 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
+  Transaction,
 } from '@solana/web3.js';
 import { assert } from 'chai';
 import fs from 'fs';
@@ -14,6 +15,7 @@ import { AllowlistKind } from '../../sdk/src';
 export const SIGNATURE_FEE_LAMPORTS = 5000;
 export const LAMPORT_ERROR_RANGE = 500;
 export const PRICE_ERROR_RANGE = 50;
+export const OCP_COMPUTE_UNITS = 1_400_000;
 const KEYPAIR_PATH = path.join(process.env.HOME!, '/.config/solana/id.json');
 
 let keypair;
@@ -72,6 +74,25 @@ export const airdrop = async (
     ...(await connection.getLatestBlockhash()),
     signature: await connection.requestAirdrop(to, amount * LAMPORTS_PER_SOL),
   });
+};
+
+export const sendAndAssertTx = async (
+  conn: Connection,
+  tx: Transaction,
+  blockhashData: Awaited<ReturnType<Connection['getLatestBlockhash']>>,
+) => {
+  const sig = await conn.sendRawTransaction(tx.serialize(), {
+    skipPreflight: true,
+  });
+  const confirmedTx = await conn.confirmTransaction(
+    {
+      signature: sig,
+      blockhash: blockhashData.blockhash,
+      lastValidBlockHeight: blockhashData.lastValidBlockHeight,
+    },
+    'processed',
+  );
+  assertTx(sig, confirmedTx);
 };
 
 export const assertTx = (

@@ -13,8 +13,8 @@ use crate::{
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct DepositSellArgs {
-    asset_amount: u64,
-    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
+    pub asset_amount: u64,
+    pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
 #[derive(Accounts)]
@@ -84,7 +84,7 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         &pool.allowlists,
         asset_mint,
         asset_metadata,
-        asset_master_edition,
+        Some(asset_master_edition),
     )?;
 
     anchor_spl::token::transfer(
