@@ -13,7 +13,7 @@ import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import {
   Mmm,
   AllowlistKind,
@@ -25,18 +25,13 @@ import {
 } from '../sdk/src';
 import {
   airdrop,
-  assertTx,
   createPolicyFixture,
   createPool,
-  createPoolWithExampleDeposits,
   createPoolWithExampleOcpDeposits,
   createTestMintAndTokenOCP,
   getEmptyAllowLists,
-  getMetaplexInstance,
   getSellStatePDARent,
   getTokenAccountRent,
-  mintCollection,
-  mintNfts,
   OCP_COMPUTE_UNITS,
   sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
@@ -72,7 +67,7 @@ describe('mmm-ocp', () => {
     await airdrop(connection, wallet.publicKey, 50);
   });
 
-  it('can deposit and withdraw ocp NFTs', async () => {
+  it('can deposit and withdraw ocp NFTs - happy path', async () => {
     const creator = Keypair.generate();
     const nftRes = await createTestMintAndTokenOCP(
       connection,
@@ -197,7 +192,7 @@ describe('mmm-ocp', () => {
     assert.equal(await connection.getBalance(poolData.poolKey), 0);
   });
 
-  it('can fulfill sell', async () => {
+  it('can fulfill sell - happy path', async () => {
     const buyer = Keypair.generate();
     const [poolData] = await Promise.all([
       createPoolWithExampleOcpDeposits(
@@ -338,7 +333,7 @@ describe('mmm-ocp', () => {
     assert.equal(buyerAta.mint.toBase58(), poolData.nft.mintAddress.toBase58());
   });
 
-  it.only('can fulfill buy', async () => {
+  it('can fulfill buy - happy path', async () => {
     const seller = Keypair.generate();
     const policy = await createPolicyFixture(connection, wallet.payer);
     const [poolData] = await Promise.all([
