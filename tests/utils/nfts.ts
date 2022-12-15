@@ -26,7 +26,6 @@ export const mintNfts = async (
   },
 ) => {
   const metaplexInstance = getMetaplexInstance(conn);
-  metaplexInstance.nfts().findAllByCreator({});
   let collectionSigner = (() => {
     if (config.verifyCollection) {
       const kp = getKeypair();

@@ -1,3 +1,7 @@
+import {
+  CMT_PROGRAM,
+  PROGRAM_ID as OCP_PROGRAM_ID,
+} from '@magiceden-oss/open_creator_protocol';
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 import {
@@ -6,11 +10,13 @@ import {
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
+  ComputeBudgetProgram,
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
   SystemProgram,
+  SYSVAR_INSTRUCTIONS_PUBKEY,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import {
@@ -21,8 +27,9 @@ import {
   getMMMSellStatePDA,
   Mmm,
 } from '../../sdk/src';
-import { getEmptyAllowLists } from './generic';
+import { getEmptyAllowLists, getKeypair, OCP_COMPUTE_UNITS } from './generic';
 import { getMetaplexInstance, mintCollection, mintNfts } from './nfts';
+import { createTestMintAndTokenOCP } from './ocp';
 
 export const createPool = async (
   program: Program<Mmm>,
@@ -101,7 +108,7 @@ export const createPoolWithExampleDeposits = async (
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   const creator = Keypair.generate();
-  const [nfts, sfts, extraNft, extraSft, allowlistValue] = await(async () => {
+  const [nfts, sfts, extraNft, extraSft, allowlistValue] = await (async () => {
     switch (kind) {
       case AllowlistKind.mint:
         return Promise.all([
@@ -368,6 +375,122 @@ export const createPoolWithExampleDeposits = async (
     poolAtaNft,
     poolAtaSft,
     poolAtaExtraSft,
+    poolAtaExtraNft,
+    poolPaymentEscrow: solEscrowKey,
+    nftCreator: creator,
+    ...poolData,
+  };
+};
+
+export const createPoolWithExampleOcpDeposits = async (
+  program: Program<Mmm>,
+  connection: Connection,
+  poolArgs: Parameters<typeof createPool>[1],
+  side: 'buy' | 'sell' | 'both',
+  nftRecipient?: PublicKey,
+  policy?: PublicKey,
+) => {
+  const creator = Keypair.generate();
+
+  const [depositNft, extraNft] = await Promise.all(
+    [poolArgs.owner, nftRecipient ?? poolArgs.owner].map((v) =>
+      createTestMintAndTokenOCP(
+        connection,
+        getKeypair(),
+        creator,
+        {
+          receiver: v,
+          closeAccount: true,
+        },
+        policy,
+      ),
+    ),
+  );
+  const mintAddressNft = depositNft.mintAddress;
+
+  const allowlists = [
+    { kind: AllowlistKind.fvca, value: creator.publicKey },
+    ...getEmptyAllowLists(5),
+  ];
+  const poolData = await createPool(program, {
+    ...poolArgs,
+    allowlists,
+  });
+  const poolKey = poolData.poolKey;
+
+  const poolAtaNft = await getAssociatedTokenAddress(
+    mintAddressNft,
+    poolKey,
+    true,
+  );
+  const poolAtaExtraNft = await getAssociatedTokenAddress(
+    extraNft.mintAddress,
+    poolKey,
+    true,
+  );
+
+  if (side === 'both' || side === 'sell') {
+    const { key: sellState } = getMMMSellStatePDA(
+      program.programId,
+      poolKey,
+      mintAddressNft,
+    );
+    await program.methods
+      .ocpDepositSell({
+        assetAmount: new anchor.BN(1),
+        allowlistAux: null,
+      })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolData.poolKey,
+        assetMetadata: depositNft.metadataAddress,
+        assetMint: depositNft.mintAddress,
+        assetTokenAccount: depositNft.tokenAddress,
+        sellsideEscrowTokenAccount: poolAtaNft,
+        sellState: sellState,
+        allowlistAuxAccount: SystemProgram.programId,
+
+        ocpMintState: depositNft.ocpMintState,
+        ocpPolicy: depositNft.ocpPolicy,
+        ocpFreezeAuthority: depositNft.ocpFreezeAuth,
+        ocpProgram: OCP_PROGRAM_ID,
+        cmtProgram: CMT_PROGRAM,
+        instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({ units: OCP_COMPUTE_UNITS }),
+      ])
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+    program.programId,
+    poolKey,
+  );
+  if (side === 'both' || side === 'buy') {
+    await program.methods
+      .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        buysideSolEscrowAccount: solEscrowKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  return {
+    nft: depositNft,
+    extraNft,
+    poolAtaNft,
     poolAtaExtraNft,
     poolPaymentEscrow: solEscrowKey,
     nftCreator: creator,

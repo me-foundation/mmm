@@ -337,6 +337,8 @@ pub fn pay_creator_fees_in_sol<'info>(
         },
     };
 
+    msg!("royalty_bp: {}", royalty_bp);
+
     // total royalty paid by the buyer, it's one of the following
     //   - buyside_sol_escrow_account (when fulfill buy)
     //   - payer                      (when fulfill sell)

@@ -91,20 +91,20 @@ pub struct SolOcpFulfillSell<'info> {
 
     /// CHECK: check in cpi
     #[account(mut)]
-    ocp_mint_state: UncheckedAccount<'info>,
+    pub ocp_mint_state: UncheckedAccount<'info>,
     /// CHECK: check in cpi
-    ocp_policy: Box<Account<'info, Policy>>,
+    pub ocp_policy: Box<Account<'info, Policy>>,
     /// CHECK: check in cpi
-    ocp_freeze_authority: UncheckedAccount<'info>,
+    pub ocp_freeze_authority: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = open_creator_protocol::id())]
-    ocp_program: UncheckedAccount<'info>,
+    pub ocp_program: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = community_managed_token::id())]
-    cmt_program: UncheckedAccount<'info>,
+    pub cmt_program: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = sysvar::instructions::id())]
-    instructions: UncheckedAccount<'info>,
+    pub instructions: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
@@ -219,24 +219,25 @@ pub fn handler<'info>(
 
     // we can close the sellside_escrow_token_account if no amount left
     // some sol will get stuck in pool to be reclaimed when pool closes
-    if sellside_escrow_token_account.amount == args.asset_amount {
-        open_creator_protocol::cpi::close(CpiContext::new_with_signer(
-            ctx.accounts.cmt_program.to_account_info(),
-            open_creator_protocol::cpi::accounts::CloseCtx {
-                policy: ocp_policy.to_account_info(),
-                freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
-                mint: asset_mint.to_account_info(),
-                metadata: payer_asset_metadata.to_account_info(),
-                mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
-                from: sellside_escrow_token_account.to_account_info(),
-                from_account: pool.to_account_info(),
-                token_program: token_program.to_account_info(),
-                cmt_program: ctx.accounts.cmt_program.to_account_info(),
-                instructions: ctx.accounts.instructions.to_account_info(),
-            },
-            pool_seeds,
-        ))?;
-    }
+    // TODO: uncomment when closing of pda ATAs is supported
+    // if sellside_escrow_token_account.amount == args.asset_amount {
+    //     open_creator_protocol::cpi::close(CpiContext::new_with_signer(
+    //         ctx.accounts.cmt_program.to_account_info(),
+    //         open_creator_protocol::cpi::accounts::CloseCtx {
+    //             policy: ocp_policy.to_account_info(),
+    //             freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
+    //             mint: asset_mint.to_account_info(),
+    //             metadata: payer_asset_metadata.to_account_info(),
+    //             mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
+    //             from: sellside_escrow_token_account.to_account_info(),
+    //             from_account: pool.to_account_info(),
+    //             token_program: token_program.to_account_info(),
+    //             cmt_program: ctx.accounts.cmt_program.to_account_info(),
+    //             instructions: ctx.accounts.instructions.to_account_info(),
+    //         },
+    //         pool_seeds,
+    //     ))?;
+    // }
 
     if lp_fee > 0 {
         anchor_lang::solana_program::program::invoke(
@@ -306,7 +307,7 @@ pub fn handler<'info>(
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_sol_fulfill_sell", pool)?;
+    log_pool("post_sol_ocp_fulfill_sell", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!(

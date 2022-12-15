@@ -119,7 +119,7 @@ export async function createTestMintAndTokenOCP(
     }),
   );
   mintTx.partialSign(mintKeypair, payer, creator);
-  await sendAndAssertTx(connection, mintTx, recentBlockhashData);
+  await sendAndAssertTx(connection, mintTx, recentBlockhashData, false);
   const receiverTokenAccount = await getAssociatedTokenAddress(
     mintKeypair.publicKey,
     receiverArgs.receiver,
@@ -175,13 +175,17 @@ export async function createTestMintAndTokenOCP(
     transferTx.recentBlockhash = recentBlockhashData.blockhash;
     transferTx.feePayer = payer.publicKey;
     transferTx.sign(payer);
-    await sendAndAssertTx(connection, transferTx, recentBlockhashData);
+    await sendAndAssertTx(connection, transferTx, recentBlockhashData, false);
   }
 
   return {
-    mint: mintKeypair.publicKey,
-    payerAta: targetTokenAccount,
-    receiverAta: receiverTokenAccount,
+    mintAddress: mintKeypair.publicKey,
+    metadataAddress: metadataAddress,
+    payerTokenAddress: targetTokenAccount,
+    tokenAddress: receiverTokenAccount,
+    ocpMintState,
+    ocpFreezeAuth,
+    ocpPolicy: policy,
   };
 }
 

@@ -971,9 +971,9 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "open_creator_protocol"
-version = "0.2.5"
+version = "0.2.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "919f2ee1adb827ea66e041c009f32f6d1f2069cab36ff39a60697bd610f4e52c"
+checksum = "c8e38f0e507d3f622847896b1f7a8a9ac47d60609b53e7fbb398db8c46cd23e4"
 dependencies = [
  "anchor-lang",
  "anchor-spl",

@@ -80,6 +80,7 @@ export const sendAndAssertTx = async (
   conn: Connection,
   tx: Transaction,
   blockhashData: Awaited<ReturnType<Connection['getLatestBlockhash']>>,
+  printTxId: boolean,
 ) => {
   const sig = await conn.sendRawTransaction(tx.serialize(), {
     skipPreflight: true,
@@ -93,6 +94,9 @@ export const sendAndAssertTx = async (
     'processed',
   );
   assertTx(sig, confirmedTx);
+  if (printTxId) {
+    console.log(sig);
+  }
 };
 
 export const assertTx = (

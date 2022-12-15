@@ -61,20 +61,20 @@ pub struct OcpDepositSell<'info> {
     pub allowlist_aux_account: UncheckedAccount<'info>,
 
     #[account(mut)]
-    ocp_mint_state: Box<Account<'info, MintState>>,
+    pub ocp_mint_state: Box<Account<'info, MintState>>,
     /// CHECK: check in cpi
-    ocp_policy: UncheckedAccount<'info>,
+    pub ocp_policy: UncheckedAccount<'info>,
     /// CHECK: check in cpi
-    ocp_freeze_authority: UncheckedAccount<'info>,
+    pub ocp_freeze_authority: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = open_creator_protocol::id())]
-    ocp_program: UncheckedAccount<'info>,
+    pub ocp_program: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = community_managed_token::id())]
-    cmt_program: UncheckedAccount<'info>,
+    pub cmt_program: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = sysvar::instructions::id())]
-    instructions: UncheckedAccount<'info>,
+    pub instructions: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,

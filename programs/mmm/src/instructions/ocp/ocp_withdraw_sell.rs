@@ -1,4 +1,10 @@
-use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
+use anchor_lang::{
+    prelude::*,
+    solana_program::{
+        sysvar,
+    },
+    AnchorDeserialize,
+};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
@@ -66,20 +72,20 @@ pub struct OcpWithdrawSell<'info> {
     pub sell_state: Account<'info, SellState>,
 
     #[account(mut)]
-    ocp_mint_state: Box<Account<'info, MintState>>,
+    pub ocp_mint_state: Box<Account<'info, MintState>>,
     /// CHECK: check in cpi
-    ocp_policy: UncheckedAccount<'info>,
+    pub ocp_policy: UncheckedAccount<'info>,
     /// CHECK: check in cpi
-    ocp_freeze_authority: UncheckedAccount<'info>,
+    pub ocp_freeze_authority: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = open_creator_protocol::id())]
-    ocp_program: UncheckedAccount<'info>,
+    pub ocp_program: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = community_managed_token::id())]
-    cmt_program: UncheckedAccount<'info>,
+    pub cmt_program: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     #[account(address = sysvar::instructions::id())]
-    instructions: UncheckedAccount<'info>,
+    pub instructions: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
@@ -150,24 +156,25 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
 
     // we can close the sellside_escrow_token_account if no amount left
     // some sol will get stuck in pool to be reclaimed when pool closes
-    if sellside_escrow_token_account.amount == args.asset_amount {
-        open_creator_protocol::cpi::close(CpiContext::new_with_signer(
-            ctx.accounts.cmt_program.to_account_info(),
-            open_creator_protocol::cpi::accounts::CloseCtx {
-                policy: ctx.accounts.ocp_policy.to_account_info(),
-                freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
-                mint: asset_mint.to_account_info(),
-                metadata: asset_metadata.to_account_info(),
-                mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
-                from: sellside_escrow_token_account.to_account_info(),
-                from_account: pool.to_account_info(),
-                token_program: token_program.to_account_info(),
-                cmt_program: ctx.accounts.cmt_program.to_account_info(),
-                instructions: ctx.accounts.instructions.to_account_info(),
-            },
-            pool_seeds,
-        ))?;
-    }
+    // TODO: uncomment when closing of pda ATAs is supported
+    // if sellside_escrow_token_account.amount == args.asset_amount {
+    //     open_creator_protocol::cpi::close(CpiContext::new_with_signer(
+    //         ctx.accounts.cmt_program.to_account_info(),
+    //         open_creator_protocol::cpi::accounts::CloseCtx {
+    //             policy: ctx.accounts.ocp_policy.to_account_info(),
+    //             freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
+    //             mint: asset_mint.to_account_info(),
+    //             metadata: asset_metadata.to_account_info(),
+    //             mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
+    //             from: pool.to_account_info(),
+    //             from_account: sellside_escrow_token_account.to_account_info(),
+    //             token_program: token_program.to_account_info(),
+    //             cmt_program: ctx.accounts.cmt_program.to_account_info(),
+    //             instructions: ctx.accounts.instructions.to_account_info(),
+    //         },
+    //         pool_seeds,
+    //     ))?;
+    // }
 
     pool.sellside_asset_amount = pool
         .sellside_asset_amount
@@ -180,7 +187,7 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_withdraw_sell", pool)?;
+    log_pool("post_ocp_withdraw_sell", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())
