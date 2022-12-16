@@ -257,7 +257,6 @@ pub fn handler<'info>(
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    msg!("payment_amount {}", payment_amount);
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }

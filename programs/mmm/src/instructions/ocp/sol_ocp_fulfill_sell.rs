@@ -300,8 +300,6 @@ pub fn handler<'info>(
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }
 
-    msg!("payment amount: {}", payment_amount);
-
     sell_state.asset_amount = sell_state
         .asset_amount
         .checked_sub(args.asset_amount)
