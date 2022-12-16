@@ -2,7 +2,6 @@ import {
   CMT_PROGRAM,
   findFreezeAuthorityPk,
   findMintStatePk,
-  LARGER_COMPUTE_UNIT,
   MintState,
   PROGRAM_ID as OCP_PROGRAM_ID,
 } from '@magiceden-oss/open_creator_protocol';
@@ -20,7 +19,6 @@ import {
   TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
-  ComputeBudgetProgram,
   Connection,
   Keypair,
   PublicKey,
