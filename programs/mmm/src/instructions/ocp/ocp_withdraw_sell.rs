@@ -1,10 +1,4 @@
-use anchor_lang::{
-    prelude::*,
-    solana_program::{
-        sysvar,
-    },
-    AnchorDeserialize,
-};
+use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},

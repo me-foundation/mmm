@@ -214,8 +214,6 @@ pub fn handler<'info>(
             .asset_amount
             .checked_add(args.asset_amount)
             .ok_or(MMMErrorCode::NumericOverflow)?;
-    } else {
-        try_close_sell_state(sell_state, owner.to_account_info())?;
     }
 
     // we can close the payer_asset_account if no amount left
@@ -259,6 +257,7 @@ pub fn handler<'info>(
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
+    msg!("payment_amount {}", payment_amount);
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }
@@ -288,6 +287,7 @@ pub fn handler<'info>(
                 buyside_sol_escrow_account.to_account_info(),
                 owner.to_account_info(),
                 system_program.to_account_info(),
+                payer.to_account_info(),
             ],
             buyside_sol_escrow_account_seeds,
         )?;
@@ -320,6 +320,7 @@ pub fn handler<'info>(
         system_program,
         buyside_sol_escrow_account_seeds,
     )?;
+    try_close_sell_state(sell_state, payer.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
     log_pool("post_sol_ocp_fulfill_buy", pool)?;

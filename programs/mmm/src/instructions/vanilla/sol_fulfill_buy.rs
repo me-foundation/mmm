@@ -205,7 +205,6 @@ pub fn handler<'info>(
             ),
             args.asset_amount,
         )?;
-        try_close_sell_state(sell_state, owner.to_account_info())?;
     }
 
     // we can close the payer_asset_account if no amount left
@@ -303,6 +302,7 @@ pub fn handler<'info>(
         system_program,
         buyside_sol_escrow_account_seeds,
     )?;
+    try_close_sell_state(sell_state, payer.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
     log_pool("post_sol_fulfill_buy", pool)?;

@@ -411,9 +411,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "community-managed-token"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c26d2fc7a0abcb62f5de93caa94ff6118878500c55ef6af42b5b426467c284f9"
+checksum = "92998dcf5ea734d6d9413be51a02fb002394fc9b7a7165a8782e32af5e9c7e5c"
 dependencies = [
  "borsh",
  "shank 0.0.10",
