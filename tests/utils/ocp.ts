@@ -37,6 +37,7 @@ import {
 } from '@magiceden-oss/open_creator_protocol';
 import { OCP_COMPUTE_UNITS, sendAndAssertTx } from './generic';
 import { getMetaplexInstance } from './nfts';
+import { BN } from '@project-serum/anchor';
 
 export const DEVNET_POLICY_ALL = new PublicKey(
   '6Huqrb4xxmmNA4NufYdgpmspoLmjXFd3qEfteCddLgSz',
@@ -168,6 +169,7 @@ export async function createTestMintAndTokenOCP(
           fromAccount: targetTokenAccount,
           cmtProgram: CMT_PROGRAM,
           instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+          destination: payer.publicKey,
         }),
       );
     }
@@ -294,8 +296,8 @@ export const createPolicyFixture = async (conn: Connection, payer: Keypair) => {
   const dr = createDynamicRoyaltyStruct({
     startMultiplierBp: 10000,
     endMultiplierBp: 0,
-    startPrice: 0,
-    endPrice: 5 * LAMPORTS_PER_SOL,
+    startPrice: new BN(0),
+    endPrice: new BN(5 * LAMPORTS_PER_SOL),
   });
   const ix = createInitPolicyInstruction(
     { policy, uuid, authority: payer.publicKey },

@@ -228,6 +228,7 @@ pub fn handler<'info>(
                 mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
                 from: payer.to_account_info(),
                 from_account: payer_asset_account.to_account_info(),
+                destination: payer.to_account_info(),
                 token_program: token_program.to_account_info(),
                 cmt_program: ctx.accounts.cmt_program.to_account_info(),
                 instructions: ctx.accounts.instructions.to_account_info(),

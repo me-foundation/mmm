@@ -3,7 +3,6 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use open_creator_protocol::state::MintState;
 
 use crate::{
     ata::init_if_needed_ocp_ata,
@@ -60,8 +59,9 @@ pub struct OcpDepositSell<'info> {
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
 
+    /// CHECK: check in cpi
     #[account(mut)]
-    pub ocp_mint_state: Box<Account<'info, MintState>>,
+    pub ocp_mint_state: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     pub ocp_policy: UncheckedAccount<'info>,
     /// CHECK: check in cpi
@@ -142,6 +142,7 @@ pub fn handler(ctx: Context<OcpDepositSell>, args: DepositSellArgs) -> Result<()
                 mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
                 from: owner.to_account_info(),
                 from_account: asset_token_account.to_account_info(),
+                destination: owner.to_account_info(),
                 token_program: token_program.to_account_info(),
                 cmt_program: ctx.accounts.cmt_program.to_account_info(),
                 instructions: ctx.accounts.instructions.to_account_info(),

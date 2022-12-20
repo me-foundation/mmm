@@ -322,6 +322,7 @@ describe('mmm-ocp', () => {
       initWalletBalance +
         1.575 * LAMPORTS_PER_SOL +
         poolAccountRent + // pool is closed because it is empty
+        tokenAccountRent +
         sellStateAccountRent -
         expectedMakerFees,
     );
@@ -757,7 +758,10 @@ describe('mmm-ocp', () => {
       );
       assert.equal(
         walletBalance,
-        initWalletBalance + expectedLpFees + sellStateAccountRent,
+        initWalletBalance +
+          expectedLpFees +
+          sellStateAccountRent +
+          tokenAccountRent,
       );
       assert.equal(Number(buyerAta.amount), 1);
       assert.equal(buyerAta.owner.toBase58(), buyer.publicKey.toBase58());

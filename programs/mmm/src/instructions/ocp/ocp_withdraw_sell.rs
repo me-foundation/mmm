@@ -3,7 +3,6 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use open_creator_protocol::state::MintState;
 
 use crate::{
     ata::init_if_needed_ocp_ata,
@@ -65,8 +64,9 @@ pub struct OcpWithdrawSell<'info> {
     )]
     pub sell_state: Account<'info, SellState>,
 
+    /// CHECK: check in cpi
     #[account(mut)]
-    pub ocp_mint_state: Box<Account<'info, MintState>>,
+    pub ocp_mint_state: UncheckedAccount<'info>,
     /// CHECK: check in cpi
     pub ocp_policy: UncheckedAccount<'info>,
     /// CHECK: check in cpi
@@ -149,26 +149,25 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
     ))?;
 
     // we can close the sellside_escrow_token_account if no amount left
-    // some sol will get stuck in pool to be reclaimed when pool closes
-    // TODO: uncomment when closing of pda ATAs is supported
-    // if sellside_escrow_token_account.amount == args.asset_amount {
-    //     open_creator_protocol::cpi::close(CpiContext::new_with_signer(
-    //         ctx.accounts.cmt_program.to_account_info(),
-    //         open_creator_protocol::cpi::accounts::CloseCtx {
-    //             policy: ctx.accounts.ocp_policy.to_account_info(),
-    //             freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
-    //             mint: asset_mint.to_account_info(),
-    //             metadata: asset_metadata.to_account_info(),
-    //             mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
-    //             from: pool.to_account_info(),
-    //             from_account: sellside_escrow_token_account.to_account_info(),
-    //             token_program: token_program.to_account_info(),
-    //             cmt_program: ctx.accounts.cmt_program.to_account_info(),
-    //             instructions: ctx.accounts.instructions.to_account_info(),
-    //         },
-    //         pool_seeds,
-    //     ))?;
-    // }
+    if sellside_escrow_token_account.amount == args.asset_amount {
+        open_creator_protocol::cpi::close(CpiContext::new_with_signer(
+            ctx.accounts.cmt_program.to_account_info(),
+            open_creator_protocol::cpi::accounts::CloseCtx {
+                policy: ctx.accounts.ocp_policy.to_account_info(),
+                freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),
+                mint: asset_mint.to_account_info(),
+                metadata: asset_metadata.to_account_info(),
+                mint_state: ctx.accounts.ocp_mint_state.to_account_info(),
+                from: pool.to_account_info(),
+                from_account: sellside_escrow_token_account.to_account_info(),
+                token_program: token_program.to_account_info(),
+                cmt_program: ctx.accounts.cmt_program.to_account_info(),
+                instructions: ctx.accounts.instructions.to_account_info(),
+                destination: owner.to_account_info(),
+            },
+            pool_seeds,
+        ))?;
+    }
 
     pool.sellside_asset_amount = pool
         .sellside_asset_amount
