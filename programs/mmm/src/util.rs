@@ -385,7 +385,11 @@ pub fn pay_creator_fees_in_sol<'info>(
             return Err(MMMErrorCode::InvalidCreatorAddress.into());
         }
         let current_creator_lamports = current_creator_info.lamports();
-        if current_creator_lamports.checked_add(creator_fee).ok_or(MMMErrorCode::NumericOverflow)? > min_rent {
+        if current_creator_lamports
+            .checked_add(creator_fee)
+            .ok_or(MMMErrorCode::NumericOverflow)?
+            > min_rent
+        {
             anchor_lang::solana_program::program::invoke_signed(
                 &anchor_lang::solana_program::system_instruction::transfer(
                     payer.key,
