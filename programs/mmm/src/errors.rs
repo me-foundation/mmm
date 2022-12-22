@@ -48,4 +48,10 @@ pub enum MMMErrorCode {
     InvalidMetadataCreatorRoyalty, // 0x1785
     #[msg("invalid maker or taker bp")]
     InvalidMakerOrTakerFeeBP, // 0x1786
+    #[msg("Invalid OCP mint supply constraints")]
+    InvalidOcpAssetParams, // 0x1787
+    #[msg("Invalid account state")]
+    InvalidAccountState, // 0x1788
+    #[msg("Invalid token mint")]
+    InvalidTokenMint, // 0x1789
 }

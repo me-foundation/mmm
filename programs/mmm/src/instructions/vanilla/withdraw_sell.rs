@@ -13,8 +13,8 @@ use crate::{
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct WithdrawSellArgs {
-    asset_amount: u64,
-    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
+    pub asset_amount: u64,
+    pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
 #[derive(Accounts)]

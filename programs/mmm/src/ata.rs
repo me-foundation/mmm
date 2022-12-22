@@ -77,3 +77,21 @@ pub fn init_if_needed_ata<'a>(
 
     assert_is_ata(&ata, &authority.key(), &mint.key(), &authority.key())
 }
+
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub fn init_if_needed_ocp_ata<'a>(
+    ocp_program: AccountInfo<'a>,
+    opc_context: open_creator_protocol::cpi::accounts::InitAccountCtx<'a>,
+) -> Result<spl_token::state::Account> {
+    let ata = opc_context.from_account.to_account_info();
+    let authority_key = opc_context.from.key();
+    let mint_key = opc_context.mint.key();
+    if opc_context.from_account.data_is_empty() {
+        open_creator_protocol::cpi::init_account(CpiContext::new(
+            ocp_program.to_account_info(),
+            opc_context,
+        ))?;
+    }
+    assert_is_ata(&ata, &authority_key, &mint_key, &authority_key)
+}

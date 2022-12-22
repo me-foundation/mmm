@@ -594,7 +594,7 @@ describe('mmm-fulfill-exp', () => {
         sellerBalance,
         initSellerBalance +
           expectedTotalPrice * LAMPORTS_PER_SOL -
-          (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent + sellStatePDARent) -
+          (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent) -
           expectedTakerFees,
         PRICE_ERROR_RANGE,
       );
@@ -611,7 +611,7 @@ describe('mmm-fulfill-exp', () => {
           expectedMakerFees,
         PRICE_ERROR_RANGE,
       );
-      assert.equal(afterWalletBalance, initWalletBalance + sellStatePDARent);
+      assert.equal(afterWalletBalance, initWalletBalance);
       assert.equal(
         ownerSftTokenAccount.owner.toBase58(),
         wallet.publicKey.toBase58(),

@@ -6,6 +6,7 @@ use mpl_token_metadata::{
     pda::{find_master_edition_account, find_metadata_account},
     state::{Metadata, TokenMetadataAccount},
 };
+use open_creator_protocol::state::Policy;
 
 // copied from mpl-token-metadata
 fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
@@ -28,7 +29,7 @@ pub fn check_allowlists_for_mint(
     allowlists: &[Allowlist],
     mint: &Account<Mint>,
     metadata: &AccountInfo,
-    master_edition: &AccountInfo,
+    master_edition: Option<&AccountInfo>,
 ) -> Result<()> {
     // TODO: we need to check the following validation rules
     // 1. make sure the metadata is correctly derived from the metadata pda with the mint
@@ -43,16 +44,18 @@ pub fn check_allowlists_for_mint(
     if find_metadata_account(&mint.key()).0 != metadata.key() {
         return Err(ErrorCode::ConstraintSeeds.into());
     }
-    if find_master_edition_account(&mint.key()).0 != master_edition.key() {
-        return Err(ErrorCode::ConstraintSeeds.into());
-    }
     let parsed_metadata = Metadata::from_account_info(metadata)?;
-    if !master_edition.data_is_empty() {
-        if master_edition.owner.ne(&token_metadata_program_key()) {
-            return Err(ErrorCode::AccountOwnedByWrongProgram.into());
+    if let Some(master_edition) = master_edition {
+        if find_master_edition_account(&mint.key()).0 != master_edition.key() {
+            return Err(ErrorCode::ConstraintSeeds.into());
         }
-        if !check_master_edition(master_edition) {
-            return Err(MMMErrorCode::InvalidMasterEdition.into());
+        if !master_edition.data_is_empty() {
+            if master_edition.owner.ne(&token_metadata_program_key()) {
+                return Err(ErrorCode::AccountOwnedByWrongProgram.into());
+            }
+            if !check_master_edition(master_edition) {
+                return Err(MMMErrorCode::InvalidMasterEdition.into());
+            }
         }
     }
 
@@ -319,10 +322,20 @@ pub fn pay_creator_fees_in_sol<'info>(
     metadata_info: AccountInfo<'info>,
     creator_accounts: &[AccountInfo<'info>],
     payer: AccountInfo<'info>,
+    policy: Option<&Account<'info, Policy>>,
     payer_seeds: &[&[&[u8]]],
     system_program: AccountInfo<'info>,
 ) -> Result<u64> {
     let metadata = Metadata::from_account_info(&metadata_info)?;
+    let royalty_bp = match policy {
+        None => metadata.data.seller_fee_basis_points,
+        Some(p) => match &p.dynamic_royalty {
+            None => metadata.data.seller_fee_basis_points,
+            Some(dynamic_royalty) => {
+                dynamic_royalty.get_royalty_bp(total_price, metadata.data.seller_fee_basis_points)
+            }
+        },
+    };
 
     // total royalty paid by the buyer, it's one of the following
     //   - buyside_sol_escrow_account (when fulfill buy)
@@ -330,7 +343,7 @@ pub fn pay_creator_fees_in_sol<'info>(
     // returns the total royalty paid
     //   royalty = spot_price * (royalty_bp / 10000) * (buyside_creator_royalty_bp / 10000)
     let royalty = ((total_price as u128)
-        .checked_mul(metadata.data.seller_fee_basis_points as u128)
+        .checked_mul(royalty_bp as u128)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_div(10000)
         .ok_or(MMMErrorCode::NumericOverflow)?
@@ -343,6 +356,12 @@ pub fn pay_creator_fees_in_sol<'info>(
         return Ok(0);
     }
 
+    let creators = if let Some(creators) = metadata.data.creators {
+        creators
+    } else {
+        return Ok(0);
+    };
+
     if payer.lamports() < royalty {
         return Err(MMMErrorCode::NotEnoughBalance.into());
     }
@@ -351,42 +370,46 @@ pub fn pay_creator_fees_in_sol<'info>(
     if metadata.data.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
         return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
     }
+    let min_rent = Rent::get()?.minimum_balance(0);
+    let mut total_royalty: u64 = 0;
 
-    match metadata.data.creators {
-        None => {
-            return Ok(0);
+    let creator_accounts_iter = &mut creator_accounts.iter();
+    for creator in creators {
+        let creator_fee = (royalty as u128)
+            .checked_mul(creator.share as u128)
+            .ok_or(MMMErrorCode::NumericOverflow)?
+            .checked_div(100)
+            .ok_or(MMMErrorCode::NumericOverflow)? as u64;
+        let current_creator_info = next_account_info(creator_accounts_iter)?;
+        if creator.address.ne(current_creator_info.key) {
+            return Err(MMMErrorCode::InvalidCreatorAddress.into());
         }
-        Some(creators) => {
-            let creator_accounts_iter = &mut creator_accounts.iter();
-            for creator in creators {
-                let creator_fee = (royalty as u128)
-                    .checked_mul(creator.share as u128)
-                    .ok_or(MMMErrorCode::NumericOverflow)?
-                    .checked_div(100)
-                    .ok_or(MMMErrorCode::NumericOverflow)? as u64;
-                let current_creator_info = next_account_info(creator_accounts_iter)?;
-                if creator.address.ne(current_creator_info.key) {
-                    return Err(MMMErrorCode::InvalidCreatorAddress.into());
-                }
-                if creator_fee > 0 {
-                    anchor_lang::solana_program::program::invoke_signed(
-                        &anchor_lang::solana_program::system_instruction::transfer(
-                            payer.key,
-                            current_creator_info.key,
-                            creator_fee,
-                        ),
-                        &[
-                            payer.to_account_info(),
-                            current_creator_info.to_account_info(),
-                            system_program.to_account_info(),
-                        ],
-                        payer_seeds,
-                    )?;
-                }
-            }
+        let current_creator_lamports = current_creator_info.lamports();
+        if creator_fee > 0
+            && current_creator_lamports
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                > min_rent
+        {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    payer.key,
+                    current_creator_info.key,
+                    creator_fee,
+                ),
+                &[
+                    payer.to_account_info(),
+                    current_creator_info.to_account_info(),
+                    system_program.to_account_info(),
+                ],
+                payer_seeds,
+            )?;
+            total_royalty = total_royalty
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?;
         }
     }
-    Ok(royalty)
+    Ok(total_royalty)
 }
 
 pub fn log_pool(prefix: &str, pool: &Pool) -> Result<()> {

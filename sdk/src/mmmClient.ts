@@ -1,4 +1,11 @@
 import {
+  CMT_PROGRAM,
+  findFreezeAuthorityPk,
+  findMintStatePk,
+  MintState,
+  PROGRAM_ID as OCP_PROGRAM_ID,
+} from '@magiceden-oss/open_creator_protocol';
+import {
   Metadata,
   Metaplex,
   sol,
@@ -16,6 +23,7 @@ import {
   Keypair,
   PublicKey,
   SystemProgram,
+  SYSVAR_INSTRUCTIONS_PUBKEY,
   SYSVAR_RENT_PUBKEY,
   Transaction,
   TransactionInstruction,
@@ -41,6 +49,8 @@ export const MMMProgramID = new PublicKey(
 );
 
 const dummyKeypair = new anchor.Wallet(new anchor.web3.Keypair());
+
+type MmmMethodsNamespace = anchor.MethodsNamespace<Mmm>;
 
 export class MMMClient {
   static ErrPoolDataEmpty = new Error('pool data is empty');
@@ -89,6 +99,38 @@ export class MMMClient {
   ): MMMClient {
     this.poolData = poolData;
     return this;
+  }
+
+  private async getMintState(
+    tokenMint: PublicKey,
+  ): Promise<{ mintStateId: PublicKey; mintState: MintState } | undefined> {
+    const mintStateId = findMintStatePk(tokenMint);
+    try {
+      const mintState = await MintState.fromAccountAddress(
+        this.conn,
+        mintStateId,
+      );
+      return { mintStateId, mintState };
+    } catch (_e) {
+      return undefined;
+    }
+  }
+
+  private getOcpAccounts(ocpMintState: {
+    mintStateId: PublicKey;
+    mintState: MintState;
+  }) {
+    const ocpFreezeAuthority = findFreezeAuthorityPk(
+      ocpMintState.mintState.policy,
+    );
+    return {
+      ocpMintState: ocpMintState.mintStateId,
+      ocpPolicy: ocpMintState.mintState.policy,
+      ocpFreezeAuthority,
+      ocpProgram: OCP_PROGRAM_ID,
+      cmtProgram: CMT_PROGRAM,
+      instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+    };
   }
 
   async getNftMetadata(tokenMint: PublicKey): Promise<Metadata> {
@@ -200,16 +242,11 @@ export class MMMClient {
       this.poolData.pool,
     );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const assetMasterEdition = this.mpl
-      .nfts()
-      .pdas()
-      .masterEdition({ mint: assetMint });
-
     const ownerTokenAccount = await getAssociatedTokenAddress(
       assetMint,
       this.poolData.owner,
     );
-    const { key: sellState } = await getMMMSellStatePDA(
+    const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
       this.poolData.pool,
       assetMint,
@@ -220,28 +257,62 @@ export class MMMClient {
       true,
     );
 
-    let builder = this.program.methods.solFulfillBuy(args).accountsStrict({
-      payer,
-      owner: this.poolData.owner,
-      buysideSolEscrowAccount,
-      pool: this.poolData.pool,
-      assetMint,
-      assetMasterEdition,
-      assetMetadata,
-      referral: this.poolData.referral,
-      cosigner: this.poolData.cosigner,
-      payerAssetAccount: assetTokenAccount,
-      ownerTokenAccount,
-      sellState,
-      sellsideEscrowTokenAccount,
-      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
-      systemProgram: SystemProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      rent: SYSVAR_RENT_PUBKEY,
-    });
+    const ocpMintState = await this.getMintState(assetMint);
+    let builder:
+      | ReturnType<MmmMethodsNamespace['solOcpFulfillBuy']>
+      | ReturnType<MmmMethodsNamespace['solFulfillBuy']>;
 
-    if (this.poolData.buysideCreatorRoyaltyBp > 0) {
+    if (ocpMintState) {
+      builder = this.program.methods.solOcpFulfillBuy(args).accountsStrict({
+        payer,
+        owner: this.poolData.owner,
+        buysideSolEscrowAccount,
+        pool: this.poolData.pool,
+        assetMint,
+        assetMetadata,
+        referral: this.poolData.referral,
+        cosigner: this.poolData.cosigner,
+        payerAssetAccount: assetTokenAccount,
+        ownerTokenAccount,
+        sellState,
+        sellsideEscrowTokenAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+
+        ...this.getOcpAccounts(ocpMintState),
+      });
+    } else {
+      const assetMasterEdition = this.mpl
+        .nfts()
+        .pdas()
+        .masterEdition({ mint: assetMint });
+
+      builder = this.program.methods.solFulfillBuy(args).accountsStrict({
+        payer,
+        owner: this.poolData.owner,
+        buysideSolEscrowAccount,
+        pool: this.poolData.pool,
+        assetMint,
+        assetMasterEdition,
+        assetMetadata,
+        referral: this.poolData.referral,
+        cosigner: this.poolData.cosigner,
+        payerAssetAccount: assetTokenAccount,
+        ownerTokenAccount,
+        sellState,
+        sellsideEscrowTokenAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      });
+    }
+
+    if (this.poolData.buysideCreatorRoyaltyBp > 0 || ocpMintState) {
       const metadata = await this.getNftMetadata(assetMint);
       if (metadata.creators.length > 0) {
         builder = builder.remainingAccounts(
@@ -268,10 +339,6 @@ export class MMMClient {
       this.poolData.pool,
     );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const assetMasterEdition = this.mpl
-      .nfts()
-      .pdas()
-      .masterEdition({ mint: assetMint });
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -284,28 +351,67 @@ export class MMMClient {
       true,
     );
     const payerAssetAccount = await getAssociatedTokenAddress(assetMint, payer);
+    const ocpMintState = await this.getMintState(assetMint);
+    let builder:
+      | ReturnType<MmmMethodsNamespace['solOcpFulfillSell']>
+      | ReturnType<MmmMethodsNamespace['solFulfillSell']>;
 
-    let builder = this.program.methods.solFulfillSell(args).accountsStrict({
-      payer,
-      owner: this.poolData.owner,
-      buysideSolEscrowAccount,
-      pool: this.poolData.pool,
-      assetMint,
-      assetMasterEdition,
-      assetMetadata,
-      referral: this.poolData.referral,
-      cosigner: this.poolData.cosigner,
-      payerAssetAccount,
-      sellState,
-      sellsideEscrowTokenAccount,
-      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
-      systemProgram: SystemProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      rent: SYSVAR_RENT_PUBKEY,
-    });
+    if (ocpMintState) {
+      builder = this.program.methods
+        .solOcpFulfillSell({
+          assetAmount: args.assetAmount,
+          maxPaymentAmount: args.maxPaymentAmount,
+          allowlistAux: args.allowlistAux,
+          makerFeeBp: args.makerFeeBp,
+          takerFeeBp: args.takerFeeBp,
+        })
+        .accountsStrict({
+          payer,
+          owner: this.poolData.owner,
+          buysideSolEscrowAccount,
+          pool: this.poolData.pool,
+          assetMint,
+          assetMetadata,
+          referral: this.poolData.referral,
+          cosigner: this.poolData.cosigner,
+          payerAssetAccount,
+          sellState,
+          sellsideEscrowTokenAccount,
+          allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
 
-    if (args.buysideCreatorRoyaltyBp > 0) {
+          ...this.getOcpAccounts(ocpMintState),
+        });
+    } else {
+      const assetMasterEdition = this.mpl
+        .nfts()
+        .pdas()
+        .masterEdition({ mint: assetMint });
+      builder = this.program.methods.solFulfillSell(args).accountsStrict({
+        payer,
+        owner: this.poolData.owner,
+        buysideSolEscrowAccount,
+        pool: this.poolData.pool,
+        assetMint,
+        assetMasterEdition,
+        assetMetadata,
+        referral: this.poolData.referral,
+        cosigner: this.poolData.cosigner,
+        payerAssetAccount,
+        sellState,
+        sellsideEscrowTokenAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      });
+    }
+
+    if (args.buysideCreatorRoyaltyBp > 0 || ocpMintState) {
       const metadata = await this.getNftMetadata(assetMint);
       if (metadata.creators.length > 0) {
         builder = builder.remainingAccounts(
@@ -327,10 +433,6 @@ export class MMMClient {
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const assetMasterEdition = this.mpl
-      .nfts()
-      .pdas()
-      .masterEdition({ mint: assetMint });
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -346,23 +448,51 @@ export class MMMClient {
       assetMint,
       this.poolData.owner,
     );
+    const ocpMintState = await this.getMintState(assetMint);
+    let builder:
+      | ReturnType<MmmMethodsNamespace['ocpDepositSell']>
+      | ReturnType<MmmMethodsNamespace['depositSell']>;
 
-    let builder = this.program.methods.depositSell(args).accountsStrict({
-      owner: this.poolData.owner,
-      pool: this.poolData.pool,
-      assetMint,
-      assetMasterEdition,
-      assetMetadata,
-      assetTokenAccount,
-      cosigner: this.poolData.cosigner,
-      sellState,
-      sellsideEscrowTokenAccount,
-      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
-      systemProgram: SystemProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      rent: SYSVAR_RENT_PUBKEY,
-    });
+    if (ocpMintState) {
+      builder = this.program.methods.ocpDepositSell(args).accountsStrict({
+        owner: this.poolData.owner,
+        pool: this.poolData.pool,
+        assetMint,
+        assetMetadata,
+        assetTokenAccount,
+        cosigner: this.poolData.cosigner,
+        sellState,
+        sellsideEscrowTokenAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+
+        ...this.getOcpAccounts(ocpMintState),
+      });
+    } else {
+      const assetMasterEdition = this.mpl
+        .nfts()
+        .pdas()
+        .masterEdition({ mint: assetMint });
+      builder = this.program.methods.depositSell(args).accountsStrict({
+        owner: this.poolData.owner,
+        pool: this.poolData.pool,
+        assetMint,
+        assetMasterEdition,
+        assetMetadata,
+        assetTokenAccount,
+        cosigner: this.poolData.cosigner,
+        sellState,
+        sellsideEscrowTokenAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      });
+    }
     return await builder.instruction();
   }
 
@@ -392,22 +522,51 @@ export class MMMClient {
       MMMProgramID,
       this.poolData.pool,
     );
+    const ocpMintState = await this.getMintState(assetMint);
+    let builder:
+      | ReturnType<MmmMethodsNamespace['ocpWithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['withdrawSell']>;
 
-    let builder = this.program.methods.withdrawSell(args).accountsStrict({
-      owner: this.poolData.owner,
-      pool: this.poolData.pool,
-      assetMint,
-      assetTokenAccount,
-      cosigner: this.poolData.cosigner,
-      sellState,
-      sellsideEscrowTokenAccount,
-      buysideSolEscrowAccount,
-      allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
-      systemProgram: SystemProgram.programId,
-      tokenProgram: TOKEN_PROGRAM_ID,
-      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-      rent: SYSVAR_RENT_PUBKEY,
-    });
+    if (ocpMintState) {
+      const assetMetadata = this.mpl
+        .nfts()
+        .pdas()
+        .metadata({ mint: assetMint });
+      builder = this.program.methods.ocpWithdrawSell(args).accountsStrict({
+        owner: this.poolData.owner,
+        pool: this.poolData.pool,
+        assetMint,
+        assetTokenAccount,
+        assetMetadata,
+        cosigner: this.poolData.cosigner,
+        sellState,
+        sellsideEscrowTokenAccount,
+        buysideSolEscrowAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+
+        ...this.getOcpAccounts(ocpMintState),
+      });
+    } else {
+      builder = this.program.methods.withdrawSell(args).accountsStrict({
+        owner: this.poolData.owner,
+        pool: this.poolData.pool,
+        assetMint,
+        assetTokenAccount,
+        cosigner: this.poolData.cosigner,
+        sellState,
+        sellsideEscrowTokenAccount,
+        buysideSolEscrowAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      });
+    }
     return await builder.instruction();
   }
 }

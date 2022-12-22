@@ -17,11 +17,11 @@ use crate::{
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolFulfillBuyArgs {
-    asset_amount: u64,
-    min_payment_amount: u64,
-    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
-    maker_fee_bp: u16,             // will be checked by cosigner
-    taker_fee_bp: u16,             // will be checked by cosigner
+    pub asset_amount: u64,
+    pub min_payment_amount: u64,
+    pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
+    pub maker_fee_bp: u16,             // will be checked by cosigner
+    pub taker_fee_bp: u16,             // will be checked by cosigner
 }
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
@@ -125,7 +125,7 @@ pub fn handler<'info>(
         &pool.allowlists,
         asset_mint,
         payer_asset_metadata,
-        asset_master_edition,
+        Some(asset_master_edition),
     )?;
 
     let (total_price, next_price) =
@@ -205,7 +205,6 @@ pub fn handler<'info>(
             ),
             args.asset_amount,
         )?;
-        try_close_sell_state(sell_state, owner.to_account_info())?;
     }
 
     // we can close the payer_asset_account if no amount left
@@ -227,6 +226,7 @@ pub fn handler<'info>(
         payer_asset_metadata.to_account_info(),
         ctx.remaining_accounts,
         buyside_sol_escrow_account.to_account_info(),
+        None,
         buyside_sol_escrow_account_seeds,
         system_program.to_account_info(),
     )?;
@@ -302,6 +302,7 @@ pub fn handler<'info>(
         system_program,
         buyside_sol_escrow_account_seeds,
     )?;
+    try_close_sell_state(sell_state, payer.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
     log_pool("post_sol_fulfill_buy", pool)?;

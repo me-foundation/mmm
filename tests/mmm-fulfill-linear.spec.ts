@@ -574,13 +574,13 @@ describe('mmm-fulfill-linear', () => {
         sellerBalance,
         initSellerBalance +
           2.7 * LAMPORTS_PER_SOL -
-          (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent + sellStatePDARent) -
+          (SIGNATURE_FEE_LAMPORTS * 2 + tokenAccountRent) -
           expectedTakerFees,
       );
       assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
       assert.equal(poolAtaBalance, 0);
       assert.equal(poolEscrowBalance, 7.3 * LAMPORTS_PER_SOL - totalMakerFees);
-      assert.equal(afterWalletBalance, initWalletBalance + sellStatePDARent);
+      assert.equal(afterWalletBalance, initWalletBalance);
 
       initReferralBalance = referralBalance;
       initSellerBalance = sellerBalance;
