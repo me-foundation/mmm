@@ -4,8 +4,8 @@ MMM is an open source and secure AMM protocol on Solana. It enables the multi-po
 
 | Network | Program Address |
 | ----------- | ----------- |
-| Devnet  | mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc|
-| Mainnet |    mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc     |
+| Devnet  | mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc |
+| Mainnet | mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc |
 
 
 ## Motivation
@@ -14,7 +14,7 @@ We'd like to introduce the standard of AMM to maximize the liquidity for traders
 
 
 ## Build status
-![github ci status](https://github.com/magiceden-oss/mmm/actions/workflows/test.yml/badge.svg?branch=main)
+![github ci status](https://github.com/the-1ndex/mmm/actions/workflows/test.yml/badge.svg?branch=main)
 
 
 ## Features
@@ -38,6 +38,9 @@ We'd like to introduce the standard of AMM to maximize the liquidity for traders
   - exponential
   - reverse linear (coming soon)
   - reverse exponential (coming soon)
+- multiple royalty enforcement standards
+  - OCP (open creator protocol)
+  - Metaplex MIP-1 (coming soon)
 - spl support (coming soon)
 
 <b>Built with</b>
@@ -125,7 +128,7 @@ anchor test
 ```
 
 ## Security
-https://magiceden.io/.well-known/security.txt
+Audit by Halborn
 
 ## License
-MIT © [MagicEden Open Source](https://github.com/magiceden-oss)
+Apache 2.0
