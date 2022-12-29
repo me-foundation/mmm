@@ -128,7 +128,7 @@ anchor test
 ```
 
 ## Security
-Audit by Halborn
+[Audit by Halborn](./docs/Security_Audit_Report_Halborn_Final.pdf)
 
 ## License
 Apache 2.0
