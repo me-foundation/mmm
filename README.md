@@ -8,7 +8,7 @@ MMM is an open source and secure AMM protocol on Solana. It enables the multi-po
 | Mainnet | mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc |
 
 ## Build status
-![github ci status](https://github.com/the-1ndex/mmm/actions/workflows/test.yml/badge.svg?branch=main)
+![github ci status](https://github.com/coralcube-oss/mmm/actions/workflows/test.yml/badge.svg?branch=main)
 
 ## Features
 
@@ -68,7 +68,7 @@ Fulfill Sell Side
 
 ## MMM Javascript/Typescript SDK
 ```
-npm add @the-1ndex/mmm
+npm add @coralcube-oss/mmm
 ```
 
 ## State Account
