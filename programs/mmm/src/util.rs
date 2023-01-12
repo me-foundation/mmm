@@ -316,6 +316,7 @@ pub fn try_close_sell_state<'info>(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn pay_creator_fees_in_sol<'info>(
     buyside_creator_royalty_bp: u16,
     total_price: u64,

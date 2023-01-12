@@ -123,6 +123,7 @@ pub struct SellState {
 
 ## Build and Test
 ```bash
+npm i
 anchor build
 anchor test
 ```
@@ -131,4 +132,5 @@ anchor test
 [Audit by Halborn](./docs/Security_Audit_Report_Halborn_Final.pdf)
 
 ## License
-Apache 2.0
+- Apache 2.0 for `./sdk` and the anchor generated cpi of MMM.
+- AGPL 3.0 for `./programs`.

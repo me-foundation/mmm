@@ -435,13 +435,16 @@ describe('mmm-deposit', () => {
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
       nftEscrow = await getTokenAccount(connection, poolAta2);
       assert.equal(Number(nftEscrow.amount), 5);
-      assert.deepEqual(nftEscrow.owner, poolKey);
+      assert.deepEqual(nftEscrow.owner.toBase58(), poolKey.toBase58());
       const sftAccount = await getTokenAccount(
         connection,
         sfts[0].tokenAddress!,
       );
       assert.equal(Number(sftAccount.amount), 5);
-      assert.deepEqual(sftAccount.owner, wallet.publicKey);
+      assert.deepEqual(
+        sftAccount.owner.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
 
       const sellState2AccountInfo = await program.account.sellState.fetch(
         sellState2,
@@ -584,13 +587,16 @@ describe('mmm-deposit', () => {
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
       nftEscrow = await getTokenAccount(connection, poolAta2);
       assert.equal(Number(nftEscrow.amount), 5);
-      assert.deepEqual(nftEscrow.owner, poolKey);
+      assert.deepEqual(nftEscrow.owner.toBase58(), poolKey.toBase58());
       const sftAccount = await getTokenAccount(
         connection,
         sfts[0].tokenAddress!,
       );
       assert.equal(Number(sftAccount.amount), 5);
-      assert.deepEqual(sftAccount.owner, wallet.publicKey);
+      assert.deepEqual(
+        sftAccount.owner.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
     });
 
     it('correctly verifies mint-only allowlists when depositing items', async () => {
@@ -706,13 +712,16 @@ describe('mmm-deposit', () => {
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
       nftEscrow = await getTokenAccount(connection, poolAta2);
       assert.equal(Number(nftEscrow.amount), 5);
-      assert.deepEqual(nftEscrow.owner, poolKey);
+      assert.deepEqual(nftEscrow.owner.toBase58(), poolKey.toBase58());
       const sftAccount = await getTokenAccount(
         connection,
         sfts[0].tokenAddress!,
       );
       assert.equal(Number(sftAccount.amount), 5);
-      assert.deepEqual(sftAccount.owner, wallet.publicKey);
+      assert.deepEqual(
+        sftAccount.owner.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
     });
   });
 });
