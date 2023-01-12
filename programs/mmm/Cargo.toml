@@ -1,7 +1,7 @@
 [package]
 name = "mmm"
 version = "0.1.0"
-description = "mmm is a open standard of collection offers and AMM solana program"
+description = "MMM is an open source and secure AMM protocol on Solana"
 edition = "2018"
 license = "AGPL-3.0"
 
