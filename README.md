@@ -68,7 +68,7 @@ Fulfill Sell Side
 
 ## MMM Javascript/Typescript SDK
 ```
-npm add @the-1ndex/mmm
+npm add @coralcube-oss/mmm
 ```
 
 ## State Account
