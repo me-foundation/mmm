@@ -1,10 +1,10 @@
 {
   "name": "@the-1ndex/mmm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "mmm typescript sdk",
   "main": "dist/src/index.js",
   "scripts": {
-    "prebuild": "rm -rf ./src/idl && cp -r ../target/types/ ./src/idl",
+    "copy_idl": "rm -rf ./src/idl && cp -r ../target/types/ ./src/idl",
     "build": "tsc"
   },
   "files": [

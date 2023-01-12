@@ -74,7 +74,9 @@ Fulfill Sell Side
 <img src="./docs/fulfill_sell.excalidraw.png" width="400">
 
 ## MMM Javascript/Typescript SDK
-Coming soon
+```
+npm add @the-1ndex/mmm
+```
 
 ## State Account
 With the state account and IDL, it's useful to build up the getProgramAccounts filter params with the right size/offset.
