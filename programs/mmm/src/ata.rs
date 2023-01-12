@@ -61,7 +61,12 @@ pub fn init_if_needed_ata<'a>(
 ) -> Result<spl_token::state::Account> {
     if ata.data.borrow().is_empty() {
         anchor_lang::solana_program::program::invoke(
-            &instruction::create_associated_token_account(payer.key, authority.key, mint.key),
+            &instruction::create_associated_token_account(
+                payer.key,
+                authority.key,
+                mint.key,
+                token_program.key,
+            ),
             &[
                 payer,
                 ata.to_account_info(),
