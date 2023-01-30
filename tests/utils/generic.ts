@@ -6,6 +6,7 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   Transaction,
+  VersionedTransaction,
 } from '@solana/web3.js';
 import { assert } from 'chai';
 import fs from 'fs';
@@ -16,9 +17,10 @@ export const SIGNATURE_FEE_LAMPORTS = 5000;
 export const LAMPORT_ERROR_RANGE = 500;
 export const PRICE_ERROR_RANGE = 50;
 export const OCP_COMPUTE_UNITS = 1_400_000;
+export const MIP1_COMPUTE_UNITS = 600_000;
 const KEYPAIR_PATH = path.join(process.env.HOME!, '/.config/solana/id.json');
 
-let keypair;
+let keypair: Keypair | undefined = undefined;
 export const getKeypair = () => {
   if (keypair) {
     return keypair;
@@ -68,17 +70,20 @@ export const getEmptyAllowLists = (num: number) => {
 export const airdrop = async (
   connection: Connection,
   to: PublicKey,
-  amount: number,
+  amountInSol: number,
 ) => {
   await connection.confirmTransaction({
     ...(await connection.getLatestBlockhash()),
-    signature: await connection.requestAirdrop(to, amount * LAMPORTS_PER_SOL),
+    signature: await connection.requestAirdrop(
+      to,
+      amountInSol * LAMPORTS_PER_SOL,
+    ),
   });
 };
 
 export const sendAndAssertTx = async (
   conn: Connection,
-  tx: Transaction,
+  tx: Transaction | VersionedTransaction,
   blockhashData: Awaited<ReturnType<Connection['getLatestBlockhash']>>,
   printTxId: boolean,
 ) => {

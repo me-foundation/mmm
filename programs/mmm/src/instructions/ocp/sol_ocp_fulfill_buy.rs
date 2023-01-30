@@ -65,10 +65,10 @@ pub struct SolOcpFulfillBuy<'info> {
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
     pub payer_asset_account: Box<Account<'info, TokenAccount>>,
-    /// CHECK: check in init_if_needed_ata
+    /// CHECK: check in cpi
     #[account(mut)]
     pub sellside_escrow_token_account: UncheckedAccount<'info>,
-    /// CHECK: check in init_if_needed_ata
+    /// CHECK: check in cpi
     #[account(mut)]
     pub owner_token_account: UncheckedAccount<'info>,
     /// CHECK: will be used for allowlist checks
@@ -133,7 +133,8 @@ pub fn handler<'info>(
         &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
     ]];
 
-    check_allowlists_for_mint(&pool.allowlists, asset_mint, payer_asset_metadata, None)?;
+    let parsed_metadata =
+        check_allowlists_for_mint(&pool.allowlists, asset_mint, payer_asset_metadata, None)?;
 
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
@@ -240,7 +241,7 @@ pub fn handler<'info>(
     let royalty_paid = pay_creator_fees_in_sol(
         10000,
         total_price,
-        payer_asset_metadata.to_account_info(),
+        &parsed_metadata,
         ctx.remaining_accounts,
         buyside_sol_escrow_account.to_account_info(),
         Some(ocp_policy),

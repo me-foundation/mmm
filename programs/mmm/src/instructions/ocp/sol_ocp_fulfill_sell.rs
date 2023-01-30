@@ -138,7 +138,8 @@ pub fn handler<'info>(
         &[*ctx.bumps.get("pool").unwrap()],
     ]];
 
-    check_allowlists_for_mint(&pool.allowlists, asset_mint, payer_asset_metadata, None)?;
+    let parsed_metadata =
+        check_allowlists_for_mint(&pool.allowlists, asset_mint, payer_asset_metadata, None)?;
 
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, false)?;
@@ -279,7 +280,7 @@ pub fn handler<'info>(
     let royalty_paid = pay_creator_fees_in_sol(
         10000,
         total_price,
-        payer_asset_metadata.to_account_info(),
+        &parsed_metadata,
         ctx.remaining_accounts,
         payer.to_account_info(),
         Some(ocp_policy),

@@ -4,3 +4,9 @@ members = ["programs/*"]
 [profile.dev]
 split-debuginfo = "unpacked"
 overflow-checks = true
+
+[profile.release]
+overflow-checks = true
+strip = true
+opt-level = "z"
+lto = true
