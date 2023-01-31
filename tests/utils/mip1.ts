@@ -79,18 +79,41 @@ const getAmountRuleIxData = (name: string, owner: PublicKey): Uint8Array => {
               Any: [
                 [
                   {
-                    ProgramOwnedList: [
+                    All: [
                       [
-                        Array.from(MMMProgramID.toBuffer()),
-                        Array.from(SystemProgram.programId.toBuffer()),
+                        {
+                          ProgramOwned: [
+                            Array.from(MMMProgramID.toBuffer()),
+                            'Destination',
+                          ],
+                        },
+                        {
+                          PDAMatch: [
+                            Array.from(MMMProgramID.toBuffer()),
+                            'Destination',
+                            'DestinationSeeds',
+                          ],
+                        },
                       ],
-                      'Destination',
                     ],
                   },
                   {
-                    ProgramOwned: [
-                      Array.from(MMMProgramID.toBuffer()),
-                      'Source',
+                    All: [
+                      [
+                        {
+                          ProgramOwned: [
+                            Array.from(MMMProgramID.toBuffer()),
+                            'Source',
+                          ],
+                        },
+                        {
+                          PDAMatch: [
+                            Array.from(MMMProgramID.toBuffer()),
+                            'Source',
+                            'SourceSeeds',
+                          ],
+                        },
+                      ],
                     ],
                   },
                 ],
@@ -197,20 +220,6 @@ const createNewMip1MintTransaction = (
 
   return createNewTokenTransaction;
 };
-
-// export const getSetTokenStandardInstruction = (
-//   mint: PublicKey,
-//   updateAuthority: PublicKey,
-// ) => {
-//   const accounts: SetTokenStandardInstructionAccounts = {
-//     metadata: findMetadataPda(mint),
-//     updateAuthority,
-//     mint,
-//     edition: findMasterEditionV2Pda(mint),
-//   };
-
-//   return createSetTokenStandardInstruction(accounts);
-// };
 
 export const createProgrammableNft = async (
   connection: Connection,

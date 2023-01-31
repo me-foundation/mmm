@@ -1437,14 +1437,28 @@ export type Mmm = {
           "isSigner": false
         },
         {
-          "name": "ownerTokenRecord",
+          "name": "tokenOwnerTokenRecord",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the seller"
+          ]
         },
         {
-          "name": "destinationTokenRecord",
+          "name": "poolTokenRecord",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool - will always be required"
+          ]
+        },
+        {
+          "name": "poolOwnerTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool owner - will be required if reinvest = true"
+          ]
         },
         {
           "name": "tokenMetadataProgram",
@@ -3538,14 +3552,28 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
-          "name": "ownerTokenRecord",
+          "name": "tokenOwnerTokenRecord",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the seller"
+          ]
         },
         {
-          "name": "destinationTokenRecord",
+          "name": "poolTokenRecord",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool - will always be required"
+          ]
+        },
+        {
+          "name": "poolOwnerTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool owner - will be required if reinvest = true"
+          ]
         },
         {
           "name": "tokenMetadataProgram",

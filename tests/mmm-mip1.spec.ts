@@ -443,13 +443,17 @@ describe('mmm-mip1', () => {
         ownerTokenAccount: ownerExtraNftAtaAddress,
         allowlistAuxAccount: SystemProgram.programId,
         sellState,
-        ownerTokenRecord: getTokenRecordPDA(
+        tokenOwnerTokenRecord: getTokenRecordPDA(
           poolData.extraNft.mintAddress,
           poolData.extraNft.tokenAddress,
         ).key,
-        destinationTokenRecord: getTokenRecordPDA(
+        poolTokenRecord: getTokenRecordPDA(
           poolData.extraNft.mintAddress,
           poolData.poolAtaExtraNft,
+        ).key,
+        poolOwnerTokenRecord: getTokenRecordPDA(
+          poolData.extraNft.mintAddress,
+          ownerExtraNftAtaAddress,
         ).key,
         authorizationRules: defaultRules,
         ...DEFAULT_ACCOUNTS,
@@ -619,11 +623,15 @@ describe('mmm-mip1', () => {
           ownerTokenAccount: ownerExtraNftAtaAddress,
           allowlistAuxAccount: SystemProgram.programId,
           sellState,
-          ownerTokenRecord: getTokenRecordPDA(
+          tokenOwnerTokenRecord: getTokenRecordPDA(
             poolData.extraNft.mintAddress,
             poolData.extraNft.tokenAddress,
           ).key,
-          destinationTokenRecord: getTokenRecordPDA(
+          poolTokenRecord: getTokenRecordPDA(
+            poolData.extraNft.mintAddress,
+            poolData.poolAtaExtraNft,
+          ).key,
+          poolOwnerTokenRecord: getTokenRecordPDA(
             poolData.extraNft.mintAddress,
             ownerExtraNftAtaAddress,
           ).key,
@@ -678,7 +686,7 @@ describe('mmm-mip1', () => {
         initSellerBalance +
           2.5 * LAMPORTS_PER_SOL -
           SIGNATURE_FEE_LAMPORTS * 2 -
-          tokenRecordRent -
+          tokenRecordRent * 2 - // since reinvest buy = false, need to create two token records
           expectedTakerFees -
           expectedRoyalties -
           expectedLpFees,

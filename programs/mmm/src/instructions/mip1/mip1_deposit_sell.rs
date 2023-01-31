@@ -7,8 +7,10 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use mpl_token_metadata::instruction::{
-    builders::TransferBuilder, InstructionBuilder, TransferArgs,
+use mpl_token_auth_rules::payload::{Payload, PayloadType, SeedsVec};
+use mpl_token_metadata::{
+    instruction::{builders::TransferBuilder, InstructionBuilder, TransferArgs},
+    processor::AuthorizationData,
 };
 use spl_associated_token_account::get_associated_token_address;
 
@@ -118,6 +120,16 @@ pub fn handler(ctx: Context<Mip1DepositSell>, args: DepositSellArgs) -> Result<(
     )?;
     assert_is_programmable(&parsed_metadata)?;
 
+    let payload = Payload::from([(
+        "DestinationSeeds".to_owned(),
+        PayloadType::Seeds(SeedsVec {
+            seeds: vec![
+                POOL_PREFIX.as_bytes().to_vec(),
+                owner.key().to_bytes().to_vec(),
+                pool.uuid.to_bytes().to_vec(),
+            ],
+        }),
+    )]);
     let ins = TransferBuilder::new()
         .token(asset_token_account.key())
         .token_owner(owner.key())
@@ -137,7 +149,7 @@ pub fn handler(ctx: Context<Mip1DepositSell>, args: DepositSellArgs) -> Result<(
         .authorization_rules(authorization_rules.key())
         .authorization_rules_program(authorization_rules_program.key())
         .build(TransferArgs::V1 {
-            authorization_data: None,
+            authorization_data: Some(AuthorizationData { payload }),
             amount: args.asset_amount,
         })
         .unwrap()

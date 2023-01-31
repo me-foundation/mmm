@@ -7,8 +7,10 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use mpl_token_metadata::instruction::{
-    builders::TransferBuilder, InstructionBuilder, TransferArgs,
+use mpl_token_auth_rules::payload::{Payload, PayloadType, SeedsVec};
+use mpl_token_metadata::{
+    instruction::{builders::TransferBuilder, InstructionBuilder, TransferArgs},
+    processor::AuthorizationData,
 };
 
 use crate::{
@@ -199,6 +201,12 @@ pub fn handler<'info>(
         ],
     )?;
 
+    let payload = Payload::from([(
+        "SourceSeeds".to_owned(),
+        PayloadType::Seeds(SeedsVec {
+            seeds: pool_seeds[0][0..3].iter().map(|v| v.to_vec()).collect(),
+        }),
+    )]);
     let transfer_ins = TransferBuilder::new()
         .token(sellside_escrow_token_account.key())
         .token_owner(pool.key())
@@ -218,7 +226,7 @@ pub fn handler<'info>(
         .authorization_rules(authorization_rules.key())
         .authorization_rules_program(authorization_rules_program.key())
         .build(TransferArgs::V1 {
-            authorization_data: None,
+            authorization_data: Some(AuthorizationData { payload }),
             amount: args.asset_amount,
         })
         .unwrap()

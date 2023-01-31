@@ -297,6 +297,20 @@ export class MMMClient {
         .masterEdition({ mint: assetMint });
       if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
         const ruleset = metadataProvider.getRuleset(assetMint);
+        const {
+          ownerTokenRecord: tokenOwnerTokenRecord,
+          destinationTokenRecord: poolOwnerTokenRecord,
+          ...filteredMip1Accounts
+        } = this.getMip1Accounts({
+          ruleset,
+          mint: assetMint,
+          ownerTokenAccount: assetTokenAccount,
+          destinationTokenAccount: ownerTokenAccount,
+        });
+        const poolTokenRecord = getTokenRecordPDA(
+          assetMint,
+          sellsideEscrowTokenAccount,
+        ).key;
         builder = this.program.methods.solMip1FulfillBuy(args).accountsStrict({
           payer,
           owner: this.poolData.owner,
@@ -316,15 +330,10 @@ export class MMMClient {
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
-
-          ...this.getMip1Accounts({
-            ruleset,
-            mint: assetMint,
-            ownerTokenAccount: assetTokenAccount,
-            destinationTokenAccount: this.poolData.reinvestFulfillBuy
-              ? sellsideEscrowTokenAccount
-              : ownerTokenAccount,
-          }),
+          tokenOwnerTokenRecord,
+          poolOwnerTokenRecord,
+          poolTokenRecord,
+          ...filteredMip1Accounts,
         });
       } else {
         builder = this.program.methods.solFulfillBuy(args).accountsStrict({
