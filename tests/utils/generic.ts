@@ -17,7 +17,7 @@ export const SIGNATURE_FEE_LAMPORTS = 5000;
 export const LAMPORT_ERROR_RANGE = 500;
 export const PRICE_ERROR_RANGE = 50;
 export const OCP_COMPUTE_UNITS = 1_400_000;
-export const MIP1_COMPUTE_UNITS = 600_000;
+export const MIP1_COMPUTE_UNITS = 700_000;
 const KEYPAIR_PATH = path.join(process.env.HOME!, '/.config/solana/id.json');
 
 let keypair: Keypair | undefined = undefined;
