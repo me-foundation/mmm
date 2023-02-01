@@ -67,7 +67,7 @@ pub struct SolMip1FulfillBuy<'info> {
     #[account(mut)]
     pub asset_metadata: UncheckedAccount<'info>,
     #[account(
-        constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidOcpAssetParams,
+        constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
     pub asset_mint: Box<Account<'info, Mint>>,
     /// CHECK: will be checked in cpi
@@ -76,8 +76,8 @@ pub struct SolMip1FulfillBuy<'info> {
         mut,
         token::mint = asset_mint,
         token::authority = payer,
-        constraint = payer_asset_account.amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
-        constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
+        constraint = payer_asset_account.amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
+        constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
     pub payer_asset_account: Box<Account<'info, TokenAccount>>,
     #[account(
