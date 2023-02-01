@@ -12,7 +12,6 @@ use mpl_token_metadata::{
     instruction::{builders::TransferBuilder, InstructionBuilder, TransferArgs},
     processor::AuthorizationData,
 };
-use spl_associated_token_account::get_associated_token_address;
 
 use crate::{
     constants::*,
@@ -54,8 +53,13 @@ pub struct Mip1DepositSell<'info> {
     )]
     pub asset_token_account: Box<Account<'info, TokenAccount>>,
     /// CHECK: will be checked in cpi
-    #[account(mut, address = get_associated_token_address(&pool.key(), &asset_mint.key()))]
-    pub sellside_escrow_token_account: UncheckedAccount<'info>,
+    #[account(
+        init_if_needed,
+        payer = owner,
+        associated_token::mint = asset_mint,
+        associated_token::authority = pool,
+    )]
+    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         payer = owner,
