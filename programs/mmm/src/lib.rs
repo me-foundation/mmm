@@ -80,4 +80,29 @@ pub mod mmm {
     pub fn ocp_withdraw_sell(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<()> {
         instructions::ocp_withdraw_sell::handler(ctx, args)
     }
+
+    pub fn mip1_deposit_sell(ctx: Context<Mip1DepositSell>, args: DepositSellArgs) -> Result<()> {
+        instructions::mip1_deposit_sell::handler(ctx, args)
+    }
+
+    pub fn mip1_withdraw_sell(
+        ctx: Context<Mip1WithdrawSell>,
+        args: WithdrawSellArgs,
+    ) -> Result<()> {
+        instructions::mip1_withdraw_sell::handler(ctx, args)
+    }
+
+    pub fn sol_mip1_fulfill_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolMip1FulfillSell<'info>>,
+        args: SolMip1FulfillSellArgs,
+    ) -> Result<()> {
+        instructions::sol_mip1_fulfill_sell::handler(ctx, args)
+    }
+
+    pub fn sol_mip1_fulfill_buy<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolMip1FulfillBuy<'info>>,
+        args: SolFulfillBuyArgs,
+    ) -> Result<()> {
+        instructions::sol_mip1_fulfill_buy::handler(ctx, args)
+    }
 }

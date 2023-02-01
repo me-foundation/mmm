@@ -54,4 +54,8 @@ pub enum MMMErrorCode {
     InvalidAccountState, // 0x1788
     #[msg("Invalid token mint")]
     InvalidTokenMint, // 0x1789
+    #[msg("Invalid MIP1 mint supply constraints")]
+    InvalidMip1AssetParams, // 0x178a
+    #[msg("Invalid token standard")]
+    InvalidTokenStandard, // 0x178b
 }

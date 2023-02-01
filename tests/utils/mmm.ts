@@ -25,11 +25,20 @@ import {
   getMMMBuysideSolEscrowPDA,
   getMMMPoolPDA,
   getMMMSellStatePDA,
+  getTokenRecordPDA,
   Mmm,
 } from '../../sdk/src';
-import { getEmptyAllowLists, getKeypair, OCP_COMPUTE_UNITS } from './generic';
+import {
+  getEmptyAllowLists,
+  getKeypair,
+  MIP1_COMPUTE_UNITS,
+  OCP_COMPUTE_UNITS,
+} from './generic';
+import { createProgrammableNft } from './mip1';
 import { getMetaplexInstance, mintCollection, mintNfts } from './nfts';
 import { createTestMintAndTokenOCP } from './ocp';
+import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
+import { PROGRAM_ID as AUTHORIZATION_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
 
 export const createPool = async (
   program: Program<Mmm>,
@@ -494,6 +503,118 @@ export const createPoolWithExampleOcpDeposits = async (
     poolAtaExtraNft,
     poolPaymentEscrow: solEscrowKey,
     nftCreator: creator,
+    ...poolData,
+  };
+};
+
+export const createPoolWithExampleMip1Deposits = async (
+  program: Program<Mmm>,
+  connection: Connection,
+  poolArgs: Parameters<typeof createPool>[1],
+  side: 'buy' | 'sell' | 'both',
+  nftCreator: Keypair,
+  nftRecipient?: PublicKey,
+  ruleset?: PublicKey,
+) => {
+  const [depositNft, extraNft] = await Promise.all(
+    [poolArgs.owner, nftRecipient ?? poolArgs.owner].map((v) =>
+      createProgrammableNft(connection, nftCreator, v, ruleset),
+    ),
+  );
+  const mintAddressNft = depositNft.mintAddress;
+
+  const allowlists = [
+    { kind: AllowlistKind.fvca, value: nftCreator.publicKey },
+    ...getEmptyAllowLists(5),
+  ];
+  const poolData = await createPool(program, {
+    ...poolArgs,
+    allowlists,
+  });
+  const poolKey = poolData.poolKey;
+
+  const poolAtaNft = await getAssociatedTokenAddress(
+    mintAddressNft,
+    poolKey,
+    true,
+  );
+  const poolAtaExtraNft = await getAssociatedTokenAddress(
+    extraNft.mintAddress,
+    poolKey,
+    true,
+  );
+
+  if (side === 'both' || side === 'sell') {
+    const { key: sellState } = getMMMSellStatePDA(
+      program.programId,
+      poolKey,
+      mintAddressNft,
+    );
+    await program.methods
+      .mip1DepositSell({
+        assetAmount: new anchor.BN(1),
+        allowlistAux: null,
+      })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolData.poolKey,
+        assetMetadata: depositNft.metadataAddress,
+        assetMint: depositNft.mintAddress,
+        assetTokenAccount: depositNft.tokenAddress,
+        assetMasterEdition: depositNft.masterEditionAddress,
+        sellsideEscrowTokenAccount: poolAtaNft,
+        sellState: sellState,
+        allowlistAuxAccount: SystemProgram.programId,
+        tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+        authorizationRules: ruleset ?? TOKEN_METADATA_PROGRAM_ID,
+        authorizationRulesProgram: AUTHORIZATION_RULES_PROGRAM_ID,
+        ownerTokenRecord: getTokenRecordPDA(
+          depositNft.mintAddress,
+          depositNft.tokenAddress,
+        ).key,
+        destinationTokenRecord: getTokenRecordPDA(
+          depositNft.mintAddress,
+          poolAtaNft,
+        ).key,
+        instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({ units: MIP1_COMPUTE_UNITS }),
+      ])
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+    program.programId,
+    poolKey,
+  );
+  if (side === 'both' || side === 'buy') {
+    await program.methods
+      .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        buysideSolEscrowAccount: solEscrowKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  return {
+    nft: depositNft,
+    extraNft,
+    poolAtaNft,
+    poolAtaExtraNft,
+    poolPaymentEscrow: solEscrowKey,
+    nftCreator,
     ...poolData,
   };
 };

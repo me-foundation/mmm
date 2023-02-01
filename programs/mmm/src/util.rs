@@ -4,7 +4,7 @@ use anchor_spl::token::Mint;
 use mpl_token_metadata::{
     id as token_metadata_program_key,
     pda::{find_master_edition_account, find_metadata_account},
-    state::{Metadata, TokenMetadataAccount},
+    state::{Metadata, TokenMetadataAccount, TokenStandard},
 };
 use open_creator_protocol::state::Policy;
 
@@ -30,8 +30,8 @@ pub fn check_allowlists_for_mint(
     mint: &Account<Mint>,
     metadata: &AccountInfo,
     master_edition: Option<&AccountInfo>,
-) -> Result<()> {
-    // TODO: we need to check the following validation rules
+) -> Result<Metadata> {
+    // We need to check the following validation rules
     // 1. make sure the metadata is correctly derived from the metadata pda with the mint
     // 2. make sure mint+metadata(e.g. first verified creator address) can match one of the allowlist
     // 3. note that the allowlist is unioned together, not intersection
@@ -69,19 +69,19 @@ pub fn check_allowlists_for_mint(
                         && creators[0].address == allowlist_val.value
                         && creators[0].verified
                     {
-                        return Ok(());
+                        return Ok(parsed_metadata);
                     }
                 }
             }
             ALLOWLIST_KIND_MINT => {
                 if mint.key() == allowlist_val.value {
-                    return Ok(());
+                    return Ok(parsed_metadata);
                 }
             }
             ALLOWLIST_KIND_MCC => {
                 if let Some(ref collection_data) = parsed_metadata.collection {
                     if collection_data.key == allowlist_val.value && collection_data.verified {
-                        return Ok(());
+                        return Ok(parsed_metadata);
                     }
                 }
             }
@@ -320,21 +320,19 @@ pub fn try_close_sell_state<'info>(
 pub fn pay_creator_fees_in_sol<'info>(
     buyside_creator_royalty_bp: u16,
     total_price: u64,
-    metadata_info: AccountInfo<'info>,
+    parsed_metadata: &Metadata,
     creator_accounts: &[AccountInfo<'info>],
     payer: AccountInfo<'info>,
     policy: Option<&Account<'info, Policy>>,
     payer_seeds: &[&[&[u8]]],
     system_program: AccountInfo<'info>,
 ) -> Result<u64> {
-    let metadata = Metadata::from_account_info(&metadata_info)?;
     let royalty_bp = match policy {
-        None => metadata.data.seller_fee_basis_points,
+        None => parsed_metadata.data.seller_fee_basis_points,
         Some(p) => match &p.dynamic_royalty {
-            None => metadata.data.seller_fee_basis_points,
-            Some(dynamic_royalty) => {
-                dynamic_royalty.get_royalty_bp(total_price, metadata.data.seller_fee_basis_points)
-            }
+            None => parsed_metadata.data.seller_fee_basis_points,
+            Some(dynamic_royalty) => dynamic_royalty
+                .get_royalty_bp(total_price, parsed_metadata.data.seller_fee_basis_points),
         },
     };
 
@@ -357,7 +355,7 @@ pub fn pay_creator_fees_in_sol<'info>(
         return Ok(0);
     }
 
-    let creators = if let Some(creators) = metadata.data.creators {
+    let creators = if let Some(creators) = &parsed_metadata.data.creators {
         creators
     } else {
         return Ok(0);
@@ -368,7 +366,7 @@ pub fn pay_creator_fees_in_sol<'info>(
     }
 
     // hardcoded the max threshold for InvalidMetadataCreatorRoyalty
-    if metadata.data.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
+    if parsed_metadata.data.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
         return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
     }
     let min_rent = Rent::get()?.minimum_balance(0);
@@ -417,4 +415,12 @@ pub fn log_pool(prefix: &str, pool: &Pool) -> Result<()> {
     msg!(prefix);
     sol_log_data(&[&pool.try_to_vec()?]);
     Ok(())
+}
+
+pub fn assert_is_programmable(parsed_metadata: &Metadata) -> Result<()> {
+    if parsed_metadata.token_standard == Some(TokenStandard::ProgrammableNonFungible) {
+        Ok(())
+    } else {
+        Err(MMMErrorCode::InvalidTokenStandard.into())
+    }
 }
