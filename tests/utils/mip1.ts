@@ -458,6 +458,7 @@ export const getTokenRecordRent = async (conn: Connection): Promise<number> => {
         delegateRole: TokenDelegateRole.Sale,
         state: TokenState.Unlocked,
         ruleSetRevision: 0,
+        lockedTransfer: PublicKey.default,
       },
       conn,
     );
