@@ -85,6 +85,7 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         asset_mint,
         asset_metadata,
         Some(asset_master_edition),
+        args.allowlist_aux,
     )?;
 
     anchor_spl::token::transfer(

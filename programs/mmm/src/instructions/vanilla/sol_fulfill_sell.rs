@@ -127,6 +127,7 @@ pub fn handler<'info>(
         asset_mint,
         payer_asset_metadata,
         Some(asset_master_edition),
+        args.allowlist_aux,
     )?;
 
     let (total_price, next_price) =

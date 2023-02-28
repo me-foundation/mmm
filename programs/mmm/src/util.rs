@@ -30,6 +30,7 @@ pub fn check_allowlists_for_mint(
     mint: &Account<Mint>,
     metadata: &AccountInfo,
     master_edition: Option<&AccountInfo>,
+    allowlist_aux: Option<String>,
 ) -> Result<Metadata> {
     // We need to check the following validation rules
     // 1. make sure the metadata is correctly derived from the metadata pda with the mint
@@ -81,6 +82,13 @@ pub fn check_allowlists_for_mint(
             ALLOWLIST_KIND_MCC => {
                 if let Some(ref collection_data) = parsed_metadata.collection {
                     if collection_data.key == allowlist_val.value && collection_data.verified {
+                        return Ok(parsed_metadata);
+                    }
+                }
+            }
+            ALLOWLIST_KIND_METADATA => {
+                if let Some(ref aux_key) = allowlist_aux {
+                    if *parsed_metadata.data.uri == *aux_key {
                         return Ok(parsed_metadata);
                     }
                 }
