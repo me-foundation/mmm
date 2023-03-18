@@ -48,11 +48,14 @@ pub fn handler(ctx: Context<SolWithdrawBuy>, args: SolWithdrawBuyArgs) -> Result
         &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
     ]];
 
+    let amount_to_withdraw =
+        std::cmp::min(args.payment_amount, buyside_sol_escrow_account.lamports());
+
     anchor_lang::solana_program::program::invoke_signed(
         &anchor_lang::solana_program::system_instruction::transfer(
             buyside_sol_escrow_account.key,
             owner.key,
-            args.payment_amount,
+            amount_to_withdraw,
         ),
         &[
             buyside_sol_escrow_account.to_account_info(),
