@@ -79,6 +79,10 @@ describe('mmm-mip1-migration', () => {
       nftAuthority.publicKey,
       collectionNft.mintAddress,
     );
+    console.log(initMigrationSignerIx);
+    console.log(initMigrationIx);
+    console.log(updateMigrationIx);
+    console.log(startMigrationIx);
 
     const blockhashData = await connection.getLatestBlockhash();
     const initMigrationTx = new Transaction().add(
