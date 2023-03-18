@@ -114,6 +114,48 @@ describe('mmm-withdraw', () => {
     }
   });
 
+  it('Withdraw payment - withdraws the maximum amount possible', async () => {
+    const poolData = await createPoolWithExampleDeposits(
+      program,
+      connection,
+      AllowlistKind.fvca,
+      {
+        owner: wallet.publicKey,
+        cosigner,
+        curveType: CurveKind.linear,
+        curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(10)), // 0.1 SOL
+        expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
+        reinvestFulfillBuy: true,
+        reinvestFulfillSell: true,
+      },
+      'buy',
+    );
+
+    const initWalletBalance = await connection.getBalance(wallet.publicKey);
+    const poolRent = await connection.getBalance(poolData.poolKey);
+    await program.methods
+      .solWithdrawBuy({ paymentAmount: new anchor.BN(100 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: wallet.publicKey,
+        cosigner: cosigner.publicKey,
+        pool: poolData.poolKey,
+        buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([cosigner])
+      .rpc();
+
+    assert.equal(await connection.getBalance(poolData.poolKey), 0);
+    const walletBalance = await connection.getBalance(wallet.publicKey);
+    assert.equal(
+      walletBalance,
+      initWalletBalance +
+        10 * LAMPORTS_PER_SOL + // amount initially deposited
+        poolRent - // pool rent
+        2 * SIGNATURE_FEE_LAMPORTS, // signature fees
+    );
+  });
+
   it('Withdraw assets', async () => {
     const poolData = await createPoolWithExampleDeposits(
       program,
