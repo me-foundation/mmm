@@ -57,7 +57,7 @@ describe('mmm-fulfill-exp', () => {
       createPoolWithExampleDeposits(
         program,
         connection,
-        AllowlistKind.fvca,
+        [AllowlistKind.fvca],
         {
           owner: wallet.publicKey,
           cosigner,
@@ -470,7 +470,7 @@ describe('mmm-fulfill-exp', () => {
       createPoolWithExampleDeposits(
         program,
         connection,
-        AllowlistKind.mcc,
+        [AllowlistKind.mcc],
         {
           owner: wallet.publicKey,
           cosigner,
@@ -814,7 +814,7 @@ describe('mmm-fulfill-exp', () => {
       createPoolWithExampleDeposits(
         program,
         connection,
-        AllowlistKind.mint,
+        [AllowlistKind.mint],
         {
           owner: wallet.publicKey,
           cosigner,

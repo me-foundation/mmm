@@ -58,4 +58,6 @@ pub enum MMMErrorCode {
     InvalidMip1AssetParams, // 0x178a
     #[msg("Invalid token standard")]
     InvalidTokenStandard, // 0x178b
+    #[msg("Unexpected metadata uri")]
+    UnexpectedMetadataUri, // 0x178c
 }

@@ -155,7 +155,7 @@ describe('mmm-deposit', () => {
           createPoolWithExampleDeposits(
             program,
             connection,
-            AllowlistKind.mcc,
+            [AllowlistKind.mcc],
             {
               owner: wallet.publicKey,
               cosigner,
@@ -296,6 +296,7 @@ describe('mmm-deposit', () => {
     });
   });
 
+  // TODO - verify metadata URI allowlist here.
   describe('deposit_sell', () => {
     it('correctly verifies fvca-only allowlists when depositing items', async () => {
       const creator = Keypair.generate();

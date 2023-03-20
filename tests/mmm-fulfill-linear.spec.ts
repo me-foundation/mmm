@@ -22,9 +22,11 @@ import {
 } from '../sdk/src';
 import {
   airdrop,
+  assertFailedTx,
   assertIsBetween,
   assertTx,
   createPoolWithExampleDeposits,
+  getMetadataURI,
   getMetaplexInstance,
   getSellStatePDARent,
   getTokenAccountRent,
@@ -56,7 +58,7 @@ describe('mmm-fulfill-linear', () => {
       createPoolWithExampleDeposits(
         program,
         connection,
-        AllowlistKind.fvca,
+        [AllowlistKind.fvca],
         {
           owner: wallet.publicKey,
           cosigner,
@@ -460,7 +462,7 @@ describe('mmm-fulfill-linear', () => {
       createPoolWithExampleDeposits(
         program,
         connection,
-        AllowlistKind.mcc,
+        [AllowlistKind.mcc],
         {
           owner: wallet.publicKey,
           cosigner,
@@ -761,7 +763,7 @@ describe('mmm-fulfill-linear', () => {
       createPoolWithExampleDeposits(
         program,
         connection,
-        AllowlistKind.mint,
+        [AllowlistKind.mint],
         {
           owner: wallet.publicKey,
           cosigner,
@@ -988,5 +990,121 @@ describe('mmm-fulfill-linear', () => {
       finalBuyerBalance + finalSellerBalance,
       initBuyerBalance + initSellerBalance,
     );
+  });
+
+  it('BuySide with URI aux', async () => {
+    const seller = Keypair.generate();
+    const metaplexInstance = getMetaplexInstance(connection);
+    const [poolData] = await Promise.all([
+      createPoolWithExampleDeposits(
+        program,
+        connection,
+        // Must match MCC as well as validating URI against allowlist aux.
+        [AllowlistKind.mcc, AllowlistKind.metadata],
+        {
+          owner: wallet.publicKey,
+          cosigner,
+          curveType: CurveKind.linear,
+          curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(10)), // 0.1 SOL
+          expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
+          referralBp: 200,
+          reinvestFulfillBuy: false,
+          reinvestFulfillSell: false,
+        },
+        'buy',
+        seller.publicKey,
+      ),
+      airdrop(connection, seller.publicKey, 10),
+    ]);
+
+    const ownerExtraSftAtaAddress = await getAssociatedTokenAddress(
+      poolData.extraSft.mintAddress,
+      wallet.publicKey,
+    );
+    let initWalletBalance = await connection.getBalance(wallet.publicKey);
+    let initReferralBalance = await connection.getBalance(
+      poolData.referral.publicKey,
+    );
+    let initSellerBalance = await connection.getBalance(seller.publicKey);
+    let totalMakerFees = 0;
+
+    {
+      const expectedTakerFees = 2.7 * LAMPORTS_PER_SOL * 0.04;
+      const { key: sellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        poolData.extraSft.mintAddress,
+      );
+
+      const fulfillBuyCall = (allowlistAux: string) => {
+        return program.methods
+          .solFulfillBuy({
+            assetAmount: new anchor.BN(3),
+            minPaymentAmount: new anchor.BN(
+              2.7 * LAMPORTS_PER_SOL - expectedTakerFees,
+            ),
+            allowlistAux: allowlistAux,
+            takerFeeBp: 400,
+            makerFeeBp: 100,
+          })
+          .accountsStrict({
+            payer: seller.publicKey,
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            referral: poolData.referral.publicKey,
+            pool: poolData.poolKey,
+            buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+            assetMetadata: poolData.extraSft.metadataAddress,
+            assetMasterEdition: metaplexInstance
+              .nfts()
+              .pdas()
+              .masterEdition({ mint: poolData.extraSft.mintAddress }),
+            assetMint: poolData.extraSft.mintAddress,
+            payerAssetAccount: poolData.extraSft.tokenAddress!,
+            sellsideEscrowTokenAccount: poolData.poolAtaExtraSft,
+            ownerTokenAccount: ownerExtraSftAtaAddress,
+            allowlistAuxAccount: SystemProgram.programId,
+            sellState,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+          })
+          .transaction();
+      };
+      const failingUriTx = await fulfillBuyCall('some-different-uri');
+
+      const executeTx = async (tx: anchor.web3.Transaction) => {
+        const blockhashData = await connection.getLatestBlockhash();
+        tx.feePayer = seller.publicKey;
+        tx.recentBlockhash = blockhashData.blockhash;
+        tx.partialSign(cosigner, seller);
+
+        const txId = await connection.sendRawTransaction(tx.serialize(), {
+          skipPreflight: true,
+        });
+        const confirmedTx = await connection.confirmTransaction(
+          {
+            signature: txId,
+            blockhash: blockhashData.blockhash,
+            lastValidBlockHeight: blockhashData.lastValidBlockHeight,
+          },
+          'processed',
+        );
+
+        return { txId, confirmedTx };
+      };
+
+      const { txId, confirmedTx } = await executeTx(failingUriTx);
+
+      assertFailedTx(txId, confirmedTx);
+      assert.equal(await connection.getBalance(sellState), 0);
+
+      const { txId: successTxId, confirmedTx: successTx } = await executeTx(
+        await fulfillBuyCall(getMetadataURI(0)),
+      );
+
+      assertTx(successTxId, successTx);
+    }
   });
 });
