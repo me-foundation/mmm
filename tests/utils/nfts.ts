@@ -13,7 +13,6 @@ export const getMetaplexInstance = (conn: Connection) => {
 };
 
 export const getMetadataURI = (index: number): string => {
-  console.log(`URI: nft://${index}.json`);
   return `nft://${index}.json`;
 };
 
