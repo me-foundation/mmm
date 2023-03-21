@@ -338,6 +338,7 @@ export const getUpdateMigrationIx = (
     updateArgs: {
       ruleSet: null,
       collectionSize: null,
+      newUpdateAuthority: null,
     },
   };
   const updateAccounts: UpdateInstructionAccounts = {
@@ -362,9 +363,9 @@ export const getStartMigrationIx = (
     splTokenProgram: TOKEN_PROGRAM_ID,
     systemProgram: SystemProgram.programId,
     tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+    programSigner: pas,
   };
   const ret = createStartInstruction(startAccounts);
-  ret.keys.splice(4, 0, { pubkey: pas, isWritable: false, isSigner: false });
   return ret;
 };
 
