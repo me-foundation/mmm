@@ -138,8 +138,13 @@ pub fn handler<'info>(
         &[*ctx.bumps.get("pool").unwrap()],
     ]];
 
-    let parsed_metadata =
-        check_allowlists_for_mint(&pool.allowlists, asset_mint, payer_asset_metadata, None)?;
+    let parsed_metadata = check_allowlists_for_mint(
+        &pool.allowlists,
+        asset_mint,
+        payer_asset_metadata,
+        None,
+        args.allowlist_aux,
+    )?;
 
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, false)?;

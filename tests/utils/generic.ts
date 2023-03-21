@@ -59,6 +59,16 @@ export const getSellStatePDARent = async (conn: Connection) => {
   return sellStatePDARent;
 };
 
+export const fillAllowlists = (
+  allowlists: { kind: AllowlistKind; value: PublicKey }[],
+  totalLen: number,
+) => {
+  if (allowlists.length > totalLen)
+    throw new Error(
+      `Too many allowlist values in fillAllowlists. Passed in ${allowlists.length}, max is ${totalLen}`,
+    );
+  return [...allowlists, ...getEmptyAllowLists(totalLen - allowlists.length)];
+};
 export const getEmptyAllowLists = (num: number) => {
   const emptyAllowList = {
     kind: AllowlistKind.empty,
@@ -112,5 +122,18 @@ export const assertTx = (
   assert.isNull(
     tx.value.err,
     `transaction failed ${JSON.stringify({ txHash, err: tx.value.err })}`,
+  );
+};
+
+export const assertFailedTx = (
+  txHash: string,
+  tx: anchor.web3.RpcResponseAndContext<anchor.web3.SignatureResult>,
+) => {
+  assert.isNotNull(
+    tx.value.err,
+    `transaction succeeded, while it should have failed. ${JSON.stringify({
+      txHash,
+      err: tx.value.err,
+    })}`,
   );
 };

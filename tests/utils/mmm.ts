@@ -29,6 +29,7 @@ import {
   Mmm,
 } from '../../sdk/src';
 import {
+  fillAllowlists,
   getEmptyAllowLists,
   getKeypair,
   MIP1_COMPUTE_UNITS,
@@ -110,7 +111,7 @@ export const createPool = async (
 export const createPoolWithExampleDeposits = async (
   program: Program<Mmm>,
   connection: Connection,
-  kind: AllowlistKind,
+  kinds: AllowlistKind[],
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
   nftRecipient?: PublicKey,
@@ -118,7 +119,8 @@ export const createPoolWithExampleDeposits = async (
   const metaplexInstance = getMetaplexInstance(connection);
   const creator = Keypair.generate();
   const [nfts, sfts, extraNft, extraSft, allowlistValue] = await (async () => {
-    switch (kind) {
+    const kindToUse = kinds[0];
+    switch (kindToUse) {
       case AllowlistKind.mint:
         return Promise.all([
           mintNfts(connection, {
@@ -235,35 +237,46 @@ export const createPoolWithExampleDeposits = async (
           collection.mintAddress,
         ]);
       default:
-        throw new Error('unsupported allowlist kind');
+        throw new Error(
+          `unsupported allowlist kind passed while minting test nfts: ${kindToUse}`,
+        );
     }
   })();
 
   const mintAddressNft = nfts[0].mintAddress;
   const mintAddressSft = sfts[0].mintAddress;
 
-  const allowlists = (() => {
-    switch (kind) {
-      case AllowlistKind.fvca:
-        return [
-          { kind: AllowlistKind.fvca, value: allowlistValue! },
-          ...getEmptyAllowLists(5),
-        ];
-      case AllowlistKind.mcc:
-        return [
-          { kind: AllowlistKind.mcc, value: allowlistValue! },
-          ...getEmptyAllowLists(5),
-        ];
-      case AllowlistKind.mint:
-        return [
-          { kind: AllowlistKind.mint, value: mintAddressNft },
-          { kind: AllowlistKind.mint, value: mintAddressSft },
-          { kind: AllowlistKind.mint, value: extraNft[0].mintAddress },
-          { kind: AllowlistKind.mint, value: extraSft[0].mintAddress },
-          ...getEmptyAllowLists(2),
-        ];
-    }
-  })();
+  const allowlists = fillAllowlists(
+    kinds
+      .map((kind) => {
+        switch (kind) {
+          case AllowlistKind.fvca:
+            return [{ kind: AllowlistKind.fvca, value: allowlistValue! }];
+          case AllowlistKind.mcc:
+            return [{ kind: AllowlistKind.mcc, value: allowlistValue! }];
+          case AllowlistKind.mint:
+            return [
+              { kind: AllowlistKind.mint, value: mintAddressNft },
+              { kind: AllowlistKind.mint, value: mintAddressSft },
+              { kind: AllowlistKind.mint, value: extraNft[0].mintAddress },
+              { kind: AllowlistKind.mint, value: extraSft[0].mintAddress },
+            ];
+          case AllowlistKind.metadata:
+            return [
+              {
+                kind: AllowlistKind.metadata,
+                value: nfts[0].metadataAddress,
+              },
+            ];
+          default:
+            throw new Error(
+              `unsupported allowlist kind while building allowlist: ${kind}`,
+            );
+        }
+      })
+      .flat(),
+    6,
+  );
 
   const poolData = await createPool(program, {
     ...poolArgs,

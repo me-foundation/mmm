@@ -9,6 +9,7 @@ pub const ALLOWLIST_KIND_EMPTY: u8 = 0;
 pub const ALLOWLIST_KIND_FVCA: u8 = 1;
 pub const ALLOWLIST_KIND_MINT: u8 = 2;
 pub const ALLOWLIST_KIND_MCC: u8 = 3;
+pub const ALLOWLIST_KIND_METADATA: u8 = 4;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Allowlist {
@@ -23,7 +24,7 @@ impl Allowlist {
     // kind == 3: verified MCC
     // kind == 4,5,6,... will be supported in the future
     pub fn valid(&self) -> bool {
-        if self.kind > 3 {
+        if self.kind > ALLOWLIST_KIND_METADATA {
             return false;
         }
         if self.kind != 0 {

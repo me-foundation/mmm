@@ -2109,6 +2109,11 @@ export type Mmm = {
       "code": 6027,
       "name": "InvalidTokenStandard",
       "msg": "Invalid token standard"
+    },
+    {
+      "code": 6028,
+      "name": "UnexpectedMetadataUri",
+      "msg": "Unexpected metadata uri"
     }
   ]
 };
@@ -4224,6 +4229,11 @@ export const IDL: Mmm = {
       "code": 6027,
       "name": "InvalidTokenStandard",
       "msg": "Invalid token standard"
+    },
+    {
+      "code": 6028,
+      "name": "UnexpectedMetadataUri",
+      "msg": "Unexpected metadata uri"
     }
   ]
 };

@@ -30,6 +30,7 @@ pub fn check_allowlists_for_mint(
     mint: &Account<Mint>,
     metadata: &AccountInfo,
     master_edition: Option<&AccountInfo>,
+    allowlist_aux: Option<String>,
 ) -> Result<Metadata> {
     // We need to check the following validation rules
     // 1. make sure the metadata is correctly derived from the metadata pda with the mint
@@ -59,6 +60,24 @@ pub fn check_allowlists_for_mint(
         }
     }
 
+    if allowlists
+        .iter()
+        .any(|&val| val.kind == ALLOWLIST_KIND_METADATA)
+    {
+        // If allowlist_aux is not passed in, do not validate URI.
+        if let Some(ref aux_key) = allowlist_aux {
+            // Handle URI padding.
+            if !parsed_metadata.data.uri.trim().starts_with(aux_key) {
+                msg!(
+                    "Failed metadata validation. Expected URI: |{}| but got |{}|",
+                    *aux_key,
+                    parsed_metadata.data.uri
+                );
+                return Err(MMMErrorCode::UnexpectedMetadataUri.into());
+            }
+        }
+    }
+
     for allowlist_val in allowlists.iter() {
         match allowlist_val.kind {
             ALLOWLIST_KIND_EMPTY => {}
@@ -84,6 +103,11 @@ pub fn check_allowlists_for_mint(
                         return Ok(parsed_metadata);
                     }
                 }
+            }
+            ALLOWLIST_KIND_METADATA => {
+                // Do not validate URI here, as we already did it above.
+                // These checks are separate since allowlist values are unioned together.
+                continue;
             }
             _ => {
                 return Err(MMMErrorCode::InvalidAllowLists.into());

@@ -12,6 +12,10 @@ export const getMetaplexInstance = (conn: Connection) => {
   return Metaplex.make(conn).use(keypairIdentity(getKeypair()));
 };
 
+export const getMetadataURI = (index: number): string => {
+  return `nft://${index}.json`;
+};
+
 export const mintNfts = async (
   conn: Connection,
   config: {
@@ -41,7 +45,7 @@ export const mintNfts = async (
         metaplexInstance.nfts().create(
           {
             name: `TEST #${index}`,
-            uri: `nft://${index}.json`,
+            uri: getMetadataURI(index),
             sellerFeeBasisPoints: 100,
             isCollection: config.isCollection,
             tokenOwner: config.recipient,

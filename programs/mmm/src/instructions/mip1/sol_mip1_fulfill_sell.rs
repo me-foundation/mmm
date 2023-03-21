@@ -159,8 +159,13 @@ pub fn handler<'info>(
         &[*ctx.bumps.get("pool").unwrap()],
     ]];
 
-    let parsed_metadata =
-        check_allowlists_for_mint(&pool.allowlists, asset_mint, asset_metadata, None)?;
+    let parsed_metadata = check_allowlists_for_mint(
+        &pool.allowlists,
+        asset_mint,
+        asset_metadata,
+        None,
+        args.allowlist_aux,
+    )?;
     assert_is_programmable(&parsed_metadata)?;
 
     let (total_price, next_price) =

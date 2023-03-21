@@ -92,7 +92,13 @@ pub fn handler(ctx: Context<OcpDepositSell>, args: DepositSellArgs) -> Result<()
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
 
-    check_allowlists_for_mint(&pool.allowlists, asset_mint, asset_metadata, None)?;
+    check_allowlists_for_mint(
+        &pool.allowlists,
+        asset_mint,
+        asset_metadata,
+        None,
+        args.allowlist_aux,
+    )?;
 
     init_if_needed_ocp_ata(
         ctx.accounts.ocp_program.to_account_info(),

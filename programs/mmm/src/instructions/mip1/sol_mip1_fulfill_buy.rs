@@ -178,6 +178,7 @@ pub fn handler<'info>(
         asset_mint,
         asset_metadata,
         Some(asset_master_edition),
+        args.allowlist_aux,
     )?;
     assert_is_programmable(&parsed_metadata)?;
 

@@ -55,7 +55,7 @@ describe('mmm-creator-royalty', () => {
       createPoolWithExampleDeposits(
         program,
         connection,
-        AllowlistKind.mint,
+        [AllowlistKind.mint],
         {
           owner: wallet.publicKey,
           cosigner,
