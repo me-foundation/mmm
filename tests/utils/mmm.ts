@@ -119,7 +119,8 @@ export const createPoolWithExampleDeposits = async (
   const metaplexInstance = getMetaplexInstance(connection);
   const creator = Keypair.generate();
   const [nfts, sfts, extraNft, extraSft, allowlistValue] = await (async () => {
-    switch (kinds[0]) {
+    const kindToUse = kinds[0];
+    switch (kindToUse) {
       case AllowlistKind.mint:
         return Promise.all([
           mintNfts(connection, {
@@ -236,7 +237,9 @@ export const createPoolWithExampleDeposits = async (
           collection.mintAddress,
         ]);
       default:
-        throw new Error('unsupported allowlist kind');
+        throw new Error(
+          `unsupported allowlist kind passed while minting test nfts: ${kindToUse}`,
+        );
     }
   })();
 
@@ -266,7 +269,9 @@ export const createPoolWithExampleDeposits = async (
               },
             ];
           default:
-            throw new Error('unsupported allowlist kind');
+            throw new Error(
+              `unsupported allowlist kind while building allowlist: ${kind}`,
+            );
         }
       })
       .flat(),
