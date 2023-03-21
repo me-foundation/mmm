@@ -27,6 +27,7 @@ import {
   createPool,
   createPoolWithExampleDeposits,
   getEmptyAllowLists,
+  getMetadataURI,
   getMetaplexInstance,
   mintCollection,
   mintNfts,
@@ -296,7 +297,6 @@ describe('mmm-deposit', () => {
     });
   });
 
-  // TODO - verify metadata URI allowlist here.
   describe('deposit_sell', () => {
     it('correctly verifies fvca-only allowlists when depositing items', async () => {
       const creator = Keypair.generate();
@@ -598,6 +598,101 @@ describe('mmm-deposit', () => {
         sftAccount.owner.toBase58(),
         wallet.publicKey.toBase58(),
       );
+    });
+
+    it('correctly verifies metadata+mcc allowlists when depositing items', async () => {
+      const metaplexInstance = getMetaplexInstance(connection);
+      const { collection } = await mintCollection(connection, {
+        numNfts: 0,
+        legacy: true,
+        verifyCollection: true,
+      });
+      const [{ poolKey }, nfts, sfts] = await Promise.all([
+        createPool(program, {
+          owner: wallet.publicKey,
+          cosigner,
+          allowlists: [
+            { kind: AllowlistKind.mcc, value: collection.mintAddress },
+            { kind: AllowlistKind.metadata, value: collection.mintAddress },
+            ...getEmptyAllowLists(4),
+          ],
+        }),
+        mintNfts(connection, {
+          numNfts: 1,
+          collectionAddress: collection.mintAddress,
+          verifyCollection: true,
+          recipient: wallet.publicKey,
+        }),
+        mintNfts(connection, {
+          numNfts: 1,
+          sftAmount: 10,
+          collectionAddress: collection.mintAddress,
+          verifyCollection: true,
+          recipient: wallet.publicKey,
+        }),
+      ]);
+
+      const mintAddress1 = nfts[0].mintAddress;
+      const mintAddress2 = sfts[0].mintAddress;
+
+      let poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
+
+      const poolAta1 = await getAssociatedTokenAddress(
+        mintAddress1,
+        poolKey,
+        true,
+      );
+      const { key: sellState1 } = getMMMSellStatePDA(
+        program.programId,
+        poolKey,
+        mintAddress1,
+      );
+      const depositSellCall = (aux: string) =>
+        program.methods
+          .depositSell({
+            assetAmount: new anchor.BN(1),
+            allowlistAux: aux,
+          })
+          .accountsStrict({
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            pool: poolKey,
+            assetMetadata: metaplexInstance
+              .nfts()
+              .pdas()
+              .metadata({ mint: mintAddress1 }),
+            assetMasterEdition: metaplexInstance
+              .nfts()
+              .pdas()
+              .masterEdition({ mint: mintAddress1 }),
+            assetMint: mintAddress1,
+            assetTokenAccount: nfts[0].tokenAddress!,
+            sellsideEscrowTokenAccount: poolAta1,
+            allowlistAuxAccount: SystemProgram.programId,
+            sellState: sellState1,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+          })
+          .signers([cosigner])
+          .rpc();
+      try {
+        await depositSellCall('wrong-aux');
+        assert.fail('Should have failed with wrong aux');
+      } catch (e) {
+        console.log(`Failed in metadata-uri check test as expected: ${e}`);
+      }
+
+      await depositSellCall(getMetadataURI(0));
+
+      let nftEscrow = await getTokenAccount(connection, poolAta1);
+      assert.equal(Number(nftEscrow.amount), 1);
+      assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
+      poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
+      assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
     });
 
     it('correctly verifies mint-only allowlists when depositing items', async () => {
