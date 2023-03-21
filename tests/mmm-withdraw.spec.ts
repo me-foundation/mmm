@@ -118,7 +118,7 @@ describe('mmm-withdraw', () => {
     const poolData = await createPoolWithExampleDeposits(
       program,
       connection,
-      AllowlistKind.fvca,
+      [AllowlistKind.fvca],
       {
         owner: wallet.publicKey,
         cosigner,
