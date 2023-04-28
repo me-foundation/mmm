@@ -34,7 +34,6 @@ import {
   getEmptyAllowLists,
   getSellStatePDARent,
   getTokenAccountRent,
-  getTokenRecordRent,
   MIP1_COMPUTE_UNITS,
   sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
@@ -333,7 +332,6 @@ describe('mmm-mip1', () => {
       referralBalance,
       poolBalance,
       buyerAta,
-      tokenRecordRent,
     ] = await Promise.all([
       connection.getBalance(buyer.publicKey),
       connection.getBalance(wallet.publicKey),
@@ -341,7 +339,6 @@ describe('mmm-mip1', () => {
       connection.getBalance(poolData.referral.publicKey),
       connection.getBalance(poolData.poolKey),
       getTokenAccount(connection, buyerNftAtaAddress),
-      getTokenRecordRent(connection),
     ]);
 
     assert.equal(
@@ -350,7 +347,6 @@ describe('mmm-mip1', () => {
         1.575 * LAMPORTS_PER_SOL -
         SIGNATURE_FEE_LAMPORTS * 2 -
         tokenAccountRent -
-        tokenRecordRent -
         expectedTakerFees -
         expectedRoyalties,
     );
@@ -486,14 +482,12 @@ describe('mmm-mip1', () => {
       creatorBalance,
       referralBalance,
       poolEscrowAta,
-      tokenRecordRent,
     ] = await Promise.all([
       connection.getBalance(seller.publicKey),
       connection.getBalance(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.nftCreator.publicKey),
       connection.getBalance(poolData.referral.publicKey),
       getTokenAccount(connection, poolData.poolAtaExtraNft),
-      getTokenRecordRent(connection),
     ]);
 
     assert.equal(
@@ -501,7 +495,6 @@ describe('mmm-mip1', () => {
       initSellerBalance +
         2.2 * LAMPORTS_PER_SOL -
         SIGNATURE_FEE_LAMPORTS * 2 -
-        tokenRecordRent -
         expectedTakerFees -
         expectedRoyalties -
         sellStateAccountRent,
@@ -572,7 +565,6 @@ describe('mmm-mip1', () => {
       initPaymentEscrowBalance,
       tokenAccountRent,
       sellStateAccountRent,
-      tokenRecordRent,
     ] = await Promise.all([
       connection.getBalance(wallet.publicKey),
       connection.getBalance(buyer.publicKey),
@@ -582,7 +574,6 @@ describe('mmm-mip1', () => {
       connection.getBalance(poolData.poolPaymentEscrow),
       getTokenAccountRent(connection),
       getSellStatePDARent(connection),
-      getTokenRecordRent(connection),
     ]);
     let cumulativeLpFees = 0;
 
@@ -686,7 +677,6 @@ describe('mmm-mip1', () => {
         initSellerBalance +
           2.5 * LAMPORTS_PER_SOL -
           SIGNATURE_FEE_LAMPORTS * 2 -
-          tokenRecordRent * 2 - // since reinvest buy = false, need to create two token records
           expectedTakerFees -
           expectedRoyalties -
           expectedLpFees,
@@ -811,7 +801,6 @@ describe('mmm-mip1', () => {
         initBuyerBalance -
           2.5 * LAMPORTS_PER_SOL -
           SIGNATURE_FEE_LAMPORTS * 2 -
-          tokenRecordRent -
           tokenAccountRent -
           expectedTakerFees -
           expectedRoyalties -
