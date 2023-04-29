@@ -3,6 +3,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
+use std::convert::TryFrom;
 
 use crate::{
     constants::*,
@@ -137,10 +138,13 @@ pub fn handler<'info>(
 
     assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(total_price, args.maker_fee_bp)?;
-    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)? as u64;
-    let referral_fee = maker_fee
-        .checked_add(taker_fee as i64)
-        .ok_or(MMMErrorCode::NumericOverflow)? as u64;
+    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)?;
+    let referral_fee = u64::try_from(
+        maker_fee
+            .checked_add(taker_fee)
+            .ok_or(MMMErrorCode::NumericOverflow)?,
+    )
+    .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
     let transfer_sol_to = if pool.reinvest_fulfill_sell {
         buyside_sol_escrow_account.to_account_info()
@@ -153,9 +157,13 @@ pub fn handler<'info>(
         &anchor_lang::solana_program::system_instruction::transfer(
             payer.key,
             transfer_sol_to.key,
-            (total_price as i64)
-                .checked_sub(maker_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)? as u64,
+            u64::try_from(
+                i64::try_from(total_price)
+                    .map_err(|_| MMMErrorCode::NumericOverflow)?
+                    .checked_sub(maker_fee)
+                    .ok_or(MMMErrorCode::NumericOverflow)?,
+            )
+            .map_err(|_| MMMErrorCode::NumericOverflow)?,
         ),
         &[
             payer.to_account_info(),
@@ -242,7 +250,7 @@ pub fn handler<'info>(
     let payment_amount = total_price
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_add(taker_fee)
+        .checked_add(taker_fee as u64)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_add(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;

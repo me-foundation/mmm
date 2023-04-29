@@ -3,6 +3,7 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
+use std::convert::TryFrom;
 
 use crate::{
     ata::init_if_needed_ata,
@@ -136,10 +137,13 @@ pub fn handler<'info>(
 
     assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(total_price, args.maker_fee_bp)?;
-    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)? as u64;
-    let referral_fee = maker_fee
-        .checked_add(taker_fee as i64)
-        .ok_or(MMMErrorCode::NumericOverflow)? as u64;
+    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)?;
+    let referral_fee = u64::try_from(
+        maker_fee
+            .checked_add(taker_fee)
+            .ok_or(MMMErrorCode::NumericOverflow)?,
+    )
+    .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
     if pool.reinvest_fulfill_buy {
         let sellside_escrow_token_account =
@@ -232,7 +236,7 @@ pub fn handler<'info>(
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_sub(taker_fee)
+        .checked_sub(taker_fee as u64)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;

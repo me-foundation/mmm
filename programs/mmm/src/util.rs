@@ -11,6 +11,7 @@ use mpl_token_metadata::{
     state::{Metadata, TokenMetadataAccount, TokenStandard},
 };
 use open_creator_protocol::state::Policy;
+use std::convert::TryFrom;
 
 // copied from mpl-token-metadata
 fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
@@ -161,11 +162,14 @@ pub fn get_sol_lp_fee(
 }
 
 pub fn get_sol_fee(total_sol_price: u64, fee_bp: i16) -> Result<i64> {
-    Ok((total_sol_price as i128)
-        .checked_mul(fee_bp as i128)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_div(10000)
-        .ok_or(MMMErrorCode::NumericOverflow)? as i64)
+    i64::try_from(
+        (total_sol_price as i128)
+            .checked_mul(fee_bp as i128)
+            .ok_or(MMMErrorCode::NumericOverflow)?
+            .checked_div(10000)
+            .ok_or(MMMErrorCode::NumericOverflow)?,
+    )
+    .map_err(|_| MMMErrorCode::NumericOverflow.into())
 }
 
 pub fn get_sol_total_price_and_next_price(
