@@ -23,9 +23,9 @@ use crate::{
     instructions::sol_fulfill_buy::SolFulfillBuyArgs,
     state::{Pool, SellState},
     util::{
-        assert_is_programmable, check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee,
-        get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol, try_close_escrow,
-        try_close_pool, try_close_sell_state,
+        assert_is_programmable, assert_valid_fees_bp, check_allowlists_for_mint, get_sol_fee,
+        get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol,
+        try_close_escrow, try_close_pool, try_close_sell_state,
     },
 };
 
@@ -186,19 +186,12 @@ pub fn handler<'info>(
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
 
-    if args
-        .maker_fee_bp
-        .checked_add(args.taker_fee_bp)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        > MAX_REFERRAL_FEE_BP
-    {
-        return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
-    }
+    assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(total_price, args.maker_fee_bp)?;
-    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)?;
+    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)? as u64;
     let referral_fee = maker_fee
-        .checked_add(taker_fee)
-        .ok_or(MMMErrorCode::NumericOverflow)?;
+        .checked_add(taker_fee as i64)
+        .ok_or(MMMErrorCode::NumericOverflow)? as u64;
 
     // transfer to token account owned by pool
     let transfer_ins = TransferBuilder::new()
