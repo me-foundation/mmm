@@ -505,7 +505,7 @@ describe('mmm-fulfill-linear', () => {
           ),
           allowlistAux: '',
           takerFeeBp: 400,
-          makerFeeBp: 100,
+          makerFeeBp: -100,
         })
         .accountsStrict({
           payer: seller.publicKey,
@@ -556,7 +556,7 @@ describe('mmm-fulfill-linear', () => {
     const sellStatePDARent = await getSellStatePDARent(connection);
     {
       const expectedTakerFees = 2.7 * LAMPORTS_PER_SOL * 0.04;
-      const expectedMakerFees = 2.7 * LAMPORTS_PER_SOL * 0.01;
+      const expectedMakerFees = 2.7 * LAMPORTS_PER_SOL * -0.01;
       const expectedReferralFees = expectedTakerFees + expectedMakerFees;
       totalMakerFees += expectedMakerFees;
       const [
@@ -1021,12 +1021,6 @@ describe('mmm-fulfill-linear', () => {
       poolData.extraSft.mintAddress,
       wallet.publicKey,
     );
-    let initWalletBalance = await connection.getBalance(wallet.publicKey);
-    let initReferralBalance = await connection.getBalance(
-      poolData.referral.publicKey,
-    );
-    let initSellerBalance = await connection.getBalance(seller.publicKey);
-    let totalMakerFees = 0;
 
     {
       const expectedTakerFees = 2.7 * LAMPORTS_PER_SOL * 0.04;

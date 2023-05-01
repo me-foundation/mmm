@@ -69,7 +69,7 @@ describe('mmm-fulfill-exp', () => {
         },
         'sell',
       ),
-      airdrop(connection, buyer.publicKey, 10),
+      airdrop(connection, buyer.publicKey, 20),
     ]);
 
     const buyerNftAtaAddress = await getAssociatedTokenAddress(
@@ -461,6 +461,114 @@ describe('mmm-fulfill-exp', () => {
       poolAccountInfo.buysidePaymentAmount.toNumber(),
       1.02 * LAMPORTS_PER_SOL,
     );
+
+    {
+      initWalletBalance = await connection.getBalance(wallet.publicKey);
+      const { key: sellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        poolData.sft.mintAddress,
+      );
+      // price is now 2.4310125 * 1.05 = 2.552563125
+      const expectedTakerFees = 2.552563125 * LAMPORTS_PER_SOL * 0.01;
+      const tx = await program.methods
+        .solFulfillSell({
+          assetAmount: new anchor.BN(1),
+          maxPaymentAmount: new anchor.BN(
+            2.552563125 * LAMPORTS_PER_SOL + expectedTakerFees,
+          ),
+          buysideCreatorRoyaltyBp: 0,
+          allowlistAux: '',
+          makerFeeBp: -50,
+          takerFeeBp: 100,
+        })
+        .accountsStrict({
+          payer: buyer.publicKey,
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+          assetMetadata: poolData.sft.metadataAddress,
+          assetMasterEdition: metaplexInstance
+            .nfts()
+            .pdas()
+            .masterEdition({ mint: poolData.sft.mintAddress }),
+          assetMint: poolData.sft.mintAddress,
+          sellsideEscrowTokenAccount: poolData.poolAtaSft,
+          payerAssetAccount: buyerSftAtaAddress,
+          allowlistAuxAccount: SystemProgram.programId,
+          sellState,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        })
+        .transaction();
+
+      const blockhashData = await connection.getLatestBlockhash();
+      tx.feePayer = buyer.publicKey;
+      tx.recentBlockhash = blockhashData.blockhash;
+      tx.partialSign(cosigner, buyer);
+
+      const txId = await connection.sendRawTransaction(tx.serialize(), {
+        skipPreflight: true,
+      });
+      const confirmedTx = await connection.confirmTransaction(
+        {
+          signature: txId,
+          blockhash: blockhashData.blockhash,
+          lastValidBlockHeight: blockhashData.lastValidBlockHeight,
+        },
+        'processed',
+      );
+      assertTx(txId, confirmedTx);
+    }
+
+    {
+      const expectedMakerFees = Math.ceil(
+        2.552563125 * LAMPORTS_PER_SOL * -0.005,
+      );
+      const expectedTakerFees = Math.floor(
+        2.552563125 * LAMPORTS_PER_SOL * 0.01,
+      );
+      const expectedReferralFees = expectedMakerFees + expectedTakerFees;
+      const [
+        buyerBalance,
+        referralBalance,
+        poolAtaBalance,
+        poolEscrowBalance,
+        afterWalletBalance,
+      ] = await Promise.all([
+        connection.getBalance(buyer.publicKey),
+        connection.getBalance(poolData.referral.publicKey),
+        connection.getBalance(poolData.poolAtaSft),
+        connection.getBalance(poolData.poolPaymentEscrow),
+        connection.getBalance(wallet.publicKey),
+      ]);
+      assert.equal(
+        buyerBalance,
+        initBuyerBalance -
+          2.552563125 * LAMPORTS_PER_SOL -
+          expectedTakerFees -
+          (expectedTxFees - tokenAccountRent), // token account has already been created
+      );
+      assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
+      assert.equal(poolAtaBalance, tokenAccountRent);
+      assert.equal(poolEscrowBalance, 1.02 * LAMPORTS_PER_SOL);
+      assert.equal(
+        afterWalletBalance,
+        initWalletBalance + 2.552563125 * LAMPORTS_PER_SOL - expectedMakerFees,
+      );
+    }
+
+    poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+    assert.equal(
+      poolAccountInfo.spotPrice.toNumber(),
+      2.552563125 * LAMPORTS_PER_SOL,
+    );
+    assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
+    assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
   });
 
   it('Buyside only', async () => {

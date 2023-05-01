@@ -486,7 +486,7 @@ describe('mmm-ocp', () => {
     assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 1);
   });
 
-  it('can fulfill two sided - happy path', async () => {
+  it('can fulfill two sided with negative maker fees - happy path', async () => {
     const seller = Keypair.generate();
     const buyer = Keypair.generate();
     const policy = await createPolicyFixture(connection, wallet.payer);
@@ -554,7 +554,7 @@ describe('mmm-ocp', () => {
           assetAmount: new anchor.BN(1),
           minPaymentAmount: new anchor.BN(2.405 * LAMPORTS_PER_SOL),
           allowlistAux: null,
-          makerFeeBp: 250,
+          makerFeeBp: -30,
           takerFeeBp: 30,
         })
         .accountsStrict({
@@ -597,7 +597,7 @@ describe('mmm-ocp', () => {
       await sendAndAssertTx(connection, tx, blockhashData, false);
 
       const expectedTakerFees = 2.5 * LAMPORTS_PER_SOL * 0.003;
-      const expectedMakerFees = 2.5 * LAMPORTS_PER_SOL * 0.025;
+      const expectedMakerFees = 2.5 * LAMPORTS_PER_SOL * -0.003;
       const expectedReferralFees = expectedMakerFees + expectedTakerFees;
       const expectedRoyalties = 2.5 * LAMPORTS_PER_SOL * 0.025;
       const expectedLpFees = 2.5 * LAMPORTS_PER_SOL * 0.01;
@@ -675,7 +675,7 @@ describe('mmm-ocp', () => {
           assetAmount: new anchor.BN(1),
           maxPaymentAmount: new anchor.BN(2.675 * LAMPORTS_PER_SOL),
           allowlistAux: null,
-          makerFeeBp: 100,
+          makerFeeBp: -100,
           takerFeeBp: 350,
         })
         .accountsStrict({
@@ -717,7 +717,7 @@ describe('mmm-ocp', () => {
       await sendAndAssertTx(connection, tx, blockhashData, false);
 
       const expectedTakerFees = 2.5 * LAMPORTS_PER_SOL * 0.035;
-      const expectedMakerFees = 2.5 * LAMPORTS_PER_SOL * 0.01;
+      const expectedMakerFees = 2.5 * LAMPORTS_PER_SOL * -0.01;
       const expectedReferralFees = expectedMakerFees + expectedTakerFees;
       const expectedRoyalties = 2.5 * LAMPORTS_PER_SOL * 0.025;
       const expectedLpFees = 2.5 * LAMPORTS_PER_SOL * 0.01;
