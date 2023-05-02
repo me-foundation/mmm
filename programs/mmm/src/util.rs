@@ -1,4 +1,8 @@
-use crate::{constants::MAX_METADATA_CREATOR_ROYALTY_BP, errors::MMMErrorCode, state::*};
+use crate::{
+    constants::{MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE},
+    errors::MMMErrorCode,
+    state::*,
+};
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token::Mint;
 use mpl_token_metadata::{
@@ -7,6 +11,7 @@ use mpl_token_metadata::{
     state::{Metadata, TokenMetadataAccount, TokenStandard},
 };
 use open_creator_protocol::state::Policy;
+use std::convert::TryFrom;
 
 // copied from mpl-token-metadata
 fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
@@ -156,12 +161,15 @@ pub fn get_sol_lp_fee(
         .ok_or(MMMErrorCode::NumericOverflow)?) as u64)
 }
 
-pub fn get_sol_fee(total_sol_price: u64, fee_bp: u16) -> Result<u64> {
-    Ok((total_sol_price as u128)
-        .checked_mul(fee_bp as u128)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_div(10000)
-        .ok_or(MMMErrorCode::NumericOverflow)? as u64)
+pub fn get_sol_fee(total_sol_price: u64, fee_bp: i16) -> Result<i64> {
+    i64::try_from(
+        (total_sol_price as i128)
+            .checked_mul(fee_bp as i128)
+            .ok_or(MMMErrorCode::NumericOverflow)?
+            .checked_div(10000)
+            .ok_or(MMMErrorCode::NumericOverflow)?,
+    )
+    .map_err(|_| MMMErrorCode::NumericOverflow.into())
 }
 
 pub fn get_sol_total_price_and_next_price(
@@ -172,7 +180,7 @@ pub fn get_sol_total_price_and_next_price(
     // the price needs to go down
     let p = pool.spot_price;
     let delta = pool.curve_delta;
-    match fulfill_buy {
+    let ret = match fulfill_buy {
         true => {
             match pool.curve_type {
                 CURVE_KIND_LINEAR => {
@@ -269,6 +277,20 @@ pub fn get_sol_total_price_and_next_price(
                 _ => Err(MMMErrorCode::InvalidCurveType.into()),
             }
         }
+    };
+
+    match ret {
+        Ok((total_price, final_price)) => {
+            if total_price == 0 {
+                return Err(MMMErrorCode::NumericOverflow.into());
+            }
+
+            if total_price > MAX_TOTAL_PRICE {
+                return Err(MMMErrorCode::NumericOverflow.into());
+            }
+            Ok((total_price, final_price))
+        }
+        Err(e) => Err(e),
     }
 }
 
@@ -447,4 +469,22 @@ pub fn assert_is_programmable(parsed_metadata: &Metadata) -> Result<()> {
     } else {
         Err(MMMErrorCode::InvalidTokenStandard.into())
     }
+}
+
+pub fn assert_valid_fees_bp(maker_fee_bp: i16, taker_fee_bp: i16) -> Result<()> {
+    let bound = MAX_REFERRAL_FEE_BP;
+    if !(0..=bound).contains(&taker_fee_bp) {
+        return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
+    }
+
+    if !(-bound..=bound).contains(&maker_fee_bp) {
+        return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
+    }
+
+    let sum = maker_fee_bp + taker_fee_bp;
+    if !(0..=bound).contains(&sum) {
+        return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
+    }
+
+    Ok(())
 }

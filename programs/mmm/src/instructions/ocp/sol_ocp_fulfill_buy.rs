@@ -4,6 +4,7 @@ use anchor_spl::{
     token::{Mint, Token, TokenAccount},
 };
 use open_creator_protocol::state::Policy;
+use std::convert::TryFrom;
 
 use crate::{
     ata::init_if_needed_ocp_ata,
@@ -12,8 +13,9 @@ use crate::{
     instructions::sol_fulfill_buy::SolFulfillBuyArgs,
     state::{Pool, SellState},
     util::{
-        check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
-        log_pool, pay_creator_fees_in_sol, try_close_escrow, try_close_pool, try_close_sell_state,
+        assert_valid_fees_bp, check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee,
+        get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol, try_close_escrow,
+        try_close_pool, try_close_sell_state,
     },
 };
 
@@ -145,19 +147,16 @@ pub fn handler<'info>(
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
 
-    if args
-        .maker_fee_bp
-        .checked_add(args.taker_fee_bp)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        > MAX_REFERRAL_FEE_BP
-    {
-        return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
-    }
+    assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(total_price, args.maker_fee_bp)?;
     let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)?;
-    let referral_fee = maker_fee
-        .checked_add(taker_fee)
-        .ok_or(MMMErrorCode::NumericOverflow)?;
+    let referral_fee = u64::try_from(
+        maker_fee
+            .checked_add(taker_fee)
+            .ok_or(MMMErrorCode::NumericOverflow)?,
+    )
+    .map_err(|_| MMMErrorCode::NumericOverflow)?;
+
     let (target_token_account, target_authority) = if pool.reinvest_fulfill_buy {
         (
             ctx.accounts.sellside_escrow_token_account.to_account_info(),
@@ -260,7 +259,7 @@ pub fn handler<'info>(
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_sub(taker_fee)
+        .checked_sub(taker_fee as u64)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;

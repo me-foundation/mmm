@@ -1789,11 +1789,11 @@ export type Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }
@@ -1819,11 +1819,11 @@ export type Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }
@@ -1879,11 +1879,11 @@ export type Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }
@@ -1913,11 +1913,11 @@ export type Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }
@@ -3909,11 +3909,11 @@ export const IDL: Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }
@@ -3939,11 +3939,11 @@ export const IDL: Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }
@@ -3999,11 +3999,11 @@ export const IDL: Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }
@@ -4033,11 +4033,11 @@ export const IDL: Mmm = {
           },
           {
             "name": "makerFeeBp",
-            "type": "u16"
+            "type": "i16"
           },
           {
             "name": "takerFeeBp",
-            "type": "u16"
+            "type": "i16"
           }
         ]
       }

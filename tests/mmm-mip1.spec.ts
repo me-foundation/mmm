@@ -839,4 +839,318 @@ describe('mmm-mip1', () => {
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
     }
   });
+
+  it('can fulfill two sided with negative maker fees - happy path', async () => {
+    const seller = Keypair.generate();
+    const buyer = Keypair.generate();
+    const [poolData] = await Promise.all([
+      createPoolWithExampleMip1Deposits(
+        program,
+        connection,
+        {
+          owner: wallet.publicKey,
+          cosigner,
+          spotPrice: new anchor.BN(3 * LAMPORTS_PER_SOL),
+          curveDelta: new anchor.BN(2500),
+          curveType: CurveKind.exp,
+          reinvestFulfillBuy: false,
+          reinvestFulfillSell: true,
+          lpFeeBp: 150,
+          buysideCreatorRoyaltyBp: 123,
+        },
+        'both',
+        nftCreator,
+        seller.publicKey,
+        defaultRules,
+      ),
+      airdrop(connection, seller.publicKey, 10),
+      airdrop(connection, buyer.publicKey, 10),
+    ]);
+
+    let [
+      initWalletBalance,
+      initBuyerBalance,
+      initSellerBalance,
+      initCreatorBalance,
+      initReferralBalance,
+      initPaymentEscrowBalance,
+      tokenAccountRent,
+      sellStateAccountRent,
+    ] = await Promise.all([
+      connection.getBalance(wallet.publicKey),
+      connection.getBalance(buyer.publicKey),
+      connection.getBalance(seller.publicKey),
+      connection.getBalance(poolData.nftCreator.publicKey),
+      connection.getBalance(poolData.referral.publicKey),
+      connection.getBalance(poolData.poolPaymentEscrow),
+      getTokenAccountRent(connection),
+      getSellStatePDARent(connection),
+    ]);
+    let cumulativeLpFees = 0;
+
+    {
+      const { key: sellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        poolData.extraNft.mintAddress,
+      );
+
+      const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+        poolData.extraNft.mintAddress,
+        wallet.publicKey,
+      );
+
+      // sale price should be 3 SOL
+      // with taker fee and royalties should be 3 * (1 - 0.005 - 0.015 - 0.015) = 2.895 SOL
+      const tx = await program.methods
+        .solMip1FulfillBuy({
+          assetAmount: new anchor.BN(1),
+          minPaymentAmount: new anchor.BN(2.895 * LAMPORTS_PER_SOL),
+          allowlistAux: null,
+          makerFeeBp: -30,
+          takerFeeBp: 50,
+        })
+        .accountsStrict({
+          payer: seller.publicKey,
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+          assetMetadata: poolData.extraNft.metadataAddress,
+          assetMint: poolData.extraNft.mintAddress,
+          assetMasterEdition: poolData.extraNft.masterEditionAddress,
+          payerAssetAccount: poolData.extraNft.tokenAddress,
+          sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
+          ownerTokenAccount: ownerExtraNftAtaAddress,
+          allowlistAuxAccount: SystemProgram.programId,
+          sellState,
+          tokenOwnerTokenRecord: getTokenRecordPDA(
+            poolData.extraNft.mintAddress,
+            poolData.extraNft.tokenAddress,
+          ).key,
+          poolTokenRecord: getTokenRecordPDA(
+            poolData.extraNft.mintAddress,
+            poolData.poolAtaExtraNft,
+          ).key,
+          poolOwnerTokenRecord: getTokenRecordPDA(
+            poolData.extraNft.mintAddress,
+            ownerExtraNftAtaAddress,
+          ).key,
+          authorizationRules: defaultRules,
+          ...DEFAULT_ACCOUNTS,
+        })
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: MIP1_COMPUTE_UNITS,
+          }),
+        ])
+        .remainingAccounts([
+          {
+            pubkey: poolData.nftCreator.publicKey,
+            isSigner: false,
+            isWritable: true,
+          },
+        ])
+        .transaction();
+
+      const blockhashData = await connection.getLatestBlockhash();
+      tx.feePayer = seller.publicKey;
+      tx.recentBlockhash = blockhashData.blockhash;
+      tx.partialSign(cosigner, seller);
+      await sendAndAssertTx(connection, tx, blockhashData, false);
+
+      const expectedTakerFees = 3 * LAMPORTS_PER_SOL * 0.005;
+      const expectedMakerFees = 3 * LAMPORTS_PER_SOL * -0.003;
+      const expectedReferralFees = expectedMakerFees + expectedTakerFees;
+      const expectedRoyalties = 3 * LAMPORTS_PER_SOL * 0.015;
+      const expectedLpFees = 3 * LAMPORTS_PER_SOL * 0.015;
+      const [
+        sellerBalance,
+        paymentEscrowBalance,
+        walletBalance,
+        creatorBalance,
+        referralBalance,
+        sellStateBalance,
+        ownerAta,
+      ] = await Promise.all([
+        connection.getBalance(seller.publicKey),
+        connection.getBalance(poolData.poolPaymentEscrow),
+        connection.getBalance(wallet.publicKey),
+        connection.getBalance(poolData.nftCreator.publicKey),
+        connection.getBalance(poolData.referral.publicKey),
+        connection.getBalance(sellState),
+        getTokenAccount(connection, ownerExtraNftAtaAddress),
+      ]);
+
+      assert.equal(
+        sellerBalance,
+        initSellerBalance +
+          3 * LAMPORTS_PER_SOL -
+          SIGNATURE_FEE_LAMPORTS * 2 -
+          expectedTakerFees -
+          expectedRoyalties -
+          expectedLpFees,
+      );
+      assert.equal(
+        paymentEscrowBalance,
+        initPaymentEscrowBalance - 3 * LAMPORTS_PER_SOL - expectedMakerFees,
+      );
+      assert.equal(walletBalance, initWalletBalance + expectedLpFees);
+      assert.equal(creatorBalance, initCreatorBalance + expectedRoyalties);
+      assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
+      assert.equal(sellStateBalance, 0);
+      assert.equal(Number(ownerAta.amount), 1);
+      assert.equal(ownerAta.owner.toBase58(), wallet.publicKey.toBase58());
+      assert.equal(
+        ownerAta.mint.toBase58(),
+        poolData.extraNft.mintAddress.toBase58(),
+      );
+
+      const poolAccountInfo = await program.account.pool.fetch(
+        poolData.poolKey,
+      );
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
+      assert.equal(
+        poolAccountInfo.spotPrice.toNumber(),
+        2.4 * LAMPORTS_PER_SOL,
+      );
+      assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), expectedLpFees);
+
+      initPaymentEscrowBalance = paymentEscrowBalance;
+      initWalletBalance = walletBalance;
+      initCreatorBalance = creatorBalance;
+      initReferralBalance = referralBalance;
+      cumulativeLpFees += expectedLpFees;
+    }
+
+    {
+      const buyerNftAtaAddress = await getAssociatedTokenAddress(
+        poolData.nft.mintAddress,
+        buyer.publicKey,
+      );
+      const { key: sellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        poolData.nft.mintAddress,
+      );
+      // sale price should be 2.4 * 1.25 = 3 SOL
+      // with taker fee and royalties should be 3 * (1 + 0.035 + 0.015 + 0.015) = 3.195 SOL
+      const tx = await program.methods
+        .solMip1FulfillSell({
+          assetAmount: new anchor.BN(1),
+          maxPaymentAmount: new anchor.BN(3.195 * LAMPORTS_PER_SOL),
+          allowlistAux: null,
+          makerFeeBp: -350,
+          takerFeeBp: 350,
+        })
+        .accountsStrict({
+          payer: buyer.publicKey,
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+          assetMetadata: poolData.nft.metadataAddress,
+          assetMint: poolData.nft.mintAddress,
+          assetMasterEdition: poolData.nft.masterEditionAddress,
+          sellsideEscrowTokenAccount: poolData.poolAtaNft,
+          payerAssetAccount: buyerNftAtaAddress,
+          allowlistAuxAccount: SystemProgram.programId,
+          sellState,
+          ownerTokenRecord: getTokenRecordPDA(
+            poolData.nft.mintAddress,
+            poolData.poolAtaNft,
+          ).key,
+          destinationTokenRecord: getTokenRecordPDA(
+            poolData.nft.mintAddress,
+            buyerNftAtaAddress,
+          ).key,
+          authorizationRules: defaultRules,
+          ...DEFAULT_ACCOUNTS,
+        })
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: MIP1_COMPUTE_UNITS,
+          }),
+        ])
+        .remainingAccounts([
+          {
+            pubkey: poolData.nftCreator.publicKey,
+            isSigner: false,
+            isWritable: true,
+          },
+        ])
+        .transaction();
+
+      const blockhashData = await connection.getLatestBlockhash();
+      tx.feePayer = buyer.publicKey;
+      tx.recentBlockhash = blockhashData.blockhash;
+      tx.partialSign(cosigner, buyer);
+      await sendAndAssertTx(connection, tx, blockhashData, false);
+
+      const expectedTakerFees = 3 * LAMPORTS_PER_SOL * 0.035;
+      const expectedMakerFees = 3 * LAMPORTS_PER_SOL * -0.035;
+      const expectedReferralFees = expectedMakerFees + expectedTakerFees;
+      const expectedRoyalties = 3 * LAMPORTS_PER_SOL * 0.015;
+      const expectedLpFees = 3 * LAMPORTS_PER_SOL * 0.015;
+      const [
+        buyerBalance,
+        paymentEscrowBalance,
+        creatorBalance,
+        referralBalance,
+        walletBalance,
+        buyerAta,
+      ] = await Promise.all([
+        connection.getBalance(buyer.publicKey),
+        connection.getBalance(poolData.poolPaymentEscrow),
+        connection.getBalance(poolData.nftCreator.publicKey),
+        connection.getBalance(poolData.referral.publicKey),
+        connection.getBalance(wallet.publicKey),
+        getTokenAccount(connection, buyerNftAtaAddress),
+      ]);
+
+      assert.equal(
+        buyerBalance,
+        initBuyerBalance -
+          3 * LAMPORTS_PER_SOL -
+          SIGNATURE_FEE_LAMPORTS * 2 -
+          tokenAccountRent -
+          expectedTakerFees -
+          expectedRoyalties -
+          expectedLpFees,
+      );
+      assert.equal(
+        paymentEscrowBalance,
+        initPaymentEscrowBalance + 3 * LAMPORTS_PER_SOL - expectedMakerFees,
+      );
+      assert.equal(creatorBalance, initCreatorBalance + expectedRoyalties);
+      assert.equal(
+        referralBalance,
+        Math.floor(initReferralBalance + expectedReferralFees),
+      );
+      assert.equal(
+        walletBalance,
+        initWalletBalance +
+          expectedLpFees +
+          sellStateAccountRent +
+          tokenAccountRent,
+      );
+      assert.equal(Number(buyerAta.amount), 1);
+      assert.equal(buyerAta.owner.toBase58(), buyer.publicKey.toBase58());
+      assert.equal(
+        buyerAta.mint.toBase58(),
+        poolData.nft.mintAddress.toBase58(),
+      );
+
+      const poolAccountInfo = await program.account.pool.fetch(
+        poolData.poolKey,
+      );
+      assert.equal(
+        poolAccountInfo.lpFeeEarned.toNumber(),
+        cumulativeLpFees + expectedLpFees,
+      );
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
+    }
+  });
 });

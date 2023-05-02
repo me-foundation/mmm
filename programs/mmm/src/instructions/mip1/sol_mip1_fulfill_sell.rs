@@ -12,15 +12,16 @@ use mpl_token_metadata::{
     instruction::{builders::TransferBuilder, InstructionBuilder, TransferArgs},
     processor::AuthorizationData,
 };
+use std::convert::TryFrom;
 
 use crate::{
     constants::*,
     errors::MMMErrorCode,
     state::{Pool, SellState},
     util::{
-        assert_is_programmable, check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee,
-        get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol, try_close_pool,
-        try_close_sell_state,
+        assert_is_programmable, assert_valid_fees_bp, check_allowlists_for_mint, get_sol_fee,
+        get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol,
+        try_close_pool, try_close_sell_state,
     },
 };
 
@@ -29,8 +30,8 @@ pub struct SolMip1FulfillSellArgs {
     asset_amount: u64,
     max_payment_amount: u64,
     allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
-    maker_fee_bp: u16,             // will be checked by cosigner
-    taker_fee_bp: u16,             // will be checked by cosigner
+    maker_fee_bp: i16,             // will be checked by cosigner
+    taker_fee_bp: i16,             // will be checked by cosigner
 }
 
 // FulfillSell means a buyer wants to buy NFT/SFT from the pool
@@ -171,19 +172,16 @@ pub fn handler<'info>(
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, false)?;
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
-    if args
-        .maker_fee_bp
-        .checked_add(args.taker_fee_bp)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        > MAX_REFERRAL_FEE_BP
-    {
-        return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
-    }
+
+    assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(total_price, args.maker_fee_bp)?;
     let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)?;
-    let referral_fee = maker_fee
-        .checked_add(taker_fee)
-        .ok_or(MMMErrorCode::NumericOverflow)?;
+    let referral_fee = u64::try_from(
+        maker_fee
+            .checked_add(taker_fee)
+            .ok_or(MMMErrorCode::NumericOverflow)?,
+    )
+    .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
     let transfer_sol_to = if pool.reinvest_fulfill_sell {
         buyside_sol_escrow_account.to_account_info()
@@ -195,9 +193,13 @@ pub fn handler<'info>(
         &anchor_lang::solana_program::system_instruction::transfer(
             payer.key,
             transfer_sol_to.key,
-            total_price
-                .checked_sub(maker_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)?,
+            u64::try_from(
+                i64::try_from(total_price)
+                    .map_err(|_| MMMErrorCode::NumericOverflow)?
+                    .checked_sub(maker_fee)
+                    .ok_or(MMMErrorCode::NumericOverflow)?,
+            )
+            .map_err(|_| MMMErrorCode::NumericOverflow)?,
         ),
         &[
             payer.to_account_info(),
@@ -324,7 +326,7 @@ pub fn handler<'info>(
     let payment_amount = total_price
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_add(taker_fee)
+        .checked_add(taker_fee as u64)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_add(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
