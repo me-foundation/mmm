@@ -389,10 +389,10 @@ pub fn try_close_sell_state<'info>(
     Ok(())
 }
 
-pub fn get_metadata_royalty_bp<'info>(
+pub fn get_metadata_royalty_bp(
     total_price: u64,
     parsed_metadata: &Metadata,
-    policy: Option<&Account<'info, Policy>>,
+    policy: Option<&Account<'_, Policy>>,
 ) -> u16 {
     match policy {
         None => parsed_metadata.data.seller_fee_basis_points,

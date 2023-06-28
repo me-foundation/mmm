@@ -42,7 +42,7 @@ import {
   PROGRAM_ID as OCP_PROGRAM_ID,
 } from '@magiceden-oss/open_creator_protocol';
 
-describe.only('mmm-ocp', () => {
+describe('mmm-ocp', () => {
   const { connection } = anchor.AnchorProvider.env();
   const wallet = new anchor.Wallet(Keypair.generate());
   const provider = new anchor.AnchorProvider(connection, wallet, {
