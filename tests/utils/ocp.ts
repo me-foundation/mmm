@@ -1,6 +1,6 @@
 import {
   DataV2,
-  createCreateMetadataAccountV2Instruction,
+  createCreateMetadataAccountV3Instruction,
   createSignMetadataInstruction,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
@@ -233,7 +233,7 @@ const createNewMintTransaction = async (
       freezeAuthority, //Freeze Authority
       TOKEN_PROGRAM_ID,
     ),
-    createCreateMetadataAccountV2Instruction(
+    createCreateMetadataAccountV3Instruction(
       {
         metadata: metadataPDA,
         mint: mintKeypair.publicKey,
@@ -242,9 +242,10 @@ const createNewMintTransaction = async (
         updateAuthority: mintAuthority,
       },
       {
-        createMetadataAccountArgsV2: {
+        createMetadataAccountArgsV3: {
           data: ON_CHAIN_METADATA,
           isMutable: true,
+          collectionDetails: null,
         },
       },
     ),

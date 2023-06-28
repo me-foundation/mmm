@@ -11,7 +11,8 @@ use crate::{
     errors::MMMErrorCode,
     state::{Pool, SellState},
     util::{
-        assert_valid_fees_bp, check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee,
+        assert_valid_fees_bp, check_allowlists_for_mint, get_buyside_seller_receives,
+        get_lp_fee_bp, get_metadata_royalty_bp, get_sol_fee, get_sol_lp_fee,
         get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol, try_close_escrow,
         try_close_pool, try_close_sell_state,
     },
@@ -133,11 +134,21 @@ pub fn handler<'info>(
 
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
-    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), total_price)?;
+    let metadata_royalty_bp = get_metadata_royalty_bp(total_price, &parsed_metadata, None);
+    let seller_receives = {
+        let lp_fee_bp = get_lp_fee_bp(pool, buyside_sol_escrow_account.lamports());
+        get_buyside_seller_receives(
+            total_price,
+            lp_fee_bp,
+            metadata_royalty_bp,
+            pool.buyside_creator_royalty_bp,
+        )
+    }?;
+    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
 
     assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
-    let maker_fee = get_sol_fee(total_price, args.maker_fee_bp)?;
-    let taker_fee = get_sol_fee(total_price, args.taker_fee_bp)?;
+    let maker_fee = get_sol_fee(seller_receives, args.maker_fee_bp)?;
+    let taker_fee = get_sol_fee(seller_receives, args.taker_fee_bp)?;
     let referral_fee = u64::try_from(
         maker_fee
             .checked_add(taker_fee)
@@ -221,11 +232,11 @@ pub fn handler<'info>(
     // pool owner as buyer is going to pay the royalties
     let royalty_paid = pay_creator_fees_in_sol(
         pool.buyside_creator_royalty_bp,
-        total_price,
+        seller_receives,
         &parsed_metadata,
         ctx.remaining_accounts,
         buyside_sol_escrow_account.to_account_info(),
-        None,
+        metadata_royalty_bp,
         buyside_sol_escrow_account_seeds,
         system_program.to_account_info(),
     )?;

@@ -10,9 +10,9 @@ use crate::{
     errors::MMMErrorCode,
     state::{Pool, SellState},
     util::{
-        assert_valid_fees_bp, check_allowlists_for_mint, get_sol_fee, get_sol_lp_fee,
-        get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol, try_close_pool,
-        try_close_sell_state,
+        assert_valid_fees_bp, check_allowlists_for_mint, get_metadata_royalty_bp, get_sol_fee,
+        get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol,
+        try_close_pool, try_close_sell_state,
     },
 };
 
@@ -235,13 +235,14 @@ pub fn handler<'info>(
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
 
+    let royalty_bp = get_metadata_royalty_bp(total_price, &parsed_metadata, None);
     let royalty_paid = pay_creator_fees_in_sol(
         args.buyside_creator_royalty_bp,
         total_price,
         &parsed_metadata,
         ctx.remaining_accounts,
         payer.to_account_info(),
-        None,
+        royalty_bp,
         &[&[&[]]],
         system_program.to_account_info(),
     )?;
