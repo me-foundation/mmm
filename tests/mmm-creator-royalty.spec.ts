@@ -19,6 +19,7 @@ import {
   getMMMSellStatePDA,
   IDL,
   MMMProgramID,
+  getSolFulfillBuyPrices,
 } from '../sdk/src';
 import {
   airdrop,
@@ -27,6 +28,7 @@ import {
   getMetaplexInstance,
   getSellStatePDARent,
   getTokenAccountRent,
+  sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
 
@@ -96,19 +98,24 @@ describe('mmm-creator-royalty', () => {
       connection.getBalance(poolData.nftCreator.publicKey),
     ]);
 
+    const tokenAccountRent = await getTokenAccountRent(connection);
+    const sellStatePDARent = await getSellStatePDARent(connection);
+
+    const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer
+    const expectedBuyPrices = getSolFulfillBuyPrices({
+      totalPriceLamports: LAMPORTS_PER_SOL,
+      lpFeeBp: 200,
+      takerFeeBp: 100,
+      metadataRoyaltyBp: 100,
+      buysideCreatorRoyaltyBp: 5000,
+      makerFeeBp: 0,
+    });
+
     {
-      const expectedLpFees = LAMPORTS_PER_SOL * 0.02;
-      const expectedTakerFees = LAMPORTS_PER_SOL * 0.01;
-      const expectedCreatorFees = LAMPORTS_PER_SOL * 0.01 * 0.5;
       const tx = await program.methods
         .solFulfillBuy({
           assetAmount: new anchor.BN(1),
-          minPaymentAmount: new anchor.BN(
-            LAMPORTS_PER_SOL -
-              expectedLpFees -
-              expectedTakerFees -
-              expectedCreatorFees,
-          ),
+          minPaymentAmount: expectedBuyPrices.sellerReceives,
           allowlistAux: null,
           takerFeeBp: 100,
           makerFeeBp: 0,
@@ -150,28 +157,8 @@ describe('mmm-creator-royalty', () => {
       tx.recentBlockhash = blockhashData.blockhash;
       tx.partialSign(cosigner, seller);
 
-      const txId = await connection.sendRawTransaction(tx.serialize(), {
-        skipPreflight: true,
-      });
-      const confirmedTx = await connection.confirmTransaction(
-        {
-          signature: txId,
-          blockhash: blockhashData.blockhash,
-          lastValidBlockHeight: blockhashData.lastValidBlockHeight,
-        },
-        'processed',
-      );
-      assertTx(txId, confirmedTx);
-    }
+      await sendAndAssertTx(connection, tx, blockhashData, false);
 
-    const tokenAccountRent = await getTokenAccountRent(connection);
-    const sellStatePDARent = await getSellStatePDARent(connection);
-
-    const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer
-    {
-      const expectedLpFees = LAMPORTS_PER_SOL * 0.02;
-      const expectedTakerFees = LAMPORTS_PER_SOL * 0.01;
-      const expectedCreatorFees = LAMPORTS_PER_SOL * 0.01 * 0.5;
       const [
         sellerBalance,
         referralBalance,
@@ -189,20 +176,23 @@ describe('mmm-creator-royalty', () => {
       assert.equal(
         sellerBalance,
         initSellerBalance +
-          LAMPORTS_PER_SOL -
-          expectedLpFees -
-          expectedTakerFees -
-          expectedTxFees -
-          expectedCreatorFees -
+          expectedBuyPrices.sellerReceives.toNumber() - // amount seller receives for selling
+          expectedTxFees - // signature fees
           sellStatePDARent, // no token account rent bc seller ata was closed and pool ata opened
       );
-      assert.equal(referralBalance, initReferralBalance + expectedTakerFees);
+      assert.equal(
+        referralBalance,
+        initReferralBalance + expectedBuyPrices.takerFeePaid.toNumber(),
+      );
       assert.equal(Number(poolAta.amount), 1);
       assert.equal(
         poolEscrowBalance,
         initPaymentEscrowBalance - LAMPORTS_PER_SOL,
       );
-      assert.equal(creatorBalance, initCreatorBalance + expectedCreatorFees);
+      assert.equal(
+        creatorBalance,
+        initCreatorBalance + expectedBuyPrices.royaltyPaid.toNumber(),
+      );
       initReferralBalance = referralBalance;
       initCreatorBalance = creatorBalance;
     }
@@ -211,7 +201,7 @@ describe('mmm-creator-royalty', () => {
     assert.equal(poolAccountInfo.spotPrice.toNumber(), 0.8 * LAMPORTS_PER_SOL);
     assert.equal(
       poolAccountInfo.lpFeeEarned.toNumber(),
-      0.02 * LAMPORTS_PER_SOL,
+      expectedBuyPrices.lpFeePaid.toNumber(),
     );
     assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 7);
 
@@ -279,18 +269,7 @@ describe('mmm-creator-royalty', () => {
       tx.recentBlockhash = blockhashData.blockhash;
       tx.partialSign(cosigner, buyer);
 
-      const txId = await connection.sendRawTransaction(tx.serialize(), {
-        skipPreflight: true,
-      });
-      const confirmedTx = await connection.confirmTransaction(
-        {
-          signature: txId,
-          blockhash: blockhashData.blockhash,
-          lastValidBlockHeight: blockhashData.lastValidBlockHeight,
-        },
-        'processed',
-      );
-      assertTx(txId, confirmedTx);
+      await sendAndAssertTx(connection, tx, blockhashData, false);
     }
 
     {
@@ -326,7 +305,7 @@ describe('mmm-creator-royalty', () => {
     assert.equal(poolAccountInfo.spotPrice.toNumber(), 1 * LAMPORTS_PER_SOL);
     assert.equal(
       poolAccountInfo.lpFeeEarned.toNumber(),
-      0.04 * LAMPORTS_PER_SOL,
+      expectedBuyPrices.lpFeePaid.toNumber() + 0.02 * LAMPORTS_PER_SOL,
     );
     assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
 

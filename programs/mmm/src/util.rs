@@ -141,21 +141,48 @@ pub fn check_curve(curve_type: u8, curve_delta: u64) -> Result<()> {
     Ok(())
 }
 
+pub fn get_buyside_seller_receives(
+    total_sol_price: u64,
+    lp_fee_bp: u16,
+    royalty_bp: u16,
+    buyside_creator_royalty_bp: u16,
+) -> Result<u64> {
+    let royalty_part = u128::from(royalty_bp)
+        .checked_mul(u128::from(buyside_creator_royalty_bp))
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    let all_fees = u128::from(lp_fee_bp)
+        .checked_mul(10000)
+        .and_then(|v| v.checked_add(royalty_part))
+        .and_then(|v| v.checked_add(10000 * 10000))
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    u128::from(total_sol_price)
+        .checked_mul(10000 * 10000)
+        .and_then(|v| v.checked_div(all_fees))
+        .and_then(|v| u64::try_from(v).ok())
+        .ok_or(MMMErrorCode::NumericOverflow.into())
+}
+
+pub fn get_lp_fee_bp(pool: &Pool, buyside_sol_escrow_balance: u64) -> u16 {
+    if pool.sellside_asset_amount < 1 {
+        return 0;
+    }
+
+    if buyside_sol_escrow_balance < pool.spot_price {
+        return 0;
+    }
+
+    pool.lp_fee_bp
+}
+
 pub fn get_sol_lp_fee(
     pool: &Pool,
     buyside_sol_escrow_balance: u64,
     total_sol_price: u64,
 ) -> Result<u64> {
-    if pool.sellside_asset_amount < 1 {
-        return Ok(0);
-    }
-
-    if buyside_sol_escrow_balance < pool.spot_price {
-        return Ok(0);
-    }
+    let lp_fee_bp = get_lp_fee_bp(pool, buyside_sol_escrow_balance);
 
     Ok(((total_sol_price as u128)
-        .checked_mul(pool.lp_fee_bp as u128)
+        .checked_mul(lp_fee_bp as u128)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_div(10000)
         .ok_or(MMMErrorCode::NumericOverflow)?) as u64)
@@ -362,6 +389,21 @@ pub fn try_close_sell_state<'info>(
     Ok(())
 }
 
+pub fn get_metadata_royalty_bp(
+    total_price: u64,
+    parsed_metadata: &Metadata,
+    policy: Option<&Account<'_, Policy>>,
+) -> u16 {
+    match policy {
+        None => parsed_metadata.data.seller_fee_basis_points,
+        Some(p) => match &p.dynamic_royalty {
+            None => parsed_metadata.data.seller_fee_basis_points,
+            Some(dynamic_royalty) => dynamic_royalty
+                .get_royalty_bp(total_price, parsed_metadata.data.seller_fee_basis_points),
+        },
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn pay_creator_fees_in_sol<'info>(
     buyside_creator_royalty_bp: u16,
@@ -369,26 +411,17 @@ pub fn pay_creator_fees_in_sol<'info>(
     parsed_metadata: &Metadata,
     creator_accounts: &[AccountInfo<'info>],
     payer: AccountInfo<'info>,
-    policy: Option<&Account<'info, Policy>>,
+    metadata_royalty_bp: u16,
     payer_seeds: &[&[&[u8]]],
     system_program: AccountInfo<'info>,
 ) -> Result<u64> {
-    let royalty_bp = match policy {
-        None => parsed_metadata.data.seller_fee_basis_points,
-        Some(p) => match &p.dynamic_royalty {
-            None => parsed_metadata.data.seller_fee_basis_points,
-            Some(dynamic_royalty) => dynamic_royalty
-                .get_royalty_bp(total_price, parsed_metadata.data.seller_fee_basis_points),
-        },
-    };
-
     // total royalty paid by the buyer, it's one of the following
     //   - buyside_sol_escrow_account (when fulfill buy)
     //   - payer                      (when fulfill sell)
     // returns the total royalty paid
     //   royalty = spot_price * (royalty_bp / 10000) * (buyside_creator_royalty_bp / 10000)
     let royalty = ((total_price as u128)
-        .checked_mul(royalty_bp as u128)
+        .checked_mul(metadata_royalty_bp as u128)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_div(10000)
         .ok_or(MMMErrorCode::NumericOverflow)?
@@ -419,12 +452,18 @@ pub fn pay_creator_fees_in_sol<'info>(
     let mut total_royalty: u64 = 0;
 
     let creator_accounts_iter = &mut creator_accounts.iter();
-    for creator in creators {
-        let creator_fee = (royalty as u128)
-            .checked_mul(creator.share as u128)
-            .ok_or(MMMErrorCode::NumericOverflow)?
-            .checked_div(100)
-            .ok_or(MMMErrorCode::NumericOverflow)? as u64;
+    for (index, creator) in creators.iter().enumerate() {
+        let creator_fee = if index == creators.len() - 1 {
+            royalty
+                .checked_sub(total_royalty)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+        } else {
+            (royalty as u128)
+                .checked_mul(creator.share as u128)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                .checked_div(100)
+                .ok_or(MMMErrorCode::NumericOverflow)? as u64
+        };
         let current_creator_info = next_account_info(creator_accounts_iter)?;
         if creator.address.ne(current_creator_info.key) {
             return Err(MMMErrorCode::InvalidCreatorAddress.into());

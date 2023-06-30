@@ -22,6 +22,7 @@ import {
   IDL,
   MMMProgramID,
   CurveKind,
+  getSolFulfillBuyPrices,
 } from '../sdk/src';
 import {
   airdrop,
@@ -383,11 +384,19 @@ describe('mmm-ocp', () => {
 
     // sale price should be 2.2 SOL
     // royalty percentage should be (2.2-0) / (5-0) * (1-0) * 0.05 = 0.028
-    // with taker fee and royalties should be 2.2 * (1 - 0.005 - 0.028) = 2.1274 SOL
+    // with taker fee and royalties should be 2.2 / (1 + 0.028) * (1 - 0.005) ~ 2.129 SOL
+    const expectedBuyPrices = getSolFulfillBuyPrices({
+      totalPriceLamports: 2.2 * LAMPORTS_PER_SOL,
+      takerFeeBp: 50,
+      metadataRoyaltyBp: 280,
+      buysideCreatorRoyaltyBp: 10000,
+      lpFeeBp: 0,
+      makerFeeBp: 350,
+    });
     const tx = await program.methods
       .solOcpFulfillBuy({
         assetAmount: new anchor.BN(1),
-        minPaymentAmount: new anchor.BN(2.1274 * LAMPORTS_PER_SOL),
+        minPaymentAmount: expectedBuyPrices.sellerReceives,
         allowlistAux: null,
         makerFeeBp: 350,
         takerFeeBp: 50,
@@ -429,10 +438,9 @@ describe('mmm-ocp', () => {
     tx.partialSign(cosigner, seller);
     await sendAndAssertTx(connection, tx, blockhashData, false);
 
-    const expectedTakerFees = 2.2 * LAMPORTS_PER_SOL * 0.005;
-    const expectedMakerFees = 2.2 * LAMPORTS_PER_SOL * 0.035;
-    const expectedReferralFees = expectedMakerFees + expectedTakerFees;
-    const expectedRoyalties = 2.2 * LAMPORTS_PER_SOL * 0.028;
+    const expectedReferralFees =
+      expectedBuyPrices.makerFeePaid.toNumber() +
+      expectedBuyPrices.takerFeePaid.toNumber();
     const [
       sellerBalance,
       paymentEscrowBalance,
@@ -450,17 +458,20 @@ describe('mmm-ocp', () => {
     assert.equal(
       sellerBalance,
       initSellerBalance +
-        2.2 * LAMPORTS_PER_SOL -
+        expectedBuyPrices.sellerReceives.toNumber() -
         SIGNATURE_FEE_LAMPORTS * 2 -
-        expectedTakerFees -
-        expectedRoyalties -
         sellStateAccountRent,
     );
     assert.equal(
       paymentEscrowBalance,
-      initPaymentEscrowBalance - 2.2 * LAMPORTS_PER_SOL - expectedMakerFees,
+      initPaymentEscrowBalance -
+        2.2 * LAMPORTS_PER_SOL -
+        expectedBuyPrices.makerFeePaid.toNumber(),
     );
-    assert.equal(creatorBalance, initCreatorBalance + expectedRoyalties);
+    assert.equal(
+      creatorBalance,
+      initCreatorBalance + expectedBuyPrices.royaltyPaid.toNumber(),
+    );
     assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
     assert.equal(Number(poolEscrowAta.amount), 1);
     assert.equal(poolEscrowAta.owner.toBase58(), poolData.poolKey.toBase58());
@@ -548,11 +559,19 @@ describe('mmm-ocp', () => {
 
       // sale price should be 2.5 SOL
       // royalty percentage should be (5-2.5) / (5-0) * (1-0) * 0.05 = 0.025
-      // with taker fee and royalties should be 2.5 * (1 - 0.003 - 0.01 - 0.025) = 2.405 SOL
+      // with taker fee and royalties should be 2.5 / (1 + 0.025 + 0.01) * (1 - 0.003) ~ 2.408 SOL
+      const expectedBuyPrices = getSolFulfillBuyPrices({
+        totalPriceLamports: 2.5 * LAMPORTS_PER_SOL,
+        takerFeeBp: 30,
+        metadataRoyaltyBp: 250,
+        buysideCreatorRoyaltyBp: 10000,
+        lpFeeBp: 100,
+        makerFeeBp: -30,
+      });
       const tx = await program.methods
         .solOcpFulfillBuy({
           assetAmount: new anchor.BN(1),
-          minPaymentAmount: new anchor.BN(2.405 * LAMPORTS_PER_SOL),
+          minPaymentAmount: expectedBuyPrices.sellerReceives,
           allowlistAux: null,
           makerFeeBp: -30,
           takerFeeBp: 30,
@@ -596,11 +615,9 @@ describe('mmm-ocp', () => {
       tx.partialSign(cosigner, seller);
       await sendAndAssertTx(connection, tx, blockhashData, false);
 
-      const expectedTakerFees = 2.5 * LAMPORTS_PER_SOL * 0.003;
-      const expectedMakerFees = 2.5 * LAMPORTS_PER_SOL * -0.003;
-      const expectedReferralFees = expectedMakerFees + expectedTakerFees;
-      const expectedRoyalties = 2.5 * LAMPORTS_PER_SOL * 0.025;
-      const expectedLpFees = 2.5 * LAMPORTS_PER_SOL * 0.01;
+      const expectedReferralFees =
+        expectedBuyPrices.makerFeePaid.toNumber() +
+        expectedBuyPrices.takerFeePaid.toNumber();
       const [
         sellerBalance,
         paymentEscrowBalance,
@@ -622,18 +639,23 @@ describe('mmm-ocp', () => {
       assert.equal(
         sellerBalance,
         initSellerBalance +
-          2.5 * LAMPORTS_PER_SOL -
-          SIGNATURE_FEE_LAMPORTS * 2 -
-          expectedTakerFees -
-          expectedRoyalties -
-          expectedLpFees,
+          expectedBuyPrices.sellerReceives.toNumber() -
+          SIGNATURE_FEE_LAMPORTS * 2,
       );
       assert.equal(
         paymentEscrowBalance,
-        initPaymentEscrowBalance - 2.5 * LAMPORTS_PER_SOL - expectedMakerFees,
+        initPaymentEscrowBalance -
+          2.5 * LAMPORTS_PER_SOL -
+          expectedBuyPrices.makerFeePaid.toNumber(),
       );
-      assert.equal(walletBalance, initWalletBalance + expectedLpFees);
-      assert.equal(creatorBalance, initCreatorBalance + expectedRoyalties);
+      assert.equal(
+        walletBalance,
+        initWalletBalance + expectedBuyPrices.lpFeePaid.toNumber(),
+      );
+      assert.equal(
+        creatorBalance,
+        initCreatorBalance + expectedBuyPrices.royaltyPaid.toNumber(),
+      );
       assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
       assert.equal(sellStateBalance, 0);
       assert.equal(Number(ownerAta.amount), 1);
@@ -648,13 +670,16 @@ describe('mmm-ocp', () => {
       );
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
       assert.equal(poolAccountInfo.spotPrice.toNumber(), 2 * LAMPORTS_PER_SOL);
-      assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), expectedLpFees);
+      assert.equal(
+        poolAccountInfo.lpFeeEarned.toNumber(),
+        expectedBuyPrices.lpFeePaid.toNumber(),
+      );
 
       initPaymentEscrowBalance = paymentEscrowBalance;
       initWalletBalance = walletBalance;
       initCreatorBalance = creatorBalance;
       initReferralBalance = referralBalance;
-      cumulativeLpFees += expectedLpFees;
+      cumulativeLpFees += expectedBuyPrices.lpFeePaid.toNumber();
     }
 
     {

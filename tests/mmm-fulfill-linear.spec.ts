@@ -19,6 +19,7 @@ import {
   getMMMSellStatePDA,
   IDL,
   MMMProgramID,
+  getSolFulfillBuyPrices,
 } from '../sdk/src';
 import {
   airdrop,
@@ -31,6 +32,7 @@ import {
   getSellStatePDARent,
   getTokenAccountRent,
   LAMPORT_ERROR_RANGE,
+  sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
 
@@ -796,15 +798,19 @@ describe('mmm-fulfill-linear', () => {
         connection.getBalance(buyer.publicKey),
       ]);
 
-    const expectedLpFees = LAMPORTS_PER_SOL * 0.02;
-    const expectedTakerFees = LAMPORTS_PER_SOL * 0.01;
+    const expectedBuyPrices = getSolFulfillBuyPrices({
+      totalPriceLamports: LAMPORTS_PER_SOL,
+      lpFeeBp: 200,
+      takerFeeBp: 100,
+      metadataRoyaltyBp: 0,
+      buysideCreatorRoyaltyBp: 0,
+      makerFeeBp: 0,
+    });
     {
       const tx = await program.methods
         .solFulfillBuy({
           assetAmount: new anchor.BN(1),
-          minPaymentAmount: new anchor.BN(
-            LAMPORTS_PER_SOL - expectedLpFees - expectedTakerFees,
-          ),
+          minPaymentAmount: expectedBuyPrices.sellerReceives,
           allowlistAux: null,
           takerFeeBp: 100,
           makerFeeBp: 0,
@@ -839,18 +845,7 @@ describe('mmm-fulfill-linear', () => {
       tx.recentBlockhash = blockhashData.blockhash;
       tx.partialSign(cosigner, seller);
 
-      const txId = await connection.sendRawTransaction(tx.serialize(), {
-        skipPreflight: true,
-      });
-      const confirmedTx = await connection.confirmTransaction(
-        {
-          signature: txId,
-          blockhash: blockhashData.blockhash,
-          lastValidBlockHeight: blockhashData.lastValidBlockHeight,
-        },
-        'processed',
-      );
-      assertTx(txId, confirmedTx);
+      await sendAndAssertTx(connection, tx, blockhashData, false);
     }
 
     const tokenAccountRent = await getTokenAccountRent(connection);
@@ -867,13 +862,14 @@ describe('mmm-fulfill-linear', () => {
       assert.equal(
         sellerBalance,
         initSellerBalance +
-          LAMPORTS_PER_SOL -
-          expectedLpFees -
-          expectedTakerFees -
+          expectedBuyPrices.sellerReceives.toNumber() -
           expectedTxFees -
           sellStatePDARent, // no token account rent bc seller ata was closed and pool ata opened
       );
-      assert.equal(referralBalance, initReferralBalance + expectedTakerFees);
+      assert.equal(
+        referralBalance,
+        initReferralBalance + expectedBuyPrices.takerFeePaid.toNumber(),
+      );
       assert.equal(Number(poolAta.amount), 1);
       initReferralBalance = referralBalance;
     }
@@ -882,7 +878,7 @@ describe('mmm-fulfill-linear', () => {
     assert.equal(poolAccountInfo.spotPrice.toNumber(), 0.8 * LAMPORTS_PER_SOL);
     assert.equal(
       poolAccountInfo.lpFeeEarned.toNumber(),
-      0.02 * LAMPORTS_PER_SOL,
+      expectedBuyPrices.lpFeePaid.toNumber(),
     );
     assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 7);
 
@@ -895,13 +891,15 @@ describe('mmm-fulfill-linear', () => {
       poolData.poolKey,
       poolData.nft.mintAddress,
     );
+    const expectedSellLpFees = LAMPORTS_PER_SOL * 0.02;
+    const expectedSellTakerFees = LAMPORTS_PER_SOL * 0.01;
 
     {
       const tx = await program.methods
         .solFulfillSell({
           assetAmount: new anchor.BN(1),
           maxPaymentAmount: new anchor.BN(
-            LAMPORTS_PER_SOL + expectedTakerFees + expectedLpFees,
+            LAMPORTS_PER_SOL + expectedSellTakerFees + expectedSellLpFees,
           ),
           buysideCreatorRoyaltyBp: 0,
           allowlistAux: '',
@@ -937,23 +935,12 @@ describe('mmm-fulfill-linear', () => {
       tx.recentBlockhash = blockhashData.blockhash;
       tx.partialSign(cosigner, buyer);
 
-      const txId = await connection.sendRawTransaction(tx.serialize(), {
-        skipPreflight: true,
-      });
-      const confirmedTx = await connection.confirmTransaction(
-        {
-          signature: txId,
-          blockhash: blockhashData.blockhash,
-          lastValidBlockHeight: blockhashData.lastValidBlockHeight,
-        },
-        'processed',
-      );
-      assertTx(txId, confirmedTx);
+      await sendAndAssertTx(connection, tx, blockhashData, false);
     }
 
     {
       const expectedMakerFees = LAMPORTS_PER_SOL * 0.01;
-      const expectedReferralFees = expectedTakerFees + expectedMakerFees;
+      const expectedReferralFees = expectedSellTakerFees + expectedMakerFees;
       const [buyerBalance, referralBalance, buyerAta] = await Promise.all([
         connection.getBalance(buyer.publicKey),
         connection.getBalance(poolData.referral.publicKey),
@@ -964,8 +951,8 @@ describe('mmm-fulfill-linear', () => {
         buyerBalance,
         initBuyerBalance -
           LAMPORTS_PER_SOL -
-          expectedLpFees -
-          expectedTakerFees -
+          expectedSellLpFees -
+          expectedSellTakerFees -
           expectedTxFees -
           tokenAccountRent, // no token account rent bc seller ata was closed and pool ata opened
       );
@@ -977,7 +964,7 @@ describe('mmm-fulfill-linear', () => {
     assert.equal(poolAccountInfo.spotPrice.toNumber(), 1 * LAMPORTS_PER_SOL);
     assert.equal(
       poolAccountInfo.lpFeeEarned.toNumber(),
-      0.04 * LAMPORTS_PER_SOL,
+      expectedSellLpFees + expectedBuyPrices.lpFeePaid.toNumber(),
     );
     assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
 
