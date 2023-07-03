@@ -8,7 +8,7 @@ mod ata;
 mod constants;
 mod errors;
 mod instructions;
-mod state;
+pub mod state;
 mod util;
 
 use instructions::*;
