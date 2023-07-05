@@ -7,9 +7,9 @@ declare_id!("mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc");
 mod ata;
 mod constants;
 mod errors;
-mod instructions;
+pub mod instructions;
 pub mod state;
-mod util;
+pub mod util;
 
 use instructions::*;
 
