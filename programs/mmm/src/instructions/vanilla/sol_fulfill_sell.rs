@@ -18,12 +18,12 @@ use crate::{
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolFulfillSellArgs {
-    asset_amount: u64,
-    max_payment_amount: u64,
-    buyside_creator_royalty_bp: u16,
-    allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
-    maker_fee_bp: i16,             // will be checked by cosigner
-    taker_fee_bp: i16,             // will be checked by cosigner
+    pub asset_amount: u64,
+    pub max_payment_amount: u64,
+    pub buyside_creator_royalty_bp: u16,
+    pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
+    pub maker_fee_bp: i16,             // will be checked by cosigner
+    pub taker_fee_bp: i16,             // will be checked by cosigner
 }
 
 // FulfillSell means a buyer wants to buy NFT/SFT from the pool
