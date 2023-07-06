@@ -16,11 +16,12 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = { version = "0.26.0", features = ["init-if-needed"] }
-anchor-spl = "0.26.0"
-mpl-token-metadata = { version = "1.8.0", features = ["no-entrypoint"] }
+anchor-lang = { version = "0.27.0", features = ["init-if-needed"] }
+anchor-spl = "0.27.0"
+solana-program = "=1.14.17"
+mpl-token-metadata = { version = "=1.10.0", features = ["no-entrypoint"] }
 mpl-token-auth-rules = { version = "1.0.0", features = ["no-entrypoint"] }
-spl-token = { version = "3.3.1",  features = ["no-entrypoint"] }
-spl-associated-token-account = {version = "^1.1.1", features = ["no-entrypoint"]}
-open_creator_protocol = { version = "0.3.3", features = ["cpi"] }
+spl-token = { version = "3.5.0",  features = ["no-entrypoint"] }
+spl-associated-token-account = {version = "1.1.1", features = ["no-entrypoint"]}
+open_creator_protocol = { version = "0.3.5", features = ["cpi"] }
 community-managed-token = { version = "0.2.0", features = ["no-entrypoint"] }
