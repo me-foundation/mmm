@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 use crate::{
-    constants::{BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX, POOL_PREFIX, CANCEL_AUTHORITY},
+    constants::{BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX, CANCEL_AUTHORITY, POOL_PREFIX},
     errors::MMMErrorCode,
     state::Pool,
     util::{try_close_escrow, try_close_pool},
