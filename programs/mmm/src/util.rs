@@ -1,5 +1,8 @@
 use crate::{
-    constants::{MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE},
+    constants::{
+        MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
+        MIN_SOL_ESCROW_BALANCE_BP,
+    },
     errors::MMMErrorCode,
     state::*,
 };
@@ -347,9 +350,22 @@ pub fn try_close_escrow<'info>(
     system_program: &Program<'info, System>,
     escrow_seeds: &[&[&[u8]]],
 ) -> Result<()> {
+    // minimum rent needed to sustain a 0 data account
     let min_rent = Rent::get()?.minimum_balance(0);
+    // if the balance is less than a small percentage of the spot price, then close the escrow
+    let min_escrow_balance: u64 = if pool.reinvest_fulfill_sell && pool.sellside_asset_amount > 0 {
+        // pool balance can increase, so we just use min_rent as default amount
+        min_rent
+    } else {
+        // pool balance cannot increase without manual deposit, so we calculate the actual value
+        (u128::from(pool.spot_price))
+            .checked_mul(u128::from(MIN_SOL_ESCROW_BALANCE_BP))
+            .and_then(|v| v.checked_div(10000))
+            .and_then(|v| u64::try_from(v).ok())
+            .ok_or(MMMErrorCode::NumericOverflow)?
+    };
     let escrow_lamports = escrow.lamports();
-    if escrow_lamports == 0 || escrow_lamports > min_rent {
+    if escrow_lamports == 0 || escrow_lamports > std::cmp::max(min_rent, min_escrow_balance) {
         Ok(())
     } else {
         anchor_lang::solana_program::program::invoke_signed(

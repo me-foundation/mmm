@@ -59,6 +59,15 @@ export const getSellStatePDARent = async (conn: Connection) => {
   return sellStatePDARent;
 };
 
+let poolRent = 0;
+export const getPoolRent = async (conn: Connection) => {
+  if (poolRent) {
+    return poolRent;
+  }
+  poolRent = await conn.getMinimumBalanceForRentExemption(849);
+  return poolRent;
+};
+
 export const fillAllowlists = (
   allowlists: { kind: AllowlistKind; value: PublicKey }[],
   totalLen: number,
