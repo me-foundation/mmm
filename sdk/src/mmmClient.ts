@@ -733,7 +733,7 @@ export class MMMClient {
     return await builder.instruction();
   }
 
-  async getInsAutoClosePool(
+  async getInsCloseIfBalanceInvalid(
     authority: PublicKey,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
@@ -741,7 +741,7 @@ export class MMMClient {
       MMMProgramID,
       this.poolData.pool,
     );
-    let builder = this.program.methods.autoClosePool().accountsStrict({
+    let builder = this.program.methods.closeIfBalanceInvalid().accountsStrict({
       pool: this.poolData.pool,
       owner: this.poolData.owner,
       buysideSolEscrowAccount,

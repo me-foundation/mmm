@@ -106,7 +106,7 @@ pub mod mmm {
         instructions::sol_mip1_fulfill_buy::handler(ctx, args)
     }
 
-    pub fn auto_close_pool<'info>(ctx: Context<AutoClosePool>) -> Result<()> {
-        instructions::auto_close_pool::handler(ctx)
+    pub fn close_if_balance_invalid<'info>(ctx: Context<CloseIfBalanceInvalid>) -> Result<()> {
+        instructions::close_if_balance_invalid::handler(ctx)
     }
 }

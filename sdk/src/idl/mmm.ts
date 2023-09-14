@@ -1511,7 +1511,7 @@ export type Mmm = {
       ]
     },
     {
-      "name": "autoClosePool",
+      "name": "closeIfBalanceInvalid",
       "accounts": [
         {
           "name": "authority",
@@ -3662,7 +3662,7 @@ export const IDL: Mmm = {
       ]
     },
     {
-      "name": "autoClosePool",
+      "name": "closeIfBalanceInvalid",
       "accounts": [
         {
           "name": "authority",

@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[derive(Accounts)]
-pub struct AutoClosePool<'info> {
+pub struct CloseIfBalanceInvalid<'info> {
     #[account(address = CANCEL_AUTHORITY)]
     pub authority: Signer<'info>,
     /// CHECK: checked in pool owner constraint
@@ -32,7 +32,7 @@ pub struct AutoClosePool<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handler(ctx: Context<AutoClosePool>) -> Result<()> {
+pub fn handler(ctx: Context<CloseIfBalanceInvalid>) -> Result<()> {
     // automatically close pools that have low escrow balance and no way of increase escrow balance
     let pool_key = ctx.accounts.pool.key();
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
