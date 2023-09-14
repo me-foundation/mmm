@@ -105,4 +105,8 @@ pub mod mmm {
     ) -> Result<()> {
         instructions::sol_mip1_fulfill_buy::handler(ctx, args)
     }
+
+    pub fn close_if_balance_invalid<'info>(ctx: Context<CloseIfBalanceInvalid>) -> Result<()> {
+        instructions::close_if_balance_invalid::handler(ctx)
+    }
 }

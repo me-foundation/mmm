@@ -732,4 +732,22 @@ export class MMMClient {
     }
     return await builder.instruction();
   }
+
+  async getInsCloseIfBalanceInvalid(
+    authority: PublicKey,
+  ): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      this.poolData.pool,
+    );
+    let builder = this.program.methods.closeIfBalanceInvalid().accountsStrict({
+      pool: this.poolData.pool,
+      owner: this.poolData.owner,
+      buysideSolEscrowAccount,
+      authority,
+      systemProgram: SystemProgram.programId,
+    });
+    return await builder.instruction();
+  }
 }

@@ -8,6 +8,7 @@ import {
 import {
   Keypair,
   LAMPORTS_PER_SOL,
+  PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
@@ -23,14 +24,15 @@ import {
 } from '../sdk/src';
 import {
   airdrop,
-  assertTx,
   createPool,
   createPoolWithExampleDeposits,
   getEmptyAllowLists,
   getMetadataURI,
   getMetaplexInstance,
+  getPoolRent,
   mintCollection,
   mintNfts,
+  sendAndAssertTx,
 } from './utils';
 
 describe('mmm-deposit', () => {
@@ -148,40 +150,19 @@ describe('mmm-deposit', () => {
       assert.equal(await connection.getBalance(poolKey), 0);
     });
 
-    describe('closes pool when the sol escrow has less than required rent', () => {
-      it('fulfill buy', async () => {
-        const seller = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
-        const [poolData] = await Promise.all([
-          createPoolWithExampleDeposits(
-            program,
-            connection,
-            [AllowlistKind.mcc],
-            {
-              owner: wallet.publicKey,
-              cosigner,
-              // set spot price to 10 lamports under the 10 SOL that is deposited
-              spotPrice: new anchor.BN(10 * LAMPORTS_PER_SOL).sub(
-                new anchor.BN(10),
-              ),
-              curveType: CurveKind.linear,
-              curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(
-                new anchor.BN(10),
-              ),
-              expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
-              reinvestFulfillBuy: false,
-              reinvestFulfillSell: false,
-            },
-            'buy',
-            seller.publicKey,
-          ),
-          airdrop(connection, seller.publicKey, 10),
-        ]);
-
+    describe('closes pool when the sol escrow balance is low', () => {
+      const checkPoolClosedAfterTrade = async ({
+        poolData,
+        seller,
+      }: {
+        poolData: Awaited<ReturnType<typeof createPoolWithExampleDeposits>>;
+        seller: Keypair;
+      }) => {
         const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
           poolData.extraNft.mintAddress,
           wallet.publicKey,
         );
+        const metaplexInstance = getMetaplexInstance(connection);
 
         {
           const { key: sellState } = getMMMSellStatePDA(
@@ -192,7 +173,7 @@ describe('mmm-deposit', () => {
           const tx = await program.methods
             .solFulfillBuy({
               assetAmount: new anchor.BN(1),
-              minPaymentAmount: new anchor.BN(9.99 * LAMPORTS_PER_SOL),
+              minPaymentAmount: new anchor.BN(9 * LAMPORTS_PER_SOL),
               allowlistAux: '',
               makerFeeBp: 0,
               takerFeeBp: 0,
@@ -227,18 +208,7 @@ describe('mmm-deposit', () => {
           tx.recentBlockhash = blockhashData.blockhash;
           tx.partialSign(cosigner, seller);
 
-          const txId = await connection.sendRawTransaction(tx.serialize(), {
-            skipPreflight: true,
-          });
-          const confirmedTx = await connection.confirmTransaction(
-            {
-              signature: txId,
-              blockhash: blockhashData.blockhash,
-              lastValidBlockHeight: blockhashData.lastValidBlockHeight,
-            },
-            'processed',
-          );
-          assertTx(txId, confirmedTx);
+          await sendAndAssertTx(connection, tx, blockhashData, false);
         }
 
         assert.equal(
@@ -246,14 +216,17 @@ describe('mmm-deposit', () => {
           0,
         );
         assert.equal(await connection.getBalance(poolData.poolKey), 0);
-      });
+      };
 
-      it('withdraw buy', async () => {
-        const { poolKey } = await createPool(program, {
-          owner: wallet.publicKey,
-          cosigner,
-        });
-
+      const checkPoolClosedAfterWithdraw = async ({
+        poolKey,
+        withdrawAmount,
+        poolShouldBeClosed,
+      }: {
+        poolKey: PublicKey;
+        withdrawAmount: number;
+        poolShouldBeClosed: boolean;
+      }) => {
         const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
           program.programId,
           poolKey,
@@ -277,9 +250,7 @@ describe('mmm-deposit', () => {
 
         await program.methods
           .solWithdrawBuy({
-            paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL).sub(
-              new anchor.BN(200),
-            ),
+            paymentAmount: new anchor.BN(withdrawAmount),
           })
           .accountsStrict({
             owner: wallet.publicKey,
@@ -291,8 +262,135 @@ describe('mmm-deposit', () => {
           .signers([cosigner])
           .rpc();
 
-        assert.equal(await connection.getBalance(solEscrowKey), 0);
-        assert.equal(await connection.getBalance(poolKey), 0);
+        if (poolShouldBeClosed) {
+          assert.equal(await connection.getBalance(solEscrowKey), 0);
+          assert.equal(await connection.getBalance(poolKey), 0);
+        } else {
+          assert.notEqual(await connection.getBalance(solEscrowKey), 0);
+          assert.equal(
+            await connection.getBalance(poolKey),
+            await getPoolRent(connection),
+          );
+        }
+      };
+
+      it('fulfill buy - amount below rent', async () => {
+        const seller = Keypair.generate();
+        const [poolData] = await Promise.all([
+          createPoolWithExampleDeposits(
+            program,
+            connection,
+            [AllowlistKind.mcc],
+            {
+              owner: wallet.publicKey,
+              cosigner,
+              // set spot price to 10 lamports under the 10 SOL that is deposited
+              spotPrice: new anchor.BN(10 * LAMPORTS_PER_SOL).sub(
+                new anchor.BN(10),
+              ),
+              curveType: CurveKind.linear,
+              curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(
+                new anchor.BN(10),
+              ),
+              expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
+              reinvestFulfillBuy: false,
+              reinvestFulfillSell: false,
+            },
+            'buy',
+            seller.publicKey,
+          ),
+          airdrop(connection, seller.publicKey, 10),
+        ]);
+        await checkPoolClosedAfterTrade({
+          poolData,
+          seller,
+        });
+      });
+
+      it('withdraw buy - amount below rent', async () => {
+        const { poolKey } = await createPool(program, {
+          owner: wallet.publicKey,
+          cosigner,
+        });
+
+        await checkPoolClosedAfterWithdraw({
+          poolKey,
+          withdrawAmount: 2 * LAMPORTS_PER_SOL - 200,
+          poolShouldBeClosed: true,
+        });
+      });
+
+      it('fulfill buy - amount below 1% but more than 0 data rent', async () => {
+        const seller = Keypair.generate();
+        const [poolData] = await Promise.all([
+          createPoolWithExampleDeposits(
+            program,
+            connection,
+            [AllowlistKind.mcc],
+            {
+              owner: wallet.publicKey,
+              cosigner,
+              // default deposit 10 SOL, so we set spot price such that amount left is less than 1% of spot
+              spotPrice: new anchor.BN(10 * LAMPORTS_PER_SOL).sub(
+                new anchor.BN(90000000),
+              ),
+              curveType: CurveKind.linear,
+              curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(
+                new anchor.BN(10),
+              ),
+              expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
+              reinvestFulfillBuy: false,
+              reinvestFulfillSell: false,
+            },
+            'buy',
+            seller.publicKey,
+          ),
+          airdrop(connection, seller.publicKey, 10),
+        ]);
+
+        await checkPoolClosedAfterTrade({
+          poolData,
+          seller,
+        });
+      });
+
+      it('withdraw buy - amount below 1% but more than 0 data rent', async () => {
+        const { poolKey } = await createPool(program, {
+          owner: wallet.publicKey,
+          cosigner,
+        });
+
+        await checkPoolClosedAfterWithdraw({
+          poolKey,
+          withdrawAmount: 2 * LAMPORTS_PER_SOL - 9000000,
+          poolShouldBeClosed: true,
+        });
+      });
+
+      it('withdraw buy - should not close pool if reinvest flag is true and pool has nfts', async () => {
+        const poolData = await createPoolWithExampleDeposits(
+          program,
+          connection,
+          [AllowlistKind.mcc],
+          {
+            owner: wallet.publicKey,
+            cosigner,
+            spotPrice: new anchor.BN(10 * LAMPORTS_PER_SOL).sub(
+              new anchor.BN(90000000),
+            ),
+            curveType: CurveKind.linear,
+            curveDelta: new anchor.BN(LAMPORTS_PER_SOL).div(new anchor.BN(10)),
+            expiry: new anchor.BN(new Date().getTime() / 1000 + 1000),
+            reinvestFulfillBuy: true,
+            reinvestFulfillSell: true,
+          },
+          'sell',
+        );
+        await checkPoolClosedAfterWithdraw({
+          poolKey: poolData.poolKey,
+          withdrawAmount: 2 * LAMPORTS_PER_SOL - 9000000,
+          poolShouldBeClosed: false,
+        });
       });
     });
   });
