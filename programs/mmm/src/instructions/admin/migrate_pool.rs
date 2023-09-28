@@ -29,8 +29,8 @@ pub struct MigratePool<'info> {
     pub dynamic_allowlist: Box<Account<'info, DynamicAllowlist>>,
 }
 
-pub fn handler(ctx: Context<MigratePool>, args: MigratePoolArgs) -> Result<()> {
-    let mut pool = &mut ctx.accounts.pool;
+pub fn handler(ctx: Context<MigratePool>, _args: MigratePoolArgs) -> Result<()> {
+    let pool = &mut ctx.accounts.pool;
     let dynamic_allowlist = &mut ctx.accounts.dynamic_allowlist;
 
     // Sanity check that the existing allowlists on the pool are the same
