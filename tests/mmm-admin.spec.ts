@@ -195,6 +195,93 @@ describe('mmm-admin', () => {
     });
   });
 
+  describe('Can create & update dynamic allowlist account', () => {
+    it('happy path', async () => {
+      const fvca = Keypair.generate();
+      const newFcva = Keypair.generate();
+      const cosignerAnnotation = new Array(32).fill(0);
+
+      const allowlists = [
+        { kind: AllowlistKind.fvca, value: fvca.publicKey },
+        { kind: AllowlistKind.mint, value: cosigner.publicKey },
+        { kind: AllowlistKind.mcc, value: wallet.publicKey },
+        ...getEmptyAllowLists(3),
+      ];
+
+      const newAllowlists = [
+        { kind: AllowlistKind.fvca, value: newFcva.publicKey },
+        { kind: AllowlistKind.mint, value: cosigner.publicKey },
+        { kind: AllowlistKind.mcc, value: wallet.publicKey },
+        ...getEmptyAllowLists(3),
+      ];
+
+      const { key: dynamicAllowlist } = getDynamicAllowlistPDA(
+        program.programId,
+        wallet.publicKey,
+        cosignerAnnotation,
+      );
+
+      // The value of the pool's allowlist once the dynamic allowlist is set.
+      // This is a single address pointing to the dynamic allowlist PDA.
+      const dynamicAllowlistPointer = [
+        { kind: AllowlistKind.dynamic, value: dynamicAllowlist },
+        ...getEmptyAllowLists(5),
+      ];
+
+      await program.methods
+        .createDynamicAllowlist({
+          cosignerAnnotation,
+          allowlists,
+        })
+        .accounts({
+          authority: wallet.publicKey,
+          dynamicAllowlist,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc();
+
+      const dynamicAllowlistAccountInfo =
+        await program.account.dynamicAllowlist.fetch(dynamicAllowlist);
+
+      assert.equal(
+        dynamicAllowlistAccountInfo.authority.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
+      assert.deepEqual(
+        dynamicAllowlistAccountInfo.cosignerAnnotation,
+        cosignerAnnotation,
+      );
+      assert.deepEqual(dynamicAllowlistAccountInfo.allowlists, allowlists);
+
+      await program.methods
+        .updateDynamicAllowlist({
+          cosignerAnnotation,
+          allowlists: newAllowlists,
+        })
+        .accounts({
+          authority: wallet.publicKey,
+          dynamicAllowlist,
+        })
+        .rpc();
+
+      const updatedDynamicAllowlistAccountInfo =
+        await program.account.dynamicAllowlist.fetch(dynamicAllowlist);
+
+      assert.equal(
+        updatedDynamicAllowlistAccountInfo.authority.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
+      assert.deepEqual(
+        updatedDynamicAllowlistAccountInfo.cosignerAnnotation,
+        cosignerAnnotation,
+      );
+      assert.deepEqual(
+        updatedDynamicAllowlistAccountInfo.allowlists,
+        newAllowlists,
+      );
+    });
+  });
+
   describe('Can create sol mmm w/ dynamic allowlist', () => {
     it('happy path', async () => {
       const referral = Keypair.generate();

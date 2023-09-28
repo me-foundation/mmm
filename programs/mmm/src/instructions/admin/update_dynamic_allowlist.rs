@@ -13,7 +13,7 @@ pub struct UpdateDynamicAllowlist<'info> {
     pub authority: Signer<'info>,
     #[account(
         mut,
-        seeds = [ALLOWLIST_PREFIX.as_bytes(), args.cosigner_annotation.as_ref()],
+        seeds = [ALLOWLIST_PREFIX.as_bytes(), authority.key().as_ref(), args.cosigner_annotation.as_ref()],
         bump,
         has_one = authority @ MMMErrorCode::InvalidOwner,
     )]
