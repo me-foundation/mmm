@@ -42,7 +42,7 @@ pub struct CreatePool<'info> {
     pub pool: Box<Account<'info, Pool>>,
     pub system_program: Program<'info, System>,
     #[account(
-        seeds = [ALLOWLIST_PREFIX.as_bytes(), authority.as_ref().unwrap().key().as_ref(), pool.cosigner_annotation.as_ref()],
+        seeds = [ALLOWLIST_PREFIX.as_bytes(), authority.as_ref().unwrap().key().as_ref(), args.cosigner_annotation.as_ref()],
         bump,
     )]
     pub dynamic_allowlist: Option<Account<'info, DynamicAllowlist>>,

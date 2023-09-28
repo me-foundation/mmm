@@ -221,13 +221,6 @@ describe('mmm-admin', () => {
         cosignerAnnotation,
       );
 
-      // The value of the pool's allowlist once the dynamic allowlist is set.
-      // This is a single address pointing to the dynamic allowlist PDA.
-      const dynamicAllowlistPointer = [
-        { kind: AllowlistKind.dynamic, value: dynamicAllowlist },
-        ...getEmptyAllowLists(5),
-      ];
-
       await program.methods
         .createDynamicAllowlist({
           cosignerAnnotation,
@@ -298,7 +291,7 @@ describe('mmm-admin', () => {
         ...getEmptyAllowLists(3),
       ];
 
-      const cosignerAnnotation = new Array(32).fill(0);
+      const cosignerAnnotation = new Array(32).fill(1);
 
       const { key: dynamicAllowlist } = getDynamicAllowlistPDA(
         program.programId,
@@ -324,6 +317,19 @@ describe('mmm-admin', () => {
           systemProgram: SystemProgram.programId,
         })
         .rpc();
+
+      const dynamicAllowlistAccountInfo =
+        await program.account.dynamicAllowlist.fetch(dynamicAllowlist);
+
+      assert.equal(
+        dynamicAllowlistAccountInfo.authority.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
+      assert.deepEqual(
+        dynamicAllowlistAccountInfo.cosignerAnnotation,
+        cosignerAnnotation,
+      );
+      assert.deepEqual(dynamicAllowlistAccountInfo.allowlists, allowlists);
 
       await program.methods
         .createPool({
@@ -365,10 +371,7 @@ describe('mmm-admin', () => {
         referral.publicKey.toBase58(),
       );
       assert.equal(poolAccountInfo.referralBp, 0);
-      assert.deepEqual(
-        poolAccountInfo.cosignerAnnotation,
-        new Array(32).fill(0),
-      );
+      assert.deepEqual(poolAccountInfo.cosignerAnnotation, cosignerAnnotation);
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
       assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
       assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
