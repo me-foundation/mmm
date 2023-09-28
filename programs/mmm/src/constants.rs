@@ -3,6 +3,7 @@ use solana_program::{pubkey, pubkey::Pubkey};
 pub const BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX: &str = "mmm_buyside_sol_escrow_account";
 pub const POOL_PREFIX: &str = "mmm_pool";
 pub const SELL_STATE_PREFIX: &str = "mmm_sell_state";
+pub const ALLOWLIST_PREFIX: &str = "mmm_dynamic_allowlist";
 
 pub const MAX_TOTAL_PRICE: u64 = 8_000_000 * 1_000_000_000; // 8_000_000 SOL
 pub const MAX_METADATA_CREATOR_ROYALTY_BP: u16 = 3000;

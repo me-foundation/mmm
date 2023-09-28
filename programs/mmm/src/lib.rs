@@ -25,6 +25,24 @@ pub mod mmm {
         instructions::update_pool::handler(ctx, args)
     }
 
+    pub fn create_dynamic_allowlist(
+        ctx: Context<CreateDynamicAllowlist>,
+        args: CreateDynamicAllowlistArgs,
+    ) -> Result<()> {
+        instructions::create_dynamic_allowlist::handler(ctx, args)
+    }
+
+    pub fn update_dynamic_allowlist(
+        ctx: Context<UpdateDynamicAllowlist>,
+        args: UpdateDynamicAllowlistArgs,
+    ) -> Result<()> {
+        instructions::update_dynamic_allowlist::handler(ctx, args)
+    }
+
+    pub fn migrate_pool(ctx: Context<MigratePool>, args: MigratePoolArgs) -> Result<()> {
+        instructions::migrate_pool::handler(ctx, args)
+    }
+
     pub fn sol_close_pool(ctx: Context<SolClosePool>) -> Result<()> {
         instructions::sol_close_pool::handler(ctx)
     }

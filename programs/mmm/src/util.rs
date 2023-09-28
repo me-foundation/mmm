@@ -1,6 +1,6 @@
 use crate::{
     constants::{
-        MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
+        ALLOWLIST_MAX_LEN, MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
         MIN_SOL_ESCROW_BALANCE_BP,
     },
     errors::MMMErrorCode,
@@ -542,4 +542,16 @@ pub fn assert_valid_fees_bp(maker_fee_bp: i16, taker_fee_bp: i16) -> Result<()> 
     }
 
     Ok(())
+}
+
+// Generates a dynamic allowlist pointer array.
+pub fn create_dynamic_allowlist_ptr(dynamic_allowlist_pda: Pubkey) -> [Allowlist; 6] {
+    // Dynamic allowlists should have the first allowlist set to the dynamic allowlist and the
+    // rest empty.
+    let mut lists = [Allowlist::default(); ALLOWLIST_MAX_LEN];
+    lists[0] = Allowlist {
+        kind: ALLOWLIST_KIND_DYNAMIC,
+        value: dynamic_allowlist_pda,
+    };
+    lists
 }

@@ -10,8 +10,9 @@ pub const ALLOWLIST_KIND_FVCA: u8 = 1;
 pub const ALLOWLIST_KIND_MINT: u8 = 2;
 pub const ALLOWLIST_KIND_MCC: u8 = 3;
 pub const ALLOWLIST_KIND_METADATA: u8 = 4;
+pub const ALLOWLIST_KIND_DYNAMIC: u8 = 5;
 
-#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
+#[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize, Eq, PartialEq)]
 pub struct Allowlist {
     pub kind: u8,
     pub value: Pubkey,
@@ -22,12 +23,16 @@ impl Allowlist {
     // kind == 1: first verified creator address (FVCA)
     // kind == 2: single mint, useful for SFT
     // kind == 3: verified MCC
-    // kind == 4,5,6,... will be supported in the future
+    // kind == 4: verified metadata
+    // kind == 5: dynamic allowlist singleton for a specific collection
+    // kind == 6,... will be supported in the future
     pub fn valid(&self) -> bool {
+        // Don't allow nested dynamic allowlist. Allowlists passed in from the user
+        // should always be types 0-4.
         if self.kind > ALLOWLIST_KIND_METADATA {
             return false;
         }
-        if self.kind != 0 {
+        if self.kind != ALLOWLIST_KIND_EMPTY {
             return self.value.ne(&Pubkey::default());
         }
         true
@@ -36,6 +41,26 @@ impl Allowlist {
     pub fn is_empty(&self) -> bool {
         self.kind == ALLOWLIST_KIND_EMPTY
     }
+}
+
+// seeds = [
+//     ALLOWLIST_PREFIX.as_bytes(),
+//     owner.key().as_ref(),
+//     cosigner_annotation.as_bytes()
+// ]
+#[account]
+#[derive(Default)]
+pub struct DynamicAllowlist {
+    pub cosigner_annotation: [u8; 32],
+    pub authority: Pubkey,
+    pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
+}
+
+impl DynamicAllowlist {
+    pub const LEN: usize = 8 +    // Anchor discriminator
+    32 +                          // Cosigner annotation
+    32 +                          // Authority
+    (1 + 32) * ALLOWLIST_MAX_LEN; // Allowlists
 }
 
 // seeds = [

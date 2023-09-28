@@ -1,11 +1,4 @@
-use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
-
-use crate::{
-    constants::*,
-    errors::MMMErrorCode,
-    state::{Allowlist, Pool},
-    util::*,
-};
+use super::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct CreatePoolArgs {
@@ -48,6 +41,12 @@ pub struct CreatePool<'info> {
     )]
     pub pool: Box<Account<'info, Pool>>,
     pub system_program: Program<'info, System>,
+    #[account(
+        seeds = [ALLOWLIST_PREFIX.as_bytes(), authority.as_ref().unwrap().key().as_ref(), pool.cosigner_annotation.as_ref()],
+        bump,
+    )]
+    pub dynamic_allowlist: Option<Account<'info, DynamicAllowlist>>,
+    pub authority: Option<AccountInfo<'info>>,
 }
 
 pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
@@ -80,7 +79,14 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
     pool.cosigner = cosigner.key();
     pool.uuid = args.uuid;
     pool.payment_mint = args.payment_mint;
-    pool.allowlists = args.allowlists;
+
+    // Check for dynamic allowlist account.
+    if let Some(dynamic_allowlist) = &mut ctx.accounts.dynamic_allowlist {
+        pool.allowlists = create_dynamic_allowlist_ptr(dynamic_allowlist.key());
+    } else {
+        // Not dynamic allowlist, so just set the allowlists.
+        pool.allowlists = args.allowlists;
+    }
 
     log_pool("post_create_pool", pool)?;
 
