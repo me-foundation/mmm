@@ -158,7 +158,7 @@ export class MMMClient {
     cosigner: PublicKey,
   ): Promise<TransactionInstruction> {
     const { key: poolKey } = getMMMPoolPDA(MMMProgramID, owner, args.uuid);
-    let builder = this.program.methods.createPool(args).accountsStrict({
+    let builder = this.program.methods.createPool(args).accounts({
       pool: poolKey,
       owner,
       cosigner,

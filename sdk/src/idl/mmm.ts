@@ -24,6 +24,18 @@ export type Mmm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
         }
       ],
       "args": [
@@ -59,6 +71,85 @@ export type Mmm = {
           "name": "args",
           "type": {
             "defined": "UpdatePoolArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "createDynamicAllowlist",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "CreateDynamicAllowlistArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateDynamicAllowlist",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "UpdateDynamicAllowlistArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "migratePool",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MigratePoolArgs"
           }
         }
       ]
@@ -1544,6 +1635,38 @@ export type Mmm = {
   ],
   "accounts": [
     {
+      "name": "dynamicAllowlist",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "pool",
       "type": {
         "kind": "struct",
@@ -1675,6 +1798,34 @@ export type Mmm = {
   ],
   "types": [
     {
+      "name": "CreateDynamicAllowlistArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "CreatePoolArgs",
       "type": {
         "kind": "struct",
@@ -1731,6 +1882,70 @@ export type Mmm = {
           {
             "name": "paymentMint",
             "type": "publicKey"
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MigratePoolArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "uuid",
+            "type": "publicKey"
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateDynamicAllowlistArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "allowlists",
@@ -2145,6 +2360,11 @@ export type Mmm = {
       "code": 6028,
       "name": "UnexpectedMetadataUri",
       "msg": "Unexpected metadata uri"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidAuthority",
+      "msg": "Invalid authority"
     }
   ]
 };
@@ -2175,6 +2395,18 @@ export const IDL: Mmm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": false,
+          "isOptional": true
         }
       ],
       "args": [
@@ -2210,6 +2442,85 @@ export const IDL: Mmm = {
           "name": "args",
           "type": {
             "defined": "UpdatePoolArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "createDynamicAllowlist",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "CreateDynamicAllowlistArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateDynamicAllowlist",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "UpdateDynamicAllowlistArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "migratePool",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dynamicAllowlist",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MigratePoolArgs"
           }
         }
       ]
@@ -3695,6 +4006,38 @@ export const IDL: Mmm = {
   ],
   "accounts": [
     {
+      "name": "dynamicAllowlist",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "pool",
       "type": {
         "kind": "struct",
@@ -3826,6 +4169,34 @@ export const IDL: Mmm = {
   ],
   "types": [
     {
+      "name": "CreateDynamicAllowlistArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "CreatePoolArgs",
       "type": {
         "kind": "struct",
@@ -3882,6 +4253,70 @@ export const IDL: Mmm = {
           {
             "name": "paymentMint",
             "type": "publicKey"
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MigratePoolArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "owner",
+            "type": "publicKey"
+          },
+          {
+            "name": "uuid",
+            "type": "publicKey"
+          },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateDynamicAllowlistArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
             "name": "allowlists",
@@ -4296,6 +4731,11 @@ export const IDL: Mmm = {
       "code": 6028,
       "name": "UnexpectedMetadataUri",
       "msg": "Unexpected metadata uri"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidAuthority",
+      "msg": "Invalid authority"
     }
   ]
 };

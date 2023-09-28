@@ -65,7 +65,7 @@ describe('mmm-withdraw', () => {
     let initWalletBalance = await connection.getBalance(wallet.publicKey);
     await program.methods
       .solWithdrawBuy({ paymentAmount: new anchor.BN(6 * LAMPORTS_PER_SOL) })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,

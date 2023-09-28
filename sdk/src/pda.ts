@@ -51,3 +51,19 @@ export const getTokenRecordPDA = (mint: PublicKey, tokenAccount: PublicKey) => {
 
   return { key, bump };
 };
+
+export const getDynamicAllowlistPDA = (
+  programId: PublicKey,
+  authority: PublicKey,
+  cosigner_annotation: Array<32>,
+) => {
+  const [key, bump] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(PREFIXES.DYNAMIC_ALLOWLIST),
+      authority.toBuffer(),
+      Buffer.from(cosigner_annotation),
+    ],
+    programId,
+  );
+  return { key, bump };
+};

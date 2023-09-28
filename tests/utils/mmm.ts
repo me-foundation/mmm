@@ -94,11 +94,13 @@ export const createPool = async (
   };
   const { owner, cosigner: _, ...overrides } = args;
   const finalArgs = { ...defaults, ...overrides };
-  let builder = program.methods.createPool(finalArgs).accountsStrict({
+  let builder = program.methods.createPool(finalArgs).accounts({
     owner: args.owner,
     cosigner: finalArgs.cosigner,
     pool: poolKey,
     systemProgram: SystemProgram.programId,
+    dynamicAllowlist: null,
+    authority: null,
   });
   if (args.cosigner) {
     builder = builder.signers([args.cosigner]);
