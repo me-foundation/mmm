@@ -1,3 +1,4 @@
+# Forked from metaDAOproject/anchor-test to add support for features: https://github.com/metaDAOproject/anchor-test/blob/main/action.yml
 name: 'Anchor Test'
 description: 'An "anchor test" action that runs in ~1 minute.'
 branding:
@@ -19,7 +20,7 @@ inputs:
   features:
     description: 'Features to pass to cargo build-bpf'
     required: false
-    default: ''
+    default: 'default'
 runs:
   using: 'composite'
   steps:
