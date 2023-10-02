@@ -25,6 +25,13 @@ pub mod mmm {
         instructions::update_pool::handler(ctx, args)
     }
 
+    pub fn update_allowlists(
+        ctx: Context<UpdateAllowlists>,
+        args: UpdateAllowlistsArgs,
+    ) -> Result<()> {
+        instructions::update_allowlists::handler(ctx, args)
+    }
+
     pub fn sol_close_pool(ctx: Context<SolClosePool>) -> Result<()> {
         instructions::sol_close_pool::handler(ctx)
     }

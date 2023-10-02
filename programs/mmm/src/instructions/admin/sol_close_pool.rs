@@ -1,6 +1,4 @@
-use anchor_lang::prelude::*;
-
-use crate::{constants::*, errors::MMMErrorCode, state::Pool};
+use super::*;
 
 #[derive(Accounts)]
 pub struct SolClosePool<'info> {
