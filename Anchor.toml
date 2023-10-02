@@ -29,7 +29,7 @@ address = "6Huqrb4xxmmNA4NufYdgpmspoLmjXFd3qEfteCddLgSz" # ocp: policy (allow al
 
 [[test.genesis]]
 address = "migrxZFChTqicHpNa1CAjPcF29Mui2JU2q4Ym7qQUTi"
-program = "tests/deps/mpl_migration_validator.so" # custom migration validator with only waiting period updated
+program = "tests/deps/mpl_migration_validator.so"       # custom migration validator with only waiting period updated
 
 [programs.localnet]
 mmm = "mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc"

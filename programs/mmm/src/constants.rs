@@ -11,4 +11,8 @@ pub const MAX_LP_FEE_BP: u16 = 1000;
 pub const ALLOWLIST_MAX_LEN: usize = 6;
 pub const MIN_SOL_ESCROW_BALANCE_BP: u16 = 100;
 
-pub const CANCEL_AUTHORITY: Pubkey = pubkey!("CNTuB1JiQD8Xh5SoRcEmF61yivN9F7uzdSaGnRex36wi");
+pub const CANCEL_AUTHORITY: Pubkey = if cfg!(feature = "anchor-test") {
+    pubkey!("testZY18qdvfWNn1mTn7PvywdLdwWWsgqLXvvztKAtD")
+} else {
+    pubkey!("CNTuB1JiQD8Xh5SoRcEmF61yivN9F7uzdSaGnRex36wi")
+};
