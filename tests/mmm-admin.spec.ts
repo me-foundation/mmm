@@ -192,11 +192,8 @@ describe('mmm-admin', () => {
 
   describe('Can update allowlists', () => {
     it('happy path', async () => {
-      const testAuthorityKeypair = getTestAuthorityKeypair();
-
       const fvca = Keypair.generate();
       const newFcva = Keypair.generate();
-      const cosignerAnnotation = new Array(32).fill(0);
 
       const allowlists = [
         { kind: AllowlistKind.fvca, value: fvca.publicKey },
@@ -252,11 +249,11 @@ describe('mmm-admin', () => {
           allowlists: newAllowlists,
         })
         .accountsStrict({
-          authority: testAuthorityKeypair.publicKey,
+          cosigner: cosigner.publicKey,
           owner: wallet.publicKey,
           pool: poolKey,
         })
-        .signers([testAuthorityKeypair])
+        .signers([cosigner])
         .rpc();
 
       const poolAccountInfo = await program.account.pool.fetch(poolKey);
@@ -324,7 +321,7 @@ describe('mmm-admin', () => {
             allowlists: newAllowlists,
           })
           .accountsStrict({
-            authority: inavlidAuthorityKeypair.publicKey,
+            cosigner: inavlidAuthorityKeypair.publicKey,
             owner: wallet.publicKey,
             pool: poolKey,
           })
@@ -337,19 +334,15 @@ describe('mmm-admin', () => {
         expect(_err).to.be.instanceOf(AnchorError);
         const err = _err as AnchorError;
 
-        // 2012 -- An Address constraint was violated.
-        assert.strictEqual(
-          err.error.errorMessage,
-          'An address constraint was violated',
-        );
-        assert.strictEqual(err.error.errorCode.number, 2012);
+        assert.strictEqual(err.error.errorMessage, 'invalid owner');
+        assert.strictEqual(err.error.errorCode.number, 6007);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.deepEqual(poolAccountInfo.allowlists, allowlists);
       }
     });
 
-    it('owner cannot update', async () => {
+    it('owner cannot update when cosigner is present', async () => {
       const fvca = Keypair.generate();
       const newFcva = Keypair.generate();
 
@@ -408,7 +401,7 @@ describe('mmm-admin', () => {
             allowlists: newAllowlists,
           })
           .accountsStrict({
-            authority: wallet.publicKey,
+            cosigner: wallet.publicKey,
             owner: wallet.publicKey,
             pool: poolKey,
           })
@@ -420,16 +413,84 @@ describe('mmm-admin', () => {
         expect(_err).to.be.instanceOf(AnchorError);
         const err = _err as AnchorError;
 
-        // 2012 -- An Address constraint was violated.
-        assert.strictEqual(
-          err.error.errorMessage,
-          'An address constraint was violated',
-        );
-        assert.strictEqual(err.error.errorCode.number, 2012);
+        assert.strictEqual(err.error.errorMessage, 'invalid owner');
+        assert.strictEqual(err.error.errorCode.number, 6007);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.deepEqual(poolAccountInfo.allowlists, allowlists);
       }
+    });
+
+    it('owner can update when no cosigner', async () => {
+      const fvca = Keypair.generate();
+      const newFcva = Keypair.generate();
+
+      const allowlists = [
+        { kind: AllowlistKind.fvca, value: fvca.publicKey },
+        { kind: AllowlistKind.mint, value: cosigner.publicKey },
+        { kind: AllowlistKind.mcc, value: wallet.publicKey },
+        ...getEmptyAllowLists(3),
+      ];
+
+      const newAllowlists = [
+        { kind: AllowlistKind.fvca, value: newFcva.publicKey },
+        { kind: AllowlistKind.mint, value: cosigner.publicKey },
+        { kind: AllowlistKind.mcc, value: wallet.publicKey },
+        ...getEmptyAllowLists(3),
+      ];
+
+      const referral = Keypair.generate();
+      const uuid = Keypair.generate();
+
+      const { key: poolKey } = getMMMPoolPDA(
+        program.programId,
+        wallet.publicKey,
+        uuid.publicKey,
+      );
+
+      await program.methods
+        .createPool({
+          spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
+          curveType: CurveKind.linear,
+          curveDelta: new anchor.BN(0),
+          reinvestFulfillBuy: true,
+          reinvestFulfillSell: true,
+          expiry: new anchor.BN(42),
+          lpFeeBp: 200,
+          referral: referral.publicKey,
+          cosignerAnnotation: new Array(32).fill(0),
+          buysideCreatorRoyaltyBp: 0,
+
+          uuid: uuid.publicKey,
+          paymentMint: PublicKey.default,
+          allowlists,
+        })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: wallet.publicKey,
+          pool: poolKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([])
+        .rpc();
+
+      let poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
+      assert.deepEqual(poolAccountInfo.cosigner, wallet.publicKey);
+
+      await program.methods
+        .updateAllowlists({
+          allowlists: newAllowlists,
+        })
+        .accountsStrict({
+          cosigner: wallet.publicKey,
+          owner: wallet.publicKey,
+          pool: poolKey,
+        })
+        .rpc();
+
+      poolAccountInfo = await program.account.pool.fetch(poolKey);
+      assert.deepEqual(poolAccountInfo.allowlists, newAllowlists);
     });
   });
 });

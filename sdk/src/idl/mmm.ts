@@ -67,7 +67,7 @@ export type Mmm = {
       "name": "updateAllowlists",
       "accounts": [
         {
-          "name": "authority",
+          "name": "cosigner",
           "isMut": true,
           "isSigner": true
         },
@@ -2265,7 +2265,7 @@ export const IDL: Mmm = {
       "name": "updateAllowlists",
       "accounts": [
         {
-          "name": "authority",
+          "name": "cosigner",
           "isMut": true,
           "isSigner": true
         },

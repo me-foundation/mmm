@@ -8,15 +8,15 @@ pub struct UpdateAllowlistsArgs {
 #[derive(Accounts)]
 #[instruction(args:UpdateAllowlistsArgs)]
 pub struct UpdateAllowlists<'info> {
-    #[account(mut, address = CANCEL_AUTHORITY)]
-    pub authority: Signer<'info>,
+    #[account(mut)]
+    pub cosigner: Signer<'info>,
     /// CHECK: Owner is not validated because this is a permissioned handler
     pub owner: UncheckedAccount<'info>,
     #[account(
         mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         bump,
-        has_one = owner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidOwner,
     )]
     pub pool: Box<Account<'info, Pool>>,
 }
