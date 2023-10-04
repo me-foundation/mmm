@@ -22,7 +22,8 @@ impl Allowlist {
     // kind == 1: first verified creator address (FVCA)
     // kind == 2: single mint, useful for SFT
     // kind == 3: verified MCC
-    // kind == 4,5,6,... will be supported in the future
+    // kind == 4: metadata
+    // kind == 5,6,... will be supported in the future
     pub fn valid(&self) -> bool {
         if self.kind > ALLOWLIST_KIND_METADATA {
             return false;
