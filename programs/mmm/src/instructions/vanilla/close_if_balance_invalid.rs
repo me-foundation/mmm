@@ -44,7 +44,7 @@ pub fn handler(ctx: Context<CloseIfBalanceInvalid>) -> Result<()> {
         &ctx.accounts.buyside_sol_escrow_account,
         &ctx.accounts.pool,
         &ctx.accounts.system_program,
-        &buyside_sol_escrow_account_seeds,
+        buyside_sol_escrow_account_seeds,
     )?;
     ctx.accounts.pool.buyside_payment_amount = ctx.accounts.buyside_sol_escrow_account.lamports();
     try_close_pool(&ctx.accounts.pool, ctx.accounts.owner.to_account_info())
