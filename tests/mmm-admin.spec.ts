@@ -15,7 +15,7 @@ import {
   getMMMPoolPDA,
   MMMProgramID,
 } from '../sdk/src';
-import { airdrop, getEmptyAllowLists, getTestAuthorityKeypair } from './utils';
+import { airdrop, getEmptyAllowLists } from './utils';
 
 describe('mmm-admin', () => {
   const { connection } = anchor.AnchorProvider.env();
@@ -471,7 +471,6 @@ describe('mmm-admin', () => {
           pool: poolKey,
           systemProgram: SystemProgram.programId,
         })
-        .signers([])
         .rpc();
 
       let poolAccountInfo = await program.account.pool.fetch(poolKey);
@@ -491,6 +490,129 @@ describe('mmm-admin', () => {
 
       poolAccountInfo = await program.account.pool.fetch(poolKey);
       assert.deepEqual(poolAccountInfo.allowlists, newAllowlists);
+    });
+
+    it('cosigner cannot update pool they are not owner on', async () => {
+      const owner2 = Keypair.generate();
+      const cosigner2 = Keypair.generate();
+
+      await airdrop(connection, owner2.publicKey, 50);
+
+      const fvca = Keypair.generate();
+      const newFcva = Keypair.generate();
+
+      const allowlists = [
+        { kind: AllowlistKind.fvca, value: fvca.publicKey },
+        { kind: AllowlistKind.mint, value: cosigner.publicKey },
+        { kind: AllowlistKind.mcc, value: wallet.publicKey },
+        ...getEmptyAllowLists(3),
+      ];
+
+      const newAllowlists = [
+        { kind: AllowlistKind.fvca, value: newFcva.publicKey },
+        { kind: AllowlistKind.mint, value: cosigner.publicKey },
+        { kind: AllowlistKind.mcc, value: wallet.publicKey },
+        ...getEmptyAllowLists(3),
+      ];
+
+      const referral = Keypair.generate();
+      const uuid = Keypair.generate();
+
+      const referral2 = Keypair.generate();
+      const uuid2 = Keypair.generate();
+
+      const { key: poolKey } = getMMMPoolPDA(
+        program.programId,
+        wallet.publicKey,
+        uuid.publicKey,
+      );
+
+      const { key: poolKey2 } = getMMMPoolPDA(
+        program.programId,
+        owner2.publicKey,
+        uuid2.publicKey,
+      );
+
+      await program.methods
+        .createPool({
+          spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
+          curveType: CurveKind.linear,
+          curveDelta: new anchor.BN(0),
+          reinvestFulfillBuy: true,
+          reinvestFulfillSell: true,
+          expiry: new anchor.BN(42),
+          lpFeeBp: 200,
+          referral: referral.publicKey,
+          cosignerAnnotation: new Array(32).fill(0),
+          buysideCreatorRoyaltyBp: 0,
+
+          uuid: uuid.publicKey,
+          paymentMint: PublicKey.default,
+          allowlists,
+        })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([cosigner])
+        .rpc();
+
+      // Create second pool, with different owner and cosigner.
+      await program.methods
+        .createPool({
+          spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
+          curveType: CurveKind.linear,
+          curveDelta: new anchor.BN(0),
+          reinvestFulfillBuy: true,
+          reinvestFulfillSell: true,
+          expiry: new anchor.BN(42),
+          lpFeeBp: 200,
+          referral: referral2.publicKey,
+          cosignerAnnotation: new Array(32).fill(0),
+          buysideCreatorRoyaltyBp: 0,
+
+          uuid: uuid2.publicKey,
+          paymentMint: PublicKey.default,
+          allowlists,
+        })
+        .accountsStrict({
+          owner: owner2.publicKey,
+          cosigner: cosigner2.publicKey,
+          pool: poolKey2,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([owner2, cosigner2])
+        .rpc();
+
+      try {
+        await program.methods
+          .updateAllowlists({
+            allowlists: newAllowlists,
+          })
+          .accountsStrict({
+            cosigner: cosigner.publicKey,
+            owner: owner2.publicKey, // we pass in the correct owner pubkey because it's unchecked
+            pool: poolKey2,
+          })
+          .signers([cosigner])
+          .rpc();
+
+        assert.ok(false, 'Should have thrown error');
+      } catch (_err) {
+        // Should be an AnchorError and force convert the type.
+        expect(_err).to.be.instanceOf(AnchorError);
+        const err = _err as AnchorError;
+
+        // Seeds constraint will pass but the has_one constraint will fail with the
+        // custom "InvalidOwner" error.
+        assert.strictEqual(err.error.errorMessage, 'invalid owner');
+        assert.strictEqual(err.error.errorCode.number, 6007);
+
+        const poolAccountInfo = await program.account.pool.fetch(poolKey);
+        assert.deepEqual(poolAccountInfo.allowlists, allowlists);
+      }
     });
   });
 });
