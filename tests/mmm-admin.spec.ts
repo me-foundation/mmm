@@ -334,8 +334,8 @@ describe('mmm-admin', () => {
         expect(_err).to.be.instanceOf(AnchorError);
         const err = _err as AnchorError;
 
-        assert.strictEqual(err.error.errorMessage, 'invalid owner');
-        assert.strictEqual(err.error.errorCode.number, 6007);
+        assert.strictEqual(err.error.errorMessage, 'invalid cosigner');
+        assert.strictEqual(err.error.errorCode.number, 6005);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.deepEqual(poolAccountInfo.allowlists, allowlists);
@@ -413,8 +413,8 @@ describe('mmm-admin', () => {
         expect(_err).to.be.instanceOf(AnchorError);
         const err = _err as AnchorError;
 
-        assert.strictEqual(err.error.errorMessage, 'invalid owner');
-        assert.strictEqual(err.error.errorCode.number, 6007);
+        assert.strictEqual(err.error.errorMessage, 'invalid cosigner');
+        assert.strictEqual(err.error.errorCode.number, 6005);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.deepEqual(poolAccountInfo.allowlists, allowlists);
@@ -607,8 +607,8 @@ describe('mmm-admin', () => {
 
         // Seeds constraint will pass but the has_one constraint will fail with the
         // custom "InvalidOwner" error.
-        assert.strictEqual(err.error.errorMessage, 'invalid owner');
-        assert.strictEqual(err.error.errorCode.number, 6007);
+        assert.strictEqual(err.error.errorMessage, 'invalid cosigner');
+        assert.strictEqual(err.error.errorCode.number, 6005);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.deepEqual(poolAccountInfo.allowlists, allowlists);
