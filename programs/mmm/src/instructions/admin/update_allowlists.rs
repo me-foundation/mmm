@@ -10,7 +10,7 @@ pub struct UpdateAllowlistsArgs {
 pub struct UpdateAllowlists<'info> {
     #[account(mut)]
     pub cosigner: Signer<'info>,
-    /// CHECK: Owner is not validated because this is a permissioned handler
+    /// CHECK: Owner is only used for seed derivation. Cosigner has_one constraint is checked in the pool account.
     pub owner: UncheckedAccount<'info>,
     #[account(
         mut,
