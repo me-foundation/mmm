@@ -16,7 +16,7 @@ pub struct UpdateAllowlists<'info> {
         mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         bump,
-        has_one = cosigner @ MMMErrorCode::InvalidOwner,
+        has_one = cosigner @ MMMErrorCode::InvalidCosigner,
     )]
     pub pool: Box<Account<'info, Pool>>,
 }
