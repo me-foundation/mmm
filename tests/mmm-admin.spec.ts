@@ -192,6 +192,20 @@ describe('mmm-admin', () => {
 
   describe('Can update allowlists', () => {
     it('happy path', async () => {
+      // Ensure cosigner is the only signer of the transaction.
+      const wallet = new anchor.Wallet(cosigner);
+      const provider = new anchor.AnchorProvider(connection, wallet, {
+        commitment: 'processed',
+      });
+
+      const program = new anchor.Program(
+        IDL,
+        MMMProgramID,
+        provider,
+      ) as anchor.Program<Mmm>;
+
+      await airdrop(connection, cosigner.publicKey, 50);
+
       const fvca = Keypair.generate();
       const newFcva = Keypair.generate();
 
@@ -241,7 +255,6 @@ describe('mmm-admin', () => {
           pool: poolKey,
           systemProgram: SystemProgram.programId,
         })
-        .signers([cosigner])
         .rpc();
 
       await program.methods
@@ -253,10 +266,35 @@ describe('mmm-admin', () => {
           owner: wallet.publicKey,
           pool: poolKey,
         })
-        .signers([cosigner])
         .rpc();
 
       const poolAccountInfo = await program.account.pool.fetch(poolKey);
+
+      // All pool values should be the same...
+      assert.equal(poolAccountInfo.spotPrice.toNumber(), 1 * LAMPORTS_PER_SOL);
+      assert.equal(poolAccountInfo.curveType, CurveKind.linear);
+      assert.equal(poolAccountInfo.curveDelta.toNumber(), 0);
+      assert.isTrue(poolAccountInfo.reinvestFulfillBuy);
+      assert.isTrue(poolAccountInfo.reinvestFulfillSell);
+      assert.equal(poolAccountInfo.expiry.toNumber(), 42);
+      assert.equal(poolAccountInfo.lpFeeBp, 200);
+      assert.equal(
+        poolAccountInfo.referral.toBase58(),
+        referral.publicKey.toBase58(),
+      );
+      assert.equal(poolAccountInfo.referralBp, 0);
+      assert.deepEqual(
+        poolAccountInfo.cosignerAnnotation,
+        new Array(32).fill(0),
+      );
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
+      assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
+      assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
+      assert.deepEqual(poolAccountInfo.cosigner, cosigner.publicKey);
+      assert.deepEqual(poolAccountInfo.uuid, uuid.publicKey);
+      assert.deepEqual(poolAccountInfo.paymentMint, PublicKey.default);
+
+      // ...except for the allowlists.
       assert.deepEqual(poolAccountInfo.allowlists, newAllowlists);
     });
 
