@@ -2,7 +2,7 @@
   "compilerOptions": {
     "types": ["mocha", "chai"],
     "typeRoots": ["./node_modules/@types"],
-    "lib": ["es2015", "DOM"],
+    "lib": ["es2015", "es2019", "DOM"],
     "target": "es6",
     "resolveJsonModule": true,
     "allowJs": true,
@@ -15,7 +15,7 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "isolatedModules": true,
-    "noFallthroughCasesInSwitch": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": [".eslintrc.js", "tests/*.ts"]
 }

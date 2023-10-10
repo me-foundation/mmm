@@ -32,6 +32,20 @@ export const getKeypair = () => {
   return keypair;
 };
 
+// Hard-coded test keypair for use in testing permissioned handlers.
+let testAuthorityKeypair: Keypair | undefined = undefined;
+export const getTestAuthorityKeypair = () => {
+  if (testAuthorityKeypair) {
+    return testAuthorityKeypair;
+  }
+  // read test keypair from env vars
+  const keypairFile = fs.readFileSync('tests/test-keypair.json');
+  const keypair = Keypair.fromSecretKey(
+    Buffer.from(JSON.parse(keypairFile.toString())),
+  );
+  return keypair;
+};
+
 export const assertIsBetween = (num: number, center: number, range: number) => {
   assert.isAbove(num, center - range);
   assert.isBelow(num, center + range);

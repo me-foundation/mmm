@@ -64,6 +64,34 @@ export type Mmm = {
       ]
     },
     {
+      "name": "updateAllowlists",
+      "accounts": [
+        {
+          "name": "cosigner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "UpdateAllowlistsArgs"
+          }
+        }
+      ]
+    },
+    {
       "name": "solClosePool",
       "accounts": [
         {
@@ -1732,6 +1760,25 @@ export type Mmm = {
             "name": "paymentMint",
             "type": "publicKey"
           },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateAllowlistsArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
             "name": "allowlists",
             "type": {
@@ -2215,6 +2262,34 @@ export const IDL: Mmm = {
       ]
     },
     {
+      "name": "updateAllowlists",
+      "accounts": [
+        {
+          "name": "cosigner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "UpdateAllowlistsArgs"
+          }
+        }
+      ]
+    },
+    {
       "name": "solClosePool",
       "accounts": [
         {
@@ -3883,6 +3958,25 @@ export const IDL: Mmm = {
             "name": "paymentMint",
             "type": "publicKey"
           },
+          {
+            "name": "allowlists",
+            "type": {
+              "array": [
+                {
+                  "defined": "Allowlist"
+                },
+                6
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateAllowlistsArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
             "name": "allowlists",
             "type": {

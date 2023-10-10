@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test:anchor": "anchor test --skip-build",
+    "test:anchor": "anchor test -- --features anchor-test",
     "build": "cd sdk && npm run build",
     "idl": "cp target/types/mmm.ts sdk/src/idl/mmm.ts"
   },
