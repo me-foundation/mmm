@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ./.github/actions/anchor-test
+      - uses: metadaoproject/anchor-test@v1.3
         with:
           anchor-version: '0.24.2'
           solana-cli-version: '1.14.3'
