@@ -1,3 +1,5 @@
+<img src="./docs/logo.png" width="400">
+
 # MMM
 
 MMM is an open source and secure AMM protocol on Solana. It enables the multi-pool (buy-side, sell-side, two-side) feature, and the extendable allowlist of the pool assets.
