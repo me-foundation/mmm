@@ -89,6 +89,10 @@ pub fn check_allowlists_for_mint(
     for allowlist_val in allowlists.iter() {
         match allowlist_val.kind {
             ALLOWLIST_KIND_EMPTY => {}
+            ALLOWLIST_KIND_ANY => {
+                // any is a special case, we don't need to check anything else
+                return Ok(parsed_metadata);
+            }
             ALLOWLIST_KIND_FVCA => {
                 if let Some(ref creators) = parsed_metadata.data.creators {
                     // TODO: can we make sure we only take master_edition here?

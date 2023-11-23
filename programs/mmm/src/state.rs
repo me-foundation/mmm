@@ -10,6 +10,7 @@ pub const ALLOWLIST_KIND_FVCA: u8 = 1;
 pub const ALLOWLIST_KIND_MINT: u8 = 2;
 pub const ALLOWLIST_KIND_MCC: u8 = 3;
 pub const ALLOWLIST_KIND_METADATA: u8 = 4;
+pub const ALLOWLIST_KIND_ANY: u8 = u8::MAX;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct Allowlist {
@@ -24,11 +25,12 @@ impl Allowlist {
     // kind == 3: verified MCC
     // kind == 4: metadata
     // kind == 5,6,... will be supported in the future
+    // kind == 255: any
     pub fn valid(&self) -> bool {
-        if self.kind > ALLOWLIST_KIND_METADATA {
+        if self.kind > ALLOWLIST_KIND_METADATA && self.kind != ALLOWLIST_KIND_ANY {
             return false;
         }
-        if self.kind != 0 {
+        if self.kind != 0 && self.kind != ALLOWLIST_KIND_ANY {
             return self.value.ne(&Pubkey::default());
         }
         true

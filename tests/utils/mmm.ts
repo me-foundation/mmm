@@ -121,6 +121,7 @@ export const createPoolWithExampleDeposits = async (
   const [nfts, sfts, extraNft, extraSft, allowlistValue] = await (async () => {
     const kindToUse = kinds[0];
     switch (kindToUse) {
+      case AllowlistKind.any:
       case AllowlistKind.mint:
         return Promise.all([
           mintNfts(connection, {
@@ -268,6 +269,8 @@ export const createPoolWithExampleDeposits = async (
                 value: nfts[0].metadataAddress,
               },
             ];
+          case AllowlistKind.any:
+            return [{ kind: AllowlistKind.any, value: PublicKey.default }];
           default:
             throw new Error(
               `unsupported allowlist kind while building allowlist: ${kind}`,

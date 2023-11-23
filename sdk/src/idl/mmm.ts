@@ -1,4367 +1,4395 @@
 export type Mmm = {
-  version: '0.2.0';
-  name: 'mmm';
-  instructions: [
+  "version": "0.2.0",
+  "name": "mmm",
+  "instructions": [
     {
-      name: 'createPool';
-      accounts: [
+      "name": "createPool",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'CreatePoolArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "CreatePoolArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'updatePool';
-      accounts: [
+      "name": "updatePool",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'UpdatePoolArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "UpdatePoolArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'updateAllowlists';
-      accounts: [
+      "name": "updateAllowlists",
+      "accounts": [
         {
-          name: 'cosigner';
-          isMut: true;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: false;
-          isSigner: false;
+          "name": "owner",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'UpdateAllowlistsArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "UpdateAllowlistsArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solClosePool';
-      accounts: [
+      "name": "solClosePool",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [];
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
-      name: 'solDepositBuy';
-      accounts: [
+      "name": "solDepositBuy",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolDepositBuyArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolDepositBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solWithdrawBuy';
-      accounts: [
+      "name": "solWithdrawBuy",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolWithdrawBuyArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolWithdrawBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solFulfillBuy';
-      accounts: [
+      "name": "solFulfillBuy",
+      "accounts": [
         {
-          name: 'payer';
-          isMut: true;
-          isSigner: true;
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: false;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral';
-          isMut: true;
-          isSigner: false;
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "ownerTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolFulfillBuyArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solFulfillSell';
-      accounts: [
+      "name": "solFulfillSell",
+      "accounts": [
         {
-          name: 'payer';
-          isMut: true;
-          isSigner: true;
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: false;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral';
-          isMut: true;
-          isSigner: false;
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolFulfillSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'withdrawSell';
-      accounts: [
+      "name": "withdrawSell",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'WithdrawSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'depositSell';
-      accounts: [
+      "name": "depositSell",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'DepositSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "DepositSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'ocpDepositSell';
-      accounts: [
+      "name": "ocpDepositSell",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState';
-          isMut: true;
-          isSigner: false;
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'DepositSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "DepositSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solOcpFulfillBuy';
-      accounts: [
+      "name": "solOcpFulfillBuy",
+      "accounts": [
         {
-          name: 'payer';
-          isMut: true;
-          isSigner: true;
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: false;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral';
-          isMut: true;
-          isSigner: false;
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "ownerTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState';
-          isMut: true;
-          isSigner: false;
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolFulfillBuyArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solOcpFulfillSell';
-      accounts: [
+      "name": "solOcpFulfillSell",
+      "accounts": [
         {
-          name: 'payer';
-          isMut: true;
-          isSigner: true;
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: false;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral';
-          isMut: true;
-          isSigner: false;
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState';
-          isMut: true;
-          isSigner: false;
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolOcpFulfillSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolOcpFulfillSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'ocpWithdrawSell';
-      accounts: [
+      "name": "ocpWithdrawSell",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState';
-          isMut: true;
-          isSigner: false;
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'WithdrawSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'mip1DepositSell';
-      accounts: [
+      "name": "mip1DepositSell",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: true;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenRecord';
-          isMut: true;
-          isSigner: false;
+          "name": "ownerTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'destinationTokenRecord';
-          isMut: true;
-          isSigner: false;
+          "name": "destinationTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenMetadataProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'DepositSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "DepositSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'mip1WithdrawSell';
-      accounts: [
+      "name": "mip1WithdrawSell",
+      "accounts": [
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: true;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: true;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenRecord';
-          isMut: true;
-          isSigner: false;
+          "name": "ownerTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'destinationTokenRecord';
-          isMut: true;
-          isSigner: false;
+          "name": "destinationTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenMetadataProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'WithdrawSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solMip1FulfillSell';
-      accounts: [
+      "name": "solMip1FulfillSell",
+      "accounts": [
         {
-          name: 'payer';
-          isMut: true;
-          isSigner: true;
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: false;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral';
-          isMut: true;
-          isSigner: false;
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: true;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenRecord';
-          isMut: true;
-          isSigner: false;
+          "name": "ownerTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'destinationTokenRecord';
-          isMut: true;
-          isSigner: false;
+          "name": "destinationTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenMetadataProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolMip1FulfillSellArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolMip1FulfillSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solMip1FulfillBuy';
-      accounts: [
+      "name": "solMip1FulfillBuy",
+      "accounts": [
         {
-          name: 'payer';
-          isMut: true;
-          isSigner: true;
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: false;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner';
-          isMut: false;
-          isSigner: true;
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral';
-          isMut: true;
-          isSigner: false;
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata';
-          isMut: true;
-          isSigner: false;
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition';
-          isMut: false;
-          isSigner: false;
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "ownerTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount';
-          isMut: false;
-          isSigner: false;
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState';
-          isMut: true;
-          isSigner: false;
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'tokenOwnerTokenRecord';
-          isMut: true;
-          isSigner: false;
-          docs: ['This is the token record for the seller'];
+          "name": "tokenOwnerTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the seller"
+          ]
         },
         {
-          name: 'poolTokenRecord';
-          isMut: true;
-          isSigner: false;
-          docs: [
-            'This is the token record for the pool - will always be required',
-          ];
+          "name": "poolTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool - will always be required"
+          ]
         },
         {
-          name: 'poolOwnerTokenRecord';
-          isMut: true;
-          isSigner: false;
-          docs: [
-            'This is the token record for the pool owner - will be required if reinvest = true',
-          ];
+          "name": "poolOwnerTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool owner - will be required if reinvest = true"
+          ]
         },
         {
-          name: 'tokenMetadataProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules';
-          isMut: false;
-          isSigner: false;
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions';
-          isMut: false;
-          isSigner: false;
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram';
-          isMut: false;
-          isSigner: false;
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
         {
-          name: 'args';
-          type: {
-            defined: 'SolFulfillBuyArgs';
-          };
-        },
-      ];
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'closeIfBalanceInvalid';
-      accounts: [
+      "name": "closeIfBalanceInvalid",
+      "accounts": [
         {
-          name: 'authority';
-          isMut: false;
-          isSigner: true;
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'owner';
-          isMut: true;
-          isSigner: false;
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool';
-          isMut: true;
-          isSigner: false;
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount';
-          isMut: true;
-          isSigner: false;
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram';
-          isMut: false;
-          isSigner: false;
-        },
-      ];
-      args: [];
-    },
-  ];
-  accounts: [
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
     {
-      name: 'pool';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "pool",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'spotPrice';
-            type: 'u64';
+            "name": "spotPrice",
+            "type": "u64"
           },
           {
-            name: 'curveType';
-            type: 'u8';
+            "name": "curveType",
+            "type": "u8"
           },
           {
-            name: 'curveDelta';
-            type: 'u64';
+            "name": "curveDelta",
+            "type": "u64"
           },
           {
-            name: 'reinvestFulfillBuy';
-            type: 'bool';
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
           },
           {
-            name: 'reinvestFulfillSell';
-            type: 'bool';
+            "name": "reinvestFulfillSell",
+            "type": "bool"
           },
           {
-            name: 'expiry';
-            type: 'i64';
+            "name": "expiry",
+            "type": "i64"
           },
           {
-            name: 'lpFeeBp';
-            type: 'u16';
+            "name": "lpFeeBp",
+            "type": "u16"
           },
           {
-            name: 'referral';
-            type: 'publicKey';
+            "name": "referral",
+            "type": "publicKey"
           },
           {
-            name: 'referralBp';
-            type: 'u16';
+            "name": "referralBp",
+            "type": "u16"
           },
           {
-            name: 'buysideCreatorRoyaltyBp';
-            type: 'u16';
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           },
           {
-            name: 'cosignerAnnotation';
-            type: {
-              array: ['u8', 32];
-            };
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
-            name: 'sellsideAssetAmount';
-            type: 'u64';
+            "name": "sellsideAssetAmount",
+            "type": "u64"
           },
           {
-            name: 'lpFeeEarned';
-            type: 'u64';
+            "name": "lpFeeEarned",
+            "type": "u64"
           },
           {
-            name: 'owner';
-            type: 'publicKey';
+            "name": "owner",
+            "type": "publicKey"
           },
           {
-            name: 'cosigner';
-            type: 'publicKey';
+            "name": "cosigner",
+            "type": "publicKey"
           },
           {
-            name: 'uuid';
-            type: 'publicKey';
+            "name": "uuid",
+            "type": "publicKey"
           },
           {
-            name: 'paymentMint';
-            type: 'publicKey';
+            "name": "paymentMint",
+            "type": "publicKey"
           },
           {
-            name: 'allowlists';
-            type: {
-              array: [
+            "name": "allowlists",
+            "type": {
+              "array": [
                 {
-                  defined: 'Allowlist';
+                  "defined": "Allowlist"
                 },
-                6,
-              ];
-            };
+                6
+              ]
+            }
           },
           {
-            name: 'buysidePaymentAmount';
-            type: 'u64';
-          },
-        ];
-      };
+            "name": "buysidePaymentAmount",
+            "type": "u64"
+          }
+        ]
+      }
     },
     {
-      name: 'sellState';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "sellState",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'pool';
-            type: 'publicKey';
+            "name": "pool",
+            "type": "publicKey"
           },
           {
-            name: 'poolOwner';
-            type: 'publicKey';
+            "name": "poolOwner",
+            "type": "publicKey"
           },
           {
-            name: 'assetMint';
-            type: 'publicKey';
+            "name": "assetMint",
+            "type": "publicKey"
           },
           {
-            name: 'assetAmount';
-            type: 'u64';
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'cosignerAnnotation';
-            type: {
-              array: ['u8', 32];
-            };
-          },
-        ];
-      };
-    },
-  ];
-  types: [
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
     {
-      name: 'CreatePoolArgs';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "CreatePoolArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'spotPrice';
-            type: 'u64';
+            "name": "spotPrice",
+            "type": "u64"
           },
           {
-            name: 'curveType';
-            type: 'u8';
+            "name": "curveType",
+            "type": "u8"
           },
           {
-            name: 'curveDelta';
-            type: 'u64';
+            "name": "curveDelta",
+            "type": "u64"
           },
           {
-            name: 'reinvestFulfillBuy';
-            type: 'bool';
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
           },
           {
-            name: 'reinvestFulfillSell';
-            type: 'bool';
+            "name": "reinvestFulfillSell",
+            "type": "bool"
           },
           {
-            name: 'expiry';
-            type: 'i64';
+            "name": "expiry",
+            "type": "i64"
           },
           {
-            name: 'lpFeeBp';
-            type: 'u16';
+            "name": "lpFeeBp",
+            "type": "u16"
           },
           {
-            name: 'referral';
-            type: 'publicKey';
+            "name": "referral",
+            "type": "publicKey"
           },
           {
-            name: 'cosignerAnnotation';
-            type: {
-              array: ['u8', 32];
-            };
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
-            name: 'buysideCreatorRoyaltyBp';
-            type: 'u16';
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           },
           {
-            name: 'uuid';
-            type: 'publicKey';
+            "name": "uuid",
+            "type": "publicKey"
           },
           {
-            name: 'paymentMint';
-            type: 'publicKey';
+            "name": "paymentMint",
+            "type": "publicKey"
           },
           {
-            name: 'allowlists';
-            type: {
-              array: [
+            "name": "allowlists",
+            "type": {
+              "array": [
                 {
-                  defined: 'Allowlist';
+                  "defined": "Allowlist"
                 },
-                6,
-              ];
-            };
-          },
-        ];
-      };
+                6
+              ]
+            }
+          }
+        ]
+      }
     },
     {
-      name: 'UpdateAllowlistsArgs';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "UpdateAllowlistsArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'allowlists';
-            type: {
-              array: [
+            "name": "allowlists",
+            "type": {
+              "array": [
                 {
-                  defined: 'Allowlist';
+                  "defined": "Allowlist"
                 },
-                6,
-              ];
-            };
-          },
-        ];
-      };
+                6
+              ]
+            }
+          }
+        ]
+      }
     },
     {
-      name: 'UpdatePoolArgs';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "UpdatePoolArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'spotPrice';
-            type: 'u64';
+            "name": "spotPrice",
+            "type": "u64"
           },
           {
-            name: 'curveType';
-            type: 'u8';
+            "name": "curveType",
+            "type": "u8"
           },
           {
-            name: 'curveDelta';
-            type: 'u64';
+            "name": "curveDelta",
+            "type": "u64"
           },
           {
-            name: 'reinvestFulfillBuy';
-            type: 'bool';
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
           },
           {
-            name: 'reinvestFulfillSell';
-            type: 'bool';
+            "name": "reinvestFulfillSell",
+            "type": "bool"
           },
           {
-            name: 'expiry';
-            type: 'i64';
+            "name": "expiry",
+            "type": "i64"
           },
           {
-            name: 'lpFeeBp';
-            type: 'u16';
+            "name": "lpFeeBp",
+            "type": "u16"
           },
           {
-            name: 'referral';
-            type: 'publicKey';
+            "name": "referral",
+            "type": "publicKey"
           },
           {
-            name: 'cosignerAnnotation';
-            type: {
-              array: ['u8', 32];
-            };
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
-            name: 'buysideCreatorRoyaltyBp';
-            type: 'u16';
-          },
-        ];
-      };
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          }
+        ]
+      }
     },
     {
-      name: 'SolMip1FulfillSellArgs';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "SolMip1FulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount';
-            type: 'u64';
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'maxPaymentAmount';
-            type: 'u64';
+            "name": "maxPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux';
-            type: {
-              option: 'string';
-            };
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'makerFeeBp';
-            type: 'i16';
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'takerFeeBp';
-            type: 'i16';
-          },
-        ];
-      };
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
     },
     {
-      name: 'SolOcpFulfillSellArgs';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "SolOcpFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount';
-            type: 'u64';
-          },
-          {
-            name: 'maxPaymentAmount';
-            type: 'u64';
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux';
-            type: {
-              option: 'string';
-            };
+            "name": "maxPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'makerFeeBp';
-            type: 'i16';
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'takerFeeBp';
-            type: 'i16';
-          },
-        ];
-      };
-    },
-    {
-      name: 'DepositSellArgs';
-      type: {
-        kind: 'struct';
-        fields: [
-          {
-            name: 'assetAmount';
-            type: 'u64';
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'allowlistAux';
-            type: {
-              option: 'string';
-            };
-          },
-        ];
-      };
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
     },
     {
-      name: 'SolDepositBuyArgs';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "DepositSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'paymentAmount';
-            type: 'u64';
-          },
-        ];
-      };
-    },
-    {
-      name: 'SolFulfillBuyArgs';
-      type: {
-        kind: 'struct';
-        fields: [
-          {
-            name: 'assetAmount';
-            type: 'u64';
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'minPaymentAmount';
-            type: 'u64';
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SolDepositBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "paymentAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SolFulfillBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux';
-            type: {
-              option: 'string';
-            };
+            "name": "minPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'makerFeeBp';
-            type: 'i16';
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'takerFeeBp';
-            type: 'i16';
-          },
-        ];
-      };
-    },
-    {
-      name: 'SolFulfillSellArgs';
-      type: {
-        kind: 'struct';
-        fields: [
-          {
-            name: 'assetAmount';
-            type: 'u64';
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'maxPaymentAmount';
-            type: 'u64';
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SolFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'buysideCreatorRoyaltyBp';
-            type: 'u16';
+            "name": "maxPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux';
-            type: {
-              option: 'string';
-            };
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           },
           {
-            name: 'makerFeeBp';
-            type: 'i16';
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'takerFeeBp';
-            type: 'i16';
-          },
-        ];
-      };
-    },
-    {
-      name: 'SolWithdrawBuyArgs';
-      type: {
-        kind: 'struct';
-        fields: [
-          {
-            name: 'paymentAmount';
-            type: 'u64';
-          },
-        ];
-      };
-    },
-    {
-      name: 'WithdrawSellArgs';
-      type: {
-        kind: 'struct';
-        fields: [
-          {
-            name: 'assetAmount';
-            type: 'u64';
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'allowlistAux';
-            type: {
-              option: 'string';
-            };
-          },
-        ];
-      };
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
     },
     {
-      name: 'Allowlist';
-      type: {
-        kind: 'struct';
-        fields: [
+      "name": "SolWithdrawBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'kind';
-            type: 'u8';
+            "name": "paymentAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "WithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'value';
-            type: 'publicKey';
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Allowlist",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "kind",
+            "type": "u8"
           },
-        ];
-      };
-    },
-  ];
-  errors: [
+          {
+            "name": "value",
+            "type": "publicKey"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
     {
-      code: 6000;
-      name: 'InvalidLPFee';
-      msg: 'lp fee bp must be between 0 and 10000';
-    },
-    {
-      code: 6001;
-      name: 'InvalidAllowLists';
-      msg: 'invalid allowlists';
-    },
-    {
-      code: 6002;
-      name: 'InvalidBP';
-      msg: 'invalid bp';
+      "code": 6000,
+      "name": "InvalidLPFee",
+      "msg": "lp fee bp must be between 0 and 10000"
     },
     {
-      code: 6003;
-      name: 'InvalidCurveType';
-      msg: 'invalid curve type';
+      "code": 6001,
+      "name": "InvalidAllowLists",
+      "msg": "invalid allowlists"
     },
     {
-      code: 6004;
-      name: 'InvalidCurveDelta';
-      msg: 'invalid curve delta';
+      "code": 6002,
+      "name": "InvalidBP",
+      "msg": "invalid bp"
     },
     {
-      code: 6005;
-      name: 'InvalidCosigner';
-      msg: 'invalid cosigner';
+      "code": 6003,
+      "name": "InvalidCurveType",
+      "msg": "invalid curve type"
     },
     {
-      code: 6006;
-      name: 'InvalidPaymentMint';
-      msg: 'invalid payment mint';
+      "code": 6004,
+      "name": "InvalidCurveDelta",
+      "msg": "invalid curve delta"
     },
     {
-      code: 6007;
-      name: 'InvalidOwner';
-      msg: 'invalid owner';
+      "code": 6005,
+      "name": "InvalidCosigner",
+      "msg": "invalid cosigner"
     },
     {
-      code: 6008;
-      name: 'NumericOverflow';
-      msg: 'numeric overflow';
+      "code": 6006,
+      "name": "InvalidPaymentMint",
+      "msg": "invalid payment mint"
     },
     {
-      code: 6009;
-      name: 'InvalidRequestedPrice';
-      msg: 'invalid requested price';
+      "code": 6007,
+      "name": "InvalidOwner",
+      "msg": "invalid owner"
     },
     {
-      code: 6010;
-      name: 'NotEmptyEscrowAccount';
-      msg: 'not empty escrow account';
+      "code": 6008,
+      "name": "NumericOverflow",
+      "msg": "numeric overflow"
     },
     {
-      code: 6011;
-      name: 'NotEmptySellsideAssetAmount';
-      msg: 'not empty sell side asset amount';
+      "code": 6009,
+      "name": "InvalidRequestedPrice",
+      "msg": "invalid requested price"
     },
     {
-      code: 6012;
-      name: 'InvalidReferral';
-      msg: 'invalid referral';
+      "code": 6010,
+      "name": "NotEmptyEscrowAccount",
+      "msg": "not empty escrow account"
     },
     {
-      code: 6013;
-      name: 'InvalidMasterEdition';
-      msg: 'invalid master edition';
+      "code": 6011,
+      "name": "NotEmptySellsideAssetAmount",
+      "msg": "not empty sell side asset amount"
     },
     {
-      code: 6014;
-      name: 'Expired';
-      msg: 'expired';
+      "code": 6012,
+      "name": "InvalidReferral",
+      "msg": "invalid referral"
     },
     {
-      code: 6015;
-      name: 'InvalidCreatorAddress';
-      msg: 'invalid creator address';
+      "code": 6013,
+      "name": "InvalidMasterEdition",
+      "msg": "invalid master edition"
     },
     {
-      code: 6016;
-      name: 'NotEnoughBalance';
-      msg: 'not enough balance';
+      "code": 6014,
+      "name": "Expired",
+      "msg": "expired"
     },
     {
-      code: 6017;
-      name: 'InvalidTokenOwner';
-      msg: 'invalid token owner';
+      "code": 6015,
+      "name": "InvalidCreatorAddress",
+      "msg": "invalid creator address"
     },
     {
-      code: 6018;
-      name: 'PubkeyMismatch';
-      msg: 'pubkey mismatch';
+      "code": 6016,
+      "name": "NotEnoughBalance",
+      "msg": "not enough balance"
     },
     {
-      code: 6019;
-      name: 'UninitializedAccount';
-      msg: 'uninitialized account';
+      "code": 6017,
+      "name": "InvalidTokenOwner",
+      "msg": "invalid token owner"
     },
     {
-      code: 6020;
-      name: 'InvalidSpotPrice';
-      msg: 'invalid spot_price';
+      "code": 6018,
+      "name": "PubkeyMismatch",
+      "msg": "pubkey mismatch"
     },
     {
-      code: 6021;
-      name: 'InvalidMetadataCreatorRoyalty';
-      msg: 'invalid metadata creator royalty';
+      "code": 6019,
+      "name": "UninitializedAccount",
+      "msg": "uninitialized account"
     },
     {
-      code: 6022;
-      name: 'InvalidMakerOrTakerFeeBP';
-      msg: 'invalid maker or taker bp';
+      "code": 6020,
+      "name": "InvalidSpotPrice",
+      "msg": "invalid spot_price"
     },
     {
-      code: 6023;
-      name: 'InvalidOcpAssetParams';
-      msg: 'Invalid OCP mint supply constraints';
+      "code": 6021,
+      "name": "InvalidMetadataCreatorRoyalty",
+      "msg": "invalid metadata creator royalty"
     },
     {
-      code: 6024;
-      name: 'InvalidAccountState';
-      msg: 'Invalid account state';
+      "code": 6022,
+      "name": "InvalidMakerOrTakerFeeBP",
+      "msg": "invalid maker or taker bp"
     },
     {
-      code: 6025;
-      name: 'InvalidTokenMint';
-      msg: 'Invalid token mint';
+      "code": 6023,
+      "name": "InvalidOcpAssetParams",
+      "msg": "Invalid OCP mint supply constraints"
     },
     {
-      code: 6026;
-      name: 'InvalidMip1AssetParams';
-      msg: 'Invalid MIP1 mint supply constraints';
+      "code": 6024,
+      "name": "InvalidAccountState",
+      "msg": "Invalid account state"
     },
     {
-      code: 6027;
-      name: 'InvalidTokenStandard';
-      msg: 'Invalid token standard';
+      "code": 6025,
+      "name": "InvalidTokenMint",
+      "msg": "Invalid token mint"
     },
     {
-      code: 6028;
-      name: 'UnexpectedMetadataUri';
-      msg: 'Unexpected metadata uri';
+      "code": 6026,
+      "name": "InvalidMip1AssetParams",
+      "msg": "Invalid MIP1 mint supply constraints"
     },
-  ];
+    {
+      "code": 6027,
+      "name": "InvalidTokenStandard",
+      "msg": "Invalid token standard"
+    },
+    {
+      "code": 6028,
+      "name": "UnexpectedMetadataUri",
+      "msg": "Unexpected metadata uri"
+    }
+  ]
 };
 
 export const IDL: Mmm = {
-  version: '0.2.0',
-  name: 'mmm',
-  instructions: [
+  "version": "0.2.0",
+  "name": "mmm",
+  "instructions": [
     {
-      name: 'createPool',
-      accounts: [
+      "name": "createPool",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'CreatePoolArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "CreatePoolArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'updatePool',
-      accounts: [
+      "name": "updatePool",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
-        },
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'UpdatePoolArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "UpdatePoolArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'updateAllowlists',
-      accounts: [
+      "name": "updateAllowlists",
+      "accounts": [
         {
-          name: 'cosigner',
-          isMut: true,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: false,
-          isSigner: false,
+          "name": "owner",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
-        },
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'UpdateAllowlistsArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "UpdateAllowlistsArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solClosePool',
-      accounts: [
+      "name": "solClosePool",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [],
+      "args": []
     },
     {
-      name: 'solDepositBuy',
-      accounts: [
+      "name": "solDepositBuy",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolDepositBuyArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolDepositBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solWithdrawBuy',
-      accounts: [
+      "name": "solWithdrawBuy",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolWithdrawBuyArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolWithdrawBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solFulfillBuy',
-      accounts: [
+      "name": "solFulfillBuy",
+      "accounts": [
         {
-          name: 'payer',
-          isMut: true,
-          isSigner: true,
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: false,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral',
-          isMut: true,
-          isSigner: false,
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "ownerTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolFulfillBuyArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solFulfillSell',
-      accounts: [
+      "name": "solFulfillSell",
+      "accounts": [
         {
-          name: 'payer',
-          isMut: true,
-          isSigner: true,
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: false,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral',
-          isMut: true,
-          isSigner: false,
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolFulfillSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'withdrawSell',
-      accounts: [
+      "name": "withdrawSell",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'WithdrawSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'depositSell',
-      accounts: [
+      "name": "depositSell",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'DepositSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "DepositSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'ocpDepositSell',
-      accounts: [
+      "name": "ocpDepositSell",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState',
-          isMut: true,
-          isSigner: false,
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'DepositSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "DepositSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solOcpFulfillBuy',
-      accounts: [
+      "name": "solOcpFulfillBuy",
+      "accounts": [
         {
-          name: 'payer',
-          isMut: true,
-          isSigner: true,
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: false,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral',
-          isMut: true,
-          isSigner: false,
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "ownerTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState',
-          isMut: true,
-          isSigner: false,
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolFulfillBuyArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solOcpFulfillSell',
-      accounts: [
+      "name": "solOcpFulfillSell",
+      "accounts": [
         {
-          name: 'payer',
-          isMut: true,
-          isSigner: true,
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: false,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral',
-          isMut: true,
-          isSigner: false,
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState',
-          isMut: true,
-          isSigner: false,
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolOcpFulfillSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolOcpFulfillSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'ocpWithdrawSell',
-      accounts: [
+      "name": "ocpWithdrawSell",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpMintState',
-          isMut: true,
-          isSigner: false,
+          "name": "ocpMintState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ocpPolicy',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpPolicy",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpFreezeAuthority',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpFreezeAuthority",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ocpProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "ocpProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'cmtProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "cmtProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'WithdrawSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'mip1DepositSell',
-      accounts: [
+      "name": "mip1DepositSell",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: true,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenRecord',
-          isMut: true,
-          isSigner: false,
+          "name": "ownerTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'destinationTokenRecord',
-          isMut: true,
-          isSigner: false,
+          "name": "destinationTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenMetadataProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'DepositSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "DepositSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'mip1WithdrawSell',
-      accounts: [
+      "name": "mip1WithdrawSell",
+      "accounts": [
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: true,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: true,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenRecord',
-          isMut: true,
-          isSigner: false,
+          "name": "ownerTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'destinationTokenRecord',
-          isMut: true,
-          isSigner: false,
+          "name": "destinationTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenMetadataProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'WithdrawSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solMip1FulfillSell',
-      accounts: [
+      "name": "solMip1FulfillSell",
+      "accounts": [
         {
-          name: 'payer',
-          isMut: true,
-          isSigner: true,
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: false,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral',
-          isMut: true,
-          isSigner: false,
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: true,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenRecord',
-          isMut: true,
-          isSigner: false,
+          "name": "ownerTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'destinationTokenRecord',
-          isMut: true,
-          isSigner: false,
+          "name": "destinationTokenRecord",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenMetadataProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolMip1FulfillSellArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolMip1FulfillSellArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'solMip1FulfillBuy',
-      accounts: [
+      "name": "solMip1FulfillBuy",
+      "accounts": [
         {
-          name: 'payer',
-          isMut: true,
-          isSigner: true,
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: false,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'cosigner',
-          isMut: false,
-          isSigner: true,
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'referral',
-          isMut: true,
-          isSigner: false,
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMetadata',
-          isMut: true,
-          isSigner: false,
+          "name": "assetMetadata",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'assetMint',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'assetMasterEdition',
-          isMut: false,
-          isSigner: false,
+          "name": "assetMasterEdition",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'payerAssetAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "payerAssetAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'sellsideEscrowTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'ownerTokenAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "ownerTokenAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'allowlistAuxAccount',
-          isMut: false,
-          isSigner: false,
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'sellState',
-          isMut: true,
-          isSigner: false,
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'tokenOwnerTokenRecord',
-          isMut: true,
-          isSigner: false,
-          docs: ['This is the token record for the seller'],
+          "name": "tokenOwnerTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the seller"
+          ]
         },
         {
-          name: 'poolTokenRecord',
-          isMut: true,
-          isSigner: false,
-          docs: [
-            'This is the token record for the pool - will always be required',
-          ],
+          "name": "poolTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool - will always be required"
+          ]
         },
         {
-          name: 'poolOwnerTokenRecord',
-          isMut: true,
-          isSigner: false,
-          docs: [
-            'This is the token record for the pool owner - will be required if reinvest = true',
-          ],
+          "name": "poolOwnerTokenRecord",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "This is the token record for the pool owner - will be required if reinvest = true"
+          ]
         },
         {
-          name: 'tokenMetadataProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenMetadataProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRulesProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRulesProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'authorizationRules',
-          isMut: false,
-          isSigner: false,
+          "name": "authorizationRules",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'instructions',
-          isMut: false,
-          isSigner: false,
+          "name": "instructions",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'tokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'associatedTokenProgram',
-          isMut: false,
-          isSigner: false,
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
         },
         {
-          name: 'rent',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [
+      "args": [
         {
-          name: 'args',
-          type: {
-            defined: 'SolFulfillBuyArgs',
-          },
-        },
-      ],
+          "name": "args",
+          "type": {
+            "defined": "SolFulfillBuyArgs"
+          }
+        }
+      ]
     },
     {
-      name: 'closeIfBalanceInvalid',
-      accounts: [
+      "name": "closeIfBalanceInvalid",
+      "accounts": [
         {
-          name: 'authority',
-          isMut: false,
-          isSigner: true,
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
         },
         {
-          name: 'owner',
-          isMut: true,
-          isSigner: false,
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'pool',
-          isMut: true,
-          isSigner: false,
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'buysideSolEscrowAccount',
-          isMut: true,
-          isSigner: false,
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          name: 'systemProgram',
-          isMut: false,
-          isSigner: false,
-        },
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
       ],
-      args: [],
-    },
+      "args": []
+    }
   ],
-  accounts: [
+  "accounts": [
     {
-      name: 'pool',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "pool",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'spotPrice',
-            type: 'u64',
+            "name": "spotPrice",
+            "type": "u64"
           },
           {
-            name: 'curveType',
-            type: 'u8',
+            "name": "curveType",
+            "type": "u8"
           },
           {
-            name: 'curveDelta',
-            type: 'u64',
+            "name": "curveDelta",
+            "type": "u64"
           },
           {
-            name: 'reinvestFulfillBuy',
-            type: 'bool',
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
           },
           {
-            name: 'reinvestFulfillSell',
-            type: 'bool',
+            "name": "reinvestFulfillSell",
+            "type": "bool"
           },
           {
-            name: 'expiry',
-            type: 'i64',
+            "name": "expiry",
+            "type": "i64"
           },
           {
-            name: 'lpFeeBp',
-            type: 'u16',
+            "name": "lpFeeBp",
+            "type": "u16"
           },
           {
-            name: 'referral',
-            type: 'publicKey',
+            "name": "referral",
+            "type": "publicKey"
           },
           {
-            name: 'referralBp',
-            type: 'u16',
+            "name": "referralBp",
+            "type": "u16"
           },
           {
-            name: 'buysideCreatorRoyaltyBp',
-            type: 'u16',
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           },
           {
-            name: 'cosignerAnnotation',
-            type: {
-              array: ['u8', 32],
-            },
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
-            name: 'sellsideAssetAmount',
-            type: 'u64',
+            "name": "sellsideAssetAmount",
+            "type": "u64"
           },
           {
-            name: 'lpFeeEarned',
-            type: 'u64',
+            "name": "lpFeeEarned",
+            "type": "u64"
           },
           {
-            name: 'owner',
-            type: 'publicKey',
+            "name": "owner",
+            "type": "publicKey"
           },
           {
-            name: 'cosigner',
-            type: 'publicKey',
+            "name": "cosigner",
+            "type": "publicKey"
           },
           {
-            name: 'uuid',
-            type: 'publicKey',
+            "name": "uuid",
+            "type": "publicKey"
           },
           {
-            name: 'paymentMint',
-            type: 'publicKey',
+            "name": "paymentMint",
+            "type": "publicKey"
           },
           {
-            name: 'allowlists',
-            type: {
-              array: [
+            "name": "allowlists",
+            "type": {
+              "array": [
                 {
-                  defined: 'Allowlist',
+                  "defined": "Allowlist"
                 },
-                6,
-              ],
-            },
+                6
+              ]
+            }
           },
           {
-            name: 'buysidePaymentAmount',
-            type: 'u64',
-          },
-        ],
-      },
+            "name": "buysidePaymentAmount",
+            "type": "u64"
+          }
+        ]
+      }
     },
     {
-      name: 'sellState',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "sellState",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'pool',
-            type: 'publicKey',
+            "name": "pool",
+            "type": "publicKey"
           },
           {
-            name: 'poolOwner',
-            type: 'publicKey',
+            "name": "poolOwner",
+            "type": "publicKey"
           },
           {
-            name: 'assetMint',
-            type: 'publicKey',
+            "name": "assetMint",
+            "type": "publicKey"
           },
           {
-            name: 'assetAmount',
-            type: 'u64',
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'cosignerAnnotation',
-            type: {
-              array: ['u8', 32],
-            },
-          },
-        ],
-      },
-    },
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    }
   ],
-  types: [
+  "types": [
     {
-      name: 'CreatePoolArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "CreatePoolArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'spotPrice',
-            type: 'u64',
+            "name": "spotPrice",
+            "type": "u64"
           },
           {
-            name: 'curveType',
-            type: 'u8',
+            "name": "curveType",
+            "type": "u8"
           },
           {
-            name: 'curveDelta',
-            type: 'u64',
+            "name": "curveDelta",
+            "type": "u64"
           },
           {
-            name: 'reinvestFulfillBuy',
-            type: 'bool',
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
           },
           {
-            name: 'reinvestFulfillSell',
-            type: 'bool',
+            "name": "reinvestFulfillSell",
+            "type": "bool"
           },
           {
-            name: 'expiry',
-            type: 'i64',
+            "name": "expiry",
+            "type": "i64"
           },
           {
-            name: 'lpFeeBp',
-            type: 'u16',
+            "name": "lpFeeBp",
+            "type": "u16"
           },
           {
-            name: 'referral',
-            type: 'publicKey',
+            "name": "referral",
+            "type": "publicKey"
           },
           {
-            name: 'cosignerAnnotation',
-            type: {
-              array: ['u8', 32],
-            },
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
-            name: 'buysideCreatorRoyaltyBp',
-            type: 'u16',
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           },
           {
-            name: 'uuid',
-            type: 'publicKey',
+            "name": "uuid",
+            "type": "publicKey"
           },
           {
-            name: 'paymentMint',
-            type: 'publicKey',
+            "name": "paymentMint",
+            "type": "publicKey"
           },
           {
-            name: 'allowlists',
-            type: {
-              array: [
+            "name": "allowlists",
+            "type": {
+              "array": [
                 {
-                  defined: 'Allowlist',
+                  "defined": "Allowlist"
                 },
-                6,
-              ],
-            },
-          },
-        ],
-      },
+                6
+              ]
+            }
+          }
+        ]
+      }
     },
     {
-      name: 'UpdateAllowlistsArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "UpdateAllowlistsArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'allowlists',
-            type: {
-              array: [
+            "name": "allowlists",
+            "type": {
+              "array": [
                 {
-                  defined: 'Allowlist',
+                  "defined": "Allowlist"
                 },
-                6,
-              ],
-            },
-          },
-        ],
-      },
+                6
+              ]
+            }
+          }
+        ]
+      }
     },
     {
-      name: 'UpdatePoolArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "UpdatePoolArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'spotPrice',
-            type: 'u64',
+            "name": "spotPrice",
+            "type": "u64"
           },
           {
-            name: 'curveType',
-            type: 'u8',
+            "name": "curveType",
+            "type": "u8"
           },
           {
-            name: 'curveDelta',
-            type: 'u64',
+            "name": "curveDelta",
+            "type": "u64"
           },
           {
-            name: 'reinvestFulfillBuy',
-            type: 'bool',
+            "name": "reinvestFulfillBuy",
+            "type": "bool"
           },
           {
-            name: 'reinvestFulfillSell',
-            type: 'bool',
+            "name": "reinvestFulfillSell",
+            "type": "bool"
           },
           {
-            name: 'expiry',
-            type: 'i64',
+            "name": "expiry",
+            "type": "i64"
           },
           {
-            name: 'lpFeeBp',
-            type: 'u16',
+            "name": "lpFeeBp",
+            "type": "u16"
           },
           {
-            name: 'referral',
-            type: 'publicKey',
+            "name": "referral",
+            "type": "publicKey"
           },
           {
-            name: 'cosignerAnnotation',
-            type: {
-              array: ['u8', 32],
-            },
+            "name": "cosignerAnnotation",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
           },
           {
-            name: 'buysideCreatorRoyaltyBp',
-            type: 'u16',
-          },
-        ],
-      },
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          }
+        ]
+      }
     },
     {
-      name: 'SolMip1FulfillSellArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "SolMip1FulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount',
-            type: 'u64',
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'maxPaymentAmount',
-            type: 'u64',
+            "name": "maxPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux',
-            type: {
-              option: 'string',
-            },
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'makerFeeBp',
-            type: 'i16',
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'takerFeeBp',
-            type: 'i16',
-          },
-        ],
-      },
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
     },
     {
-      name: 'SolOcpFulfillSellArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "SolOcpFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount',
-            type: 'u64',
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'maxPaymentAmount',
-            type: 'u64',
+            "name": "maxPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux',
-            type: {
-              option: 'string',
-            },
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'makerFeeBp',
-            type: 'i16',
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'takerFeeBp',
-            type: 'i16',
-          },
-        ],
-      },
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
     },
     {
-      name: 'DepositSellArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "DepositSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount',
-            type: 'u64',
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux',
-            type: {
-              option: 'string',
-            },
-          },
-        ],
-      },
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
     },
     {
-      name: 'SolDepositBuyArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "SolDepositBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'paymentAmount',
-            type: 'u64',
-          },
-        ],
-      },
+            "name": "paymentAmount",
+            "type": "u64"
+          }
+        ]
+      }
     },
     {
-      name: 'SolFulfillBuyArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "SolFulfillBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount',
-            type: 'u64',
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'minPaymentAmount',
-            type: 'u64',
+            "name": "minPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux',
-            type: {
-              option: 'string',
-            },
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'makerFeeBp',
-            type: 'i16',
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'takerFeeBp',
-            type: 'i16',
-          },
-        ],
-      },
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
     },
     {
-      name: 'SolFulfillSellArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "SolFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount',
-            type: 'u64',
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'maxPaymentAmount',
-            type: 'u64',
+            "name": "maxPaymentAmount",
+            "type": "u64"
           },
           {
-            name: 'buysideCreatorRoyaltyBp',
-            type: 'u16',
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
           },
           {
-            name: 'allowlistAux',
-            type: {
-              option: 'string',
-            },
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           },
           {
-            name: 'makerFeeBp',
-            type: 'i16',
+            "name": "makerFeeBp",
+            "type": "i16"
           },
           {
-            name: 'takerFeeBp',
-            type: 'i16',
-          },
-        ],
-      },
+            "name": "takerFeeBp",
+            "type": "i16"
+          }
+        ]
+      }
     },
     {
-      name: 'SolWithdrawBuyArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "SolWithdrawBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'paymentAmount',
-            type: 'u64',
-          },
-        ],
-      },
+            "name": "paymentAmount",
+            "type": "u64"
+          }
+        ]
+      }
     },
     {
-      name: 'WithdrawSellArgs',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "WithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'assetAmount',
-            type: 'u64',
+            "name": "assetAmount",
+            "type": "u64"
           },
           {
-            name: 'allowlistAux',
-            type: {
-              option: 'string',
-            },
-          },
-        ],
-      },
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          }
+        ]
+      }
     },
     {
-      name: 'Allowlist',
-      type: {
-        kind: 'struct',
-        fields: [
+      "name": "Allowlist",
+      "type": {
+        "kind": "struct",
+        "fields": [
           {
-            name: 'kind',
-            type: 'u8',
+            "name": "kind",
+            "type": "u8"
           },
           {
-            name: 'value',
-            type: 'publicKey',
-          },
-        ],
-      },
-    },
+            "name": "value",
+            "type": "publicKey"
+          }
+        ]
+      }
+    }
   ],
-  errors: [
+  "errors": [
     {
-      code: 6000,
-      name: 'InvalidLPFee',
-      msg: 'lp fee bp must be between 0 and 10000',
+      "code": 6000,
+      "name": "InvalidLPFee",
+      "msg": "lp fee bp must be between 0 and 10000"
     },
     {
-      code: 6001,
-      name: 'InvalidAllowLists',
-      msg: 'invalid allowlists',
+      "code": 6001,
+      "name": "InvalidAllowLists",
+      "msg": "invalid allowlists"
     },
     {
-      code: 6002,
-      name: 'InvalidBP',
-      msg: 'invalid bp',
+      "code": 6002,
+      "name": "InvalidBP",
+      "msg": "invalid bp"
     },
     {
-      code: 6003,
-      name: 'InvalidCurveType',
-      msg: 'invalid curve type',
+      "code": 6003,
+      "name": "InvalidCurveType",
+      "msg": "invalid curve type"
     },
     {
-      code: 6004,
-      name: 'InvalidCurveDelta',
-      msg: 'invalid curve delta',
+      "code": 6004,
+      "name": "InvalidCurveDelta",
+      "msg": "invalid curve delta"
     },
     {
-      code: 6005,
-      name: 'InvalidCosigner',
-      msg: 'invalid cosigner',
+      "code": 6005,
+      "name": "InvalidCosigner",
+      "msg": "invalid cosigner"
     },
     {
-      code: 6006,
-      name: 'InvalidPaymentMint',
-      msg: 'invalid payment mint',
+      "code": 6006,
+      "name": "InvalidPaymentMint",
+      "msg": "invalid payment mint"
     },
     {
-      code: 6007,
-      name: 'InvalidOwner',
-      msg: 'invalid owner',
+      "code": 6007,
+      "name": "InvalidOwner",
+      "msg": "invalid owner"
     },
     {
-      code: 6008,
-      name: 'NumericOverflow',
-      msg: 'numeric overflow',
+      "code": 6008,
+      "name": "NumericOverflow",
+      "msg": "numeric overflow"
     },
     {
-      code: 6009,
-      name: 'InvalidRequestedPrice',
-      msg: 'invalid requested price',
+      "code": 6009,
+      "name": "InvalidRequestedPrice",
+      "msg": "invalid requested price"
     },
     {
-      code: 6010,
-      name: 'NotEmptyEscrowAccount',
-      msg: 'not empty escrow account',
+      "code": 6010,
+      "name": "NotEmptyEscrowAccount",
+      "msg": "not empty escrow account"
     },
     {
-      code: 6011,
-      name: 'NotEmptySellsideAssetAmount',
-      msg: 'not empty sell side asset amount',
+      "code": 6011,
+      "name": "NotEmptySellsideAssetAmount",
+      "msg": "not empty sell side asset amount"
     },
     {
-      code: 6012,
-      name: 'InvalidReferral',
-      msg: 'invalid referral',
+      "code": 6012,
+      "name": "InvalidReferral",
+      "msg": "invalid referral"
     },
     {
-      code: 6013,
-      name: 'InvalidMasterEdition',
-      msg: 'invalid master edition',
+      "code": 6013,
+      "name": "InvalidMasterEdition",
+      "msg": "invalid master edition"
     },
     {
-      code: 6014,
-      name: 'Expired',
-      msg: 'expired',
+      "code": 6014,
+      "name": "Expired",
+      "msg": "expired"
     },
     {
-      code: 6015,
-      name: 'InvalidCreatorAddress',
-      msg: 'invalid creator address',
+      "code": 6015,
+      "name": "InvalidCreatorAddress",
+      "msg": "invalid creator address"
     },
     {
-      code: 6016,
-      name: 'NotEnoughBalance',
-      msg: 'not enough balance',
+      "code": 6016,
+      "name": "NotEnoughBalance",
+      "msg": "not enough balance"
     },
     {
-      code: 6017,
-      name: 'InvalidTokenOwner',
-      msg: 'invalid token owner',
+      "code": 6017,
+      "name": "InvalidTokenOwner",
+      "msg": "invalid token owner"
     },
     {
-      code: 6018,
-      name: 'PubkeyMismatch',
-      msg: 'pubkey mismatch',
+      "code": 6018,
+      "name": "PubkeyMismatch",
+      "msg": "pubkey mismatch"
     },
     {
-      code: 6019,
-      name: 'UninitializedAccount',
-      msg: 'uninitialized account',
+      "code": 6019,
+      "name": "UninitializedAccount",
+      "msg": "uninitialized account"
     },
     {
-      code: 6020,
-      name: 'InvalidSpotPrice',
-      msg: 'invalid spot_price',
+      "code": 6020,
+      "name": "InvalidSpotPrice",
+      "msg": "invalid spot_price"
     },
     {
-      code: 6021,
-      name: 'InvalidMetadataCreatorRoyalty',
-      msg: 'invalid metadata creator royalty',
+      "code": 6021,
+      "name": "InvalidMetadataCreatorRoyalty",
+      "msg": "invalid metadata creator royalty"
     },
     {
-      code: 6022,
-      name: 'InvalidMakerOrTakerFeeBP',
-      msg: 'invalid maker or taker bp',
+      "code": 6022,
+      "name": "InvalidMakerOrTakerFeeBP",
+      "msg": "invalid maker or taker bp"
     },
     {
-      code: 6023,
-      name: 'InvalidOcpAssetParams',
-      msg: 'Invalid OCP mint supply constraints',
+      "code": 6023,
+      "name": "InvalidOcpAssetParams",
+      "msg": "Invalid OCP mint supply constraints"
     },
     {
-      code: 6024,
-      name: 'InvalidAccountState',
-      msg: 'Invalid account state',
+      "code": 6024,
+      "name": "InvalidAccountState",
+      "msg": "Invalid account state"
     },
     {
-      code: 6025,
-      name: 'InvalidTokenMint',
-      msg: 'Invalid token mint',
+      "code": 6025,
+      "name": "InvalidTokenMint",
+      "msg": "Invalid token mint"
     },
     {
-      code: 6026,
-      name: 'InvalidMip1AssetParams',
-      msg: 'Invalid MIP1 mint supply constraints',
+      "code": 6026,
+      "name": "InvalidMip1AssetParams",
+      "msg": "Invalid MIP1 mint supply constraints"
     },
     {
-      code: 6027,
-      name: 'InvalidTokenStandard',
-      msg: 'Invalid token standard',
+      "code": 6027,
+      "name": "InvalidTokenStandard",
+      "msg": "Invalid token standard"
     },
     {
-      code: 6028,
-      name: 'UnexpectedMetadataUri',
-      msg: 'Unexpected metadata uri',
-    },
-  ],
+      "code": 6028,
+      "name": "UnexpectedMetadataUri",
+      "msg": "Unexpected metadata uri"
+    }
+  ]
 };
