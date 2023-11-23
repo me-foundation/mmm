@@ -10,6 +10,7 @@ pub const ALLOWLIST_KIND_FVCA: u8 = 1;
 pub const ALLOWLIST_KIND_MINT: u8 = 2;
 pub const ALLOWLIST_KIND_MCC: u8 = 3;
 pub const ALLOWLIST_KIND_METADATA: u8 = 4;
+// ANY nft will pass the allowlist check, please make sure to use cosigner to check NFT validity
 pub const ALLOWLIST_KIND_ANY: u8 = u8::MAX;
 
 #[derive(Default, Copy, Clone, AnchorSerialize, AnchorDeserialize)]
