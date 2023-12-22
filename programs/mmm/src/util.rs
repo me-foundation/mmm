@@ -9,9 +9,8 @@ use crate::{
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token::Mint;
 use mpl_token_metadata::{
-    id as token_metadata_program_key,
-    pda::{find_master_edition_account, find_metadata_account},
-    state::{Metadata, TokenMetadataAccount, TokenStandard},
+    accounts::{MasterEdition, Metadata},
+    types::TokenStandard,
 };
 use open_creator_protocol::state::Policy;
 use std::convert::TryFrom;
@@ -47,19 +46,19 @@ pub fn check_allowlists_for_mint(
     // 4. skip if the allowlist.is_empty()
     // 5. verify that nft either does not have master edition or is master edition
 
-    if *metadata.owner != token_metadata_program_key() {
+    if *metadata.owner != mpl_token_metadata::ID {
         return Err(ErrorCode::AccountOwnedByWrongProgram.into());
     }
-    if find_metadata_account(&mint.key()).0 != metadata.key() {
+    if Metadata::find_pda(&mint.key()).0 != metadata.key() {
         return Err(ErrorCode::ConstraintSeeds.into());
     }
-    let parsed_metadata = Metadata::from_account_info(metadata)?;
+    let parsed_metadata = Metadata::safe_deserialize(&metadata.data.borrow())?;
     if let Some(master_edition) = master_edition {
-        if find_master_edition_account(&mint.key()).0 != master_edition.key() {
+        if MasterEdition::find_pda(&mint.key()).0 != master_edition.key() {
             return Err(ErrorCode::ConstraintSeeds.into());
         }
         if !master_edition.data_is_empty() {
-            if master_edition.owner.ne(&token_metadata_program_key()) {
+            if master_edition.owner.ne(&mpl_token_metadata::ID) {
                 return Err(ErrorCode::AccountOwnedByWrongProgram.into());
             }
             if !check_master_edition(master_edition) {
@@ -75,11 +74,11 @@ pub fn check_allowlists_for_mint(
         // If allowlist_aux is not passed in, do not validate URI.
         if let Some(ref aux_key) = allowlist_aux {
             // Handle URI padding.
-            if !parsed_metadata.data.uri.trim().starts_with(aux_key) {
+            if !parsed_metadata.uri.trim().starts_with(aux_key) {
                 msg!(
                     "Failed metadata validation. Expected URI: |{}| but got |{}|",
                     *aux_key,
-                    parsed_metadata.data.uri
+                    parsed_metadata.uri
                 );
                 return Err(MMMErrorCode::UnexpectedMetadataUri.into());
             }
@@ -94,7 +93,7 @@ pub fn check_allowlists_for_mint(
                 return Ok(parsed_metadata);
             }
             ALLOWLIST_KIND_FVCA => {
-                if let Some(ref creators) = parsed_metadata.data.creators {
+                if let Some(ref creators) = parsed_metadata.creators {
                     // TODO: can we make sure we only take master_edition here?
                     if !creators.is_empty()
                         && creators[0].address == allowlist_val.value
@@ -415,11 +414,12 @@ pub fn get_metadata_royalty_bp(
     policy: Option<&Account<'_, Policy>>,
 ) -> u16 {
     match policy {
-        None => parsed_metadata.data.seller_fee_basis_points,
+        None => parsed_metadata.seller_fee_basis_points,
         Some(p) => match &p.dynamic_royalty {
-            None => parsed_metadata.data.seller_fee_basis_points,
-            Some(dynamic_royalty) => dynamic_royalty
-                .get_royalty_bp(total_price, parsed_metadata.data.seller_fee_basis_points),
+            None => parsed_metadata.seller_fee_basis_points,
+            Some(dynamic_royalty) => {
+                dynamic_royalty.get_royalty_bp(total_price, parsed_metadata.seller_fee_basis_points)
+            }
         },
     }
 }
@@ -454,7 +454,7 @@ pub fn pay_creator_fees_in_sol<'info>(
         return Ok(0);
     }
 
-    let creators = if let Some(creators) = &parsed_metadata.data.creators {
+    let creators = if let Some(creators) = &parsed_metadata.creators {
         creators
     } else {
         return Ok(0);
@@ -465,7 +465,7 @@ pub fn pay_creator_fees_in_sol<'info>(
     }
 
     // hardcoded the max threshold for InvalidMetadataCreatorRoyalty
-    if parsed_metadata.data.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
+    if parsed_metadata.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
         return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
     }
     let min_rent = Rent::get()?.minimum_balance(0);
