@@ -1,21 +1,13 @@
-use anchor_lang::{
-    prelude::*,
-    solana_program::{
-        program::{invoke, invoke_signed},
-        sysvar,
-    },
-    AnchorDeserialize,
-};
+use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token::{Mint, Token, TokenAccount},
 };
-use mpl_token_auth_rules::payload::{Payload, PayloadType, SeedsVec};
 use mpl_token_metadata::{
-    instruction::{builders::TransferBuilder, InstructionBuilder, TransferArgs},
-    processor::AuthorizationData,
+    instructions::TransferCpiBuilder,
+    types::{AuthorizationData, Payload, PayloadType, SeedsVec, TransferArgs},
 };
-use std::convert::TryFrom;
+use std::{collections::HashMap, convert::TryFrom};
 
 use crate::{
     ata::init_if_needed_ata,
@@ -120,7 +112,7 @@ pub struct SolMip1FulfillBuy<'info> {
     pub pool_owner_token_record: UncheckedAccount<'info>,
 
     /// CHECK: checked by address and in CPI
-    #[account(address = mpl_token_metadata::id())]
+    #[account(address = mpl_token_metadata::ID)]
     pub token_metadata_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
     #[account(address = mpl_token_auth_rules::id())]
@@ -161,6 +153,8 @@ pub fn handler<'info>(
     let associated_token_program = &ctx.accounts.associated_token_program;
     let authorization_rules = &ctx.accounts.authorization_rules;
     let authorization_rules_program = &ctx.accounts.authorization_rules_program;
+    let token_metadata_program_ai = &ctx.accounts.token_metadata_program.to_account_info();
+
     let rent = &ctx.accounts.rent;
     let pool_key = pool.key();
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
@@ -204,58 +198,42 @@ pub fn handler<'info>(
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
     // transfer to token account owned by pool
-    let transfer_ins = TransferBuilder::new()
-        .token(payer_asset_account.key())
-        .token_owner(payer.key())
-        .destination(sellside_escrow_token_account.key())
-        .destination_owner(pool.key())
-        .mint(asset_mint.key())
-        .metadata(asset_metadata.key())
-        .edition(asset_master_edition.key())
-        .owner_token_record(token_owner_token_record.key())
-        .destination_token_record(pool_token_record.key())
-        .authority(payer.key())
-        .payer(payer.key())
-        .system_program(system_program.key())
-        .sysvar_instructions(instructions.key())
-        .spl_token_program(token_program.key())
-        .spl_ata_program(associated_token_program.key())
-        .authorization_rules(authorization_rules.key())
-        .authorization_rules_program(authorization_rules_program.key())
-        .build(TransferArgs::V1 {
-            authorization_data: Some(AuthorizationData {
-                payload: Payload::from([(
-                    "DestinationSeeds".to_owned(),
-                    PayloadType::Seeds(SeedsVec {
-                        seeds: pool_seeds[0][0..3].iter().map(|v| v.to_vec()).collect(),
-                    }),
-                )]),
+    let payload = Payload {
+        map: HashMap::from([(
+            "DestinationSeeds".to_owned(),
+            PayloadType::Seeds(SeedsVec {
+                seeds: pool_seeds[0][0..3].iter().map(|v| v.to_vec()).collect(),
             }),
-            amount: args.asset_amount,
-        })
-        .unwrap()
-        .instruction();
+        )]),
+    };
 
-    invoke(
-        &transfer_ins,
-        &[
-            payer_asset_account.to_account_info(),
-            payer.to_account_info(),
-            sellside_escrow_token_account.to_account_info(),
-            pool.to_account_info(),
-            asset_mint.to_account_info(),
-            asset_metadata.to_account_info(),
-            asset_master_edition.to_account_info(),
-            token_owner_token_record.to_account_info(),
-            pool_token_record.to_account_info(),
-            system_program.to_account_info(),
-            instructions.to_account_info(),
-            token_program.to_account_info(),
-            associated_token_program.to_account_info(),
-            authorization_rules.to_account_info(),
-            authorization_rules_program.to_account_info(),
-        ],
-    )?;
+    let transfer_args = TransferArgs::V1 {
+        authorization_data: Some(AuthorizationData { payload }),
+        amount: args.asset_amount,
+    };
+
+    let mut transfer_cpi = TransferCpiBuilder::new(token_metadata_program_ai);
+
+    transfer_cpi
+        .token(&payer_asset_account.to_account_info())
+        .token_owner(&payer.to_account_info())
+        .destination_token(&sellside_escrow_token_account.to_account_info())
+        .destination_owner(&pool.to_account_info())
+        .mint(&asset_mint.to_account_info())
+        .metadata(&asset_metadata.to_account_info())
+        .edition(Some(&asset_master_edition.to_account_info()))
+        .token_record(Some(&token_owner_token_record.to_account_info()))
+        .destination_token_record(Some(&pool_token_record.to_account_info()))
+        .authority(&payer.to_account_info())
+        .payer(&payer.to_account_info())
+        .system_program(&system_program.to_account_info())
+        .sysvar_instructions(&instructions.to_account_info())
+        .spl_token_program(&token_program.to_account_info())
+        .spl_ata_program(&associated_token_program.to_account_info())
+        .authorization_rules(Some(&authorization_rules.to_account_info()))
+        .authorization_rules_program(Some(&authorization_rules_program.to_account_info()))
+        .transfer_args(transfer_args)
+        .invoke()?;
 
     if pool.reinvest_fulfill_buy {
         pool.sellside_asset_amount = pool
@@ -282,60 +260,44 @@ pub fn handler<'info>(
             system_program.to_account_info(),
             rent.to_account_info(),
         )?;
-        let transfer_ins = TransferBuilder::new()
-            .token(sellside_escrow_token_account.key())
-            .token_owner(pool.key())
-            .destination(owner_token_account.key())
-            .destination_owner(owner.key())
-            .mint(asset_mint.key())
-            .metadata(asset_metadata.key())
-            .edition(asset_master_edition.key())
-            .owner_token_record(pool_token_record.key())
-            .destination_token_record(pool_owner_token_record.key())
-            .authority(pool.key())
-            .payer(payer.key())
-            .system_program(system_program.key())
-            .sysvar_instructions(instructions.key())
-            .spl_token_program(token_program.key())
-            .spl_ata_program(associated_token_program.key())
-            .authorization_rules(authorization_rules.key())
-            .authorization_rules_program(authorization_rules_program.key())
-            .build(TransferArgs::V1 {
-                authorization_data: Some(AuthorizationData {
-                    payload: Payload::from([(
-                        "SourceSeeds".to_owned(),
-                        PayloadType::Seeds(SeedsVec {
-                            seeds: pool_seeds[0][0..3].iter().map(|v| v.to_vec()).collect(),
-                        }),
-                    )]),
-                }),
-                amount: args.asset_amount,
-            })
-            .unwrap()
-            .instruction();
 
-        invoke_signed(
-            &transfer_ins,
-            &[
-                sellside_escrow_token_account.to_account_info(),
-                pool.to_account_info(),
-                owner_token_account.to_account_info(),
-                owner.to_account_info(),
-                payer.to_account_info(),
-                asset_mint.to_account_info(),
-                asset_metadata.to_account_info(),
-                asset_master_edition.to_account_info(),
-                pool_token_record.to_account_info(),
-                pool_owner_token_record.to_account_info(),
-                system_program.to_account_info(),
-                instructions.to_account_info(),
-                token_program.to_account_info(),
-                associated_token_program.to_account_info(),
-                authorization_rules.to_account_info(),
-                authorization_rules_program.to_account_info(),
-            ],
-            pool_seeds,
-        )?;
+        let payload = Payload {
+            map: HashMap::from([(
+                "SourceSeeds".to_owned(),
+                PayloadType::Seeds(SeedsVec {
+                    seeds: pool_seeds[0][0..3].iter().map(|v| v.to_vec()).collect(),
+                }),
+            )]),
+        };
+
+        let transfer_args = TransferArgs::V1 {
+            authorization_data: Some(AuthorizationData { payload }),
+            amount: args.asset_amount,
+        };
+
+        let mut transfer_cpi = TransferCpiBuilder::new(token_metadata_program_ai);
+
+        transfer_cpi
+            .token(&sellside_escrow_token_account.to_account_info())
+            .token_owner(&pool.to_account_info())
+            .destination_token(&owner_token_account.to_account_info())
+            .destination_owner(&owner.to_account_info())
+            .mint(&asset_mint.to_account_info())
+            .metadata(&asset_metadata.to_account_info())
+            .edition(Some(&asset_master_edition.to_account_info()))
+            .token_record(Some(&pool_token_record.to_account_info()))
+            .destination_token_record(Some(&pool_owner_token_record.to_account_info()))
+            .authority(&pool.to_account_info())
+            .payer(&payer.to_account_info())
+            .system_program(&system_program.to_account_info())
+            .sysvar_instructions(&instructions.to_account_info())
+            .spl_token_program(&token_program.to_account_info())
+            .spl_ata_program(&associated_token_program.to_account_info())
+            .authorization_rules(Some(&authorization_rules.to_account_info()))
+            .authorization_rules_program(Some(&authorization_rules_program.to_account_info()))
+            .transfer_args(transfer_args)
+            .invoke_signed(pool_seeds)?;
+
         anchor_spl::token::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
             anchor_spl::token::CloseAccount {
