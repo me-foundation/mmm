@@ -32,6 +32,15 @@ pub struct OcpWithdrawSell<'info> {
     )]
     pub asset_mint: Account<'info, Mint>,
     /// CHECK: will be checked in cpi
+    #[account(
+    seeds = [
+        "metadata".as_bytes(),
+        mpl_token_metadata::ID.as_ref(),
+        asset_mint.key().as_ref(),
+    ],
+    bump,
+    seeds::program = mpl_token_metadata::ID,
+    )]
     pub asset_metadata: UncheckedAccount<'info>,
     /// CHECK: checked in init_if_needed_ocp_ata
     #[account(mut)]
