@@ -33,7 +33,15 @@ pub struct Mip1DepositSell<'info> {
     )]
     pub pool: Box<Account<'info, Pool>>,
     /// CHECK: we will check the metadata in check_allowlists_for_mint(), also checked in cpi
-    #[account(mut)]
+    #[account(mut,
+    seeds = [
+        "metadata".as_bytes(),
+        mpl_token_metadata::ID.as_ref(),
+        asset_mint.key().as_ref(),
+    ],
+    bump,
+    seeds::program = mpl_token_metadata::ID,
+    )]
     pub asset_metadata: UncheckedAccount<'info>,
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidMip1AssetParams,
