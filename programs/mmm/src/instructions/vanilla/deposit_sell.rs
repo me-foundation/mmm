@@ -32,6 +32,15 @@ pub struct DepositSell<'info> {
     )]
     pub pool: Box<Account<'info, Pool>>,
     /// CHECK: we will check the metadata in check_allowlists_for_mint()
+    #[account(
+    seeds = [
+        "metadata".as_bytes(),
+        mpl_token_metadata::ID.as_ref(),
+        asset_mint.key().as_ref(),
+    ],
+    bump,
+    seeds::program = mpl_token_metadata::ID,
+    )]
     pub asset_metadata: UncheckedAccount<'info>,
     /// CHECK: we will check the master_edition in check_allowlists_for_mint()
     pub asset_master_edition: UncheckedAccount<'info>,

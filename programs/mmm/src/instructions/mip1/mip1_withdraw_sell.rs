@@ -40,7 +40,15 @@ pub struct Mip1WithdrawSell<'info> {
     /// CHECK: will be checked in cpi
     asset_master_edition: UncheckedAccount<'info>,
     /// CHECK: will be checked in cpi
-    #[account(mut)]
+    #[account(mut,
+    seeds = [
+        "metadata".as_bytes(),
+        mpl_token_metadata::ID.as_ref(),
+        asset_mint.key().as_ref(),
+    ],
+    bump,
+    seeds::program = mpl_token_metadata::ID,
+    )]
     pub asset_metadata: UncheckedAccount<'info>,
     #[account(
         init_if_needed,
