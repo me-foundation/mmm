@@ -68,7 +68,7 @@ describe('mmm-ocp', () => {
     await airdrop(connection, wallet.publicKey, 50);
   });
 
-  it.only('can deposit and withdraw ocp NFTs - happy path', async () => {
+  it('can deposit and withdraw ocp NFTs - happy path', async () => {
     const creator = Keypair.generate();
     const nftRes = await createTestMintAndTokenOCP(
       connection,
