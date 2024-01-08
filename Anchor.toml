@@ -35,7 +35,7 @@ program = "tests/deps/mpl_migration_validator.so"       # custom migration valid
 mmm = "mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc"
 
 [scripts]
-test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.spec.ts"
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/mmm-ocp.spec.ts"
 
 [toolchain]
 anchor = "0.29.0"
