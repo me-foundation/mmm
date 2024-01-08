@@ -92,7 +92,7 @@ pub struct Mip1DepositSell<'info> {
     #[account(address = mpl_token_metadata::ID)]
     pub token_metadata_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
-    #[account(address = mpl_token_auth_rules::id())]
+    #[account(address = MPL_TOKEN_AUTH_RULES)]
     pub authorization_rules_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
     #[account(address = sysvar::instructions::id())]

@@ -16,3 +16,4 @@ pub const CANCEL_AUTHORITY: Pubkey = if cfg!(feature = "anchor-test") {
 } else {
     pubkey!("CNTuB1JiQD8Xh5SoRcEmF61yivN9F7uzdSaGnRex36wi")
 };
+pub const MPL_TOKEN_AUTH_RULES: Pubkey = pubkey!("auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg");

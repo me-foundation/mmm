@@ -111,7 +111,7 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
         POOL_PREFIX.as_bytes(),
         pool.owner.as_ref(),
         pool.uuid.as_ref(),
-        &[*ctx.bumps.get("pool").unwrap()],
+        &[ctx.bumps.pool],
     ]];
 
     // Note that check_allowlists_for_mint is optional for withdraw_sell

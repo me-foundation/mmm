@@ -146,7 +146,7 @@ pub fn handler<'info>(
         POOL_PREFIX.as_bytes(),
         pool.owner.as_ref(),
         pool.uuid.as_ref(),
-        &[*ctx.bumps.get("pool").unwrap()],
+        &[ctx.bumps.pool],
     ]];
 
     let parsed_metadata = check_allowlists_for_mint(

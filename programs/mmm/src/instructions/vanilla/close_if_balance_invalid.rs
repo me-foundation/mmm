@@ -38,7 +38,7 @@ pub fn handler(ctx: Context<CloseIfBalanceInvalid>) -> Result<()> {
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
         pool_key.as_ref(),
-        &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
+        &[ctx.bumps.buyside_sol_escrow_account],
     ]];
     try_close_escrow(
         &ctx.accounts.buyside_sol_escrow_account,
