@@ -130,7 +130,7 @@ pub fn handler<'info>(
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
         pool_key.as_ref(),
-        &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
+        &[ctx.bumps.buyside_sol_escrow_account],
     ]];
 
     let parsed_metadata = check_allowlists_for_mint(

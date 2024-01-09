@@ -120,7 +120,7 @@ pub struct SolMip1FulfillSell<'info> {
     #[account(address = mpl_token_metadata::ID)]
     pub token_metadata_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
-    #[account(address = mpl_token_auth_rules::id())]
+    #[account(address = MPL_TOKEN_AUTH_RULES)]
     pub authorization_rules_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
     #[account(address = sysvar::instructions::id())]
@@ -161,7 +161,7 @@ pub fn handler<'info>(
         POOL_PREFIX.as_bytes(),
         pool.owner.as_ref(),
         pool.uuid.as_ref(),
-        &[*ctx.bumps.get("pool").unwrap()],
+        &[ctx.bumps.pool],
     ]];
 
     let parsed_metadata = check_allowlists_for_mint(

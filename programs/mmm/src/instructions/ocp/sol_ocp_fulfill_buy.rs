@@ -142,7 +142,7 @@ pub fn handler<'info>(
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
         pool_key.as_ref(),
-        &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
+        &[ctx.bumps.buyside_sol_escrow_account],
     ]];
 
     let parsed_metadata = check_allowlists_for_mint(
@@ -240,7 +240,7 @@ pub fn handler<'info>(
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
         open_creator_protocol::cpi::close(CpiContext::new(
-            ctx.accounts.cmt_program.to_account_info(),
+            ctx.accounts.ocp_program.to_account_info(),
             open_creator_protocol::cpi::accounts::CloseCtx {
                 policy: ocp_policy.to_account_info(),
                 freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),

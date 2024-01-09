@@ -123,7 +123,7 @@ pub struct SolMip1FulfillBuy<'info> {
     #[account(address = mpl_token_metadata::ID)]
     pub token_metadata_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
-    #[account(address = mpl_token_auth_rules::id())]
+    #[account(address = MPL_TOKEN_AUTH_RULES)]
     pub authorization_rules_program: UncheckedAccount<'info>,
     /// CHECK: will be checked in cpi
     pub authorization_rules: UncheckedAccount<'info>,
@@ -168,13 +168,13 @@ pub fn handler<'info>(
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
         pool_key.as_ref(),
-        &[*ctx.bumps.get("buyside_sol_escrow_account").unwrap()],
+        &[ctx.bumps.buyside_sol_escrow_account],
     ]];
     let pool_seeds: &[&[&[u8]]] = &[&[
         POOL_PREFIX.as_bytes(),
         pool.owner.as_ref(),
         pool.uuid.as_ref(),
-        &[*ctx.bumps.get("pool").unwrap()],
+        &[ctx.bumps.pool],
     ]];
 
     let parsed_metadata = check_allowlists_for_mint(

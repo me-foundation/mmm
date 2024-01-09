@@ -111,7 +111,7 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
         POOL_PREFIX.as_bytes(),
         pool.owner.as_ref(),
         pool.uuid.as_ref(),
-        &[*ctx.bumps.get("pool").unwrap()],
+        &[ctx.bumps.pool],
     ]];
 
     // Note that check_allowlists_for_mint is optional for withdraw_sell
@@ -160,7 +160,7 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
     // we can close the sellside_escrow_token_account if no amount left
     if sellside_escrow_token_account.amount == args.asset_amount {
         open_creator_protocol::cpi::close(CpiContext::new_with_signer(
-            ctx.accounts.cmt_program.to_account_info(),
+            ctx.accounts.ocp_program.to_account_info(),
             open_creator_protocol::cpi::accounts::CloseCtx {
                 policy: ctx.accounts.ocp_policy.to_account_info(),
                 freeze_authority: ctx.accounts.ocp_freeze_authority.to_account_info(),

@@ -36,3 +36,7 @@ mmm = "mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc"
 
 [scripts]
 test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.spec.ts"
+
+[toolchain]
+anchor = "0.29.0"
+solana = "~1.16"

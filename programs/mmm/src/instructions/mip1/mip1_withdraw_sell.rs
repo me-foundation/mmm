@@ -97,7 +97,7 @@ pub struct Mip1WithdrawSell<'info> {
     #[account(address = mpl_token_metadata::ID)]
     pub token_metadata_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
-    #[account(address = mpl_token_auth_rules::id())]
+    #[account(address = MPL_TOKEN_AUTH_RULES)]
     pub authorization_rules_program: UncheckedAccount<'info>,
     /// CHECK: checked by address and in cpi
     #[account(address = sysvar::instructions::id())]
@@ -132,7 +132,7 @@ pub fn handler(ctx: Context<Mip1WithdrawSell>, args: WithdrawSellArgs) -> Result
         POOL_PREFIX.as_bytes(),
         pool.owner.as_ref(),
         pool.uuid.as_ref(),
-        &[*ctx.bumps.get("pool").unwrap()],
+        &[ctx.bumps.pool],
     ]];
 
     assert_is_programmable(&Metadata::safe_deserialize(&asset_metadata.data.borrow())?)?;

@@ -97,7 +97,7 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
                 POOL_PREFIX.as_bytes(),
                 owner.key().as_ref(),
                 pool.uuid.key().as_ref(),
-                &[*ctx.bumps.get("pool").unwrap()],
+                &[ctx.bumps.pool],
             ]],
         ),
         args.asset_amount,
@@ -116,7 +116,7 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
                 POOL_PREFIX.as_bytes(),
                 owner.key().as_ref(),
                 pool.uuid.key().as_ref(),
-                &[*ctx.bumps.get("pool").unwrap()],
+                &[ctx.bumps.pool],
             ]],
         ))?;
     }
