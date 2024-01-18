@@ -2,8 +2,8 @@ import {
   CMT_PROGRAM,
   PROGRAM_ID as OCP_PROGRAM_ID,
 } from '@magiceden-oss/open_creator_protocol';
-import * as anchor from '@project-serum/anchor';
-import { Program } from '@project-serum/anchor';
+import * as anchor from '@coral-xyz/anchor';
+import { Program } from '@coral-xyz/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,

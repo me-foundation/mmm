@@ -1,4 +1,4 @@
-import { BN } from '@project-serum/anchor';
+import { BN } from '@coral-xyz/anchor';
 
 export interface GetFulfillBuyPricesParams {
   totalPriceLamports: number;

@@ -37,7 +37,7 @@ import {
 } from '@magiceden-oss/open_creator_protocol';
 import { OCP_COMPUTE_UNITS, sendAndAssertTx } from './generic';
 import { getMetaplexInstance } from './nfts';
-import { BN } from '@project-serum/anchor';
+import { BN } from '@coral-xyz/anchor';
 
 export const DEVNET_POLICY_ALL = new PublicKey(
   '6Huqrb4xxmmNA4NufYdgpmspoLmjXFd3qEfteCddLgSz',
