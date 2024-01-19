@@ -97,10 +97,10 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         args.allowlist_aux,
     )?;
 
-    anchor_spl::token::transfer(
+    anchor_spl::token_2022::transfer(
         CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token::Transfer {
+            anchor_spl::token_2022::Transfer {
                 from: asset_token_account.to_account_info(),
                 to: sellside_escrow_token_account.to_account_info(),
                 authority: owner.to_account_info(),
@@ -110,9 +110,9 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
     )?;
 
     if asset_token_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
+        anchor_spl::token_2022::close_account(CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: asset_token_account.to_account_info(),
                 destination: owner.to_account_info(),
                 authority: owner.to_account_info(),

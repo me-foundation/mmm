@@ -172,9 +172,9 @@ pub fn handler(ctx: Context<Mip1DepositSell>, args: DepositSellArgs) -> Result<(
         .invoke()?;
 
     if asset_token_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
+        anchor_spl::token_2022::close_account(CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: asset_token_account.to_account_info(),
                 destination: owner.to_account_info(),
                 authority: owner.to_account_info(),

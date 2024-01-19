@@ -213,10 +213,10 @@ pub fn handler<'info>(
             system_program.to_account_info(),
             rent.to_account_info(),
         )?;
-        anchor_spl::token::transfer(
+        anchor_spl::token_2022::transfer(
             CpiContext::new(
                 token_program.to_account_info(),
-                anchor_spl::token::Transfer {
+                anchor_spl::token_2022::Transfer {
                     from: payer_asset_account.to_account_info(),
                     to: owner_token_account.to_account_info(),
                     authority: payer.to_account_info(),

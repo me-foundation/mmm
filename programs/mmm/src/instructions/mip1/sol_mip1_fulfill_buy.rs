@@ -306,9 +306,9 @@ pub fn handler<'info>(
             .transfer_args(transfer_args)
             .invoke_signed(pool_seeds)?;
 
-        anchor_spl::token::close_account(CpiContext::new_with_signer(
+        anchor_spl::token_2022::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: sellside_escrow_token_account.to_account_info(),
                 destination: payer.to_account_info(),
                 authority: pool.to_account_info(),
@@ -319,9 +319,9 @@ pub fn handler<'info>(
 
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
+        anchor_spl::token_2022::close_account(CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: payer_asset_account.to_account_info(),
                 destination: payer.to_account_info(),
                 authority: payer.to_account_info(),

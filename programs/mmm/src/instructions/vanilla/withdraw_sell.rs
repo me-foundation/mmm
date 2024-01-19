@@ -84,10 +84,10 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     // and we'd still like to enable the withdraw of those items for the pool owner.
     // check_allowlists_for_mint(&pool.allowlists, asset_mint, asset_metadata)?;
 
-    anchor_spl::token::transfer(
+    anchor_spl::token_2022::transfer(
         CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::Transfer {
+            anchor_spl::token_2022::Transfer {
                 from: sellside_escrow_token_account.to_account_info(),
                 to: asset_token_account.to_account_info(),
                 authority: pool.to_account_info(),
@@ -104,9 +104,9 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     )?;
     // we can close the sellside_escrow_token_account if no amount left
     if sellside_escrow_token_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new_with_signer(
+        anchor_spl::token_2022::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: sellside_escrow_token_account.to_account_info(),
                 destination: owner.to_account_info(),
                 authority: pool.to_account_info(),

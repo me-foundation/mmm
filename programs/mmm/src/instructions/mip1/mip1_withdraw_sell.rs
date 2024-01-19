@@ -174,9 +174,9 @@ pub fn handler(ctx: Context<Mip1WithdrawSell>, args: WithdrawSellArgs) -> Result
         .invoke_signed(pool_seeds)?;
 
     if sellside_escrow_token_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new_with_signer(
+        anchor_spl::token_2022::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: sellside_escrow_token_account.to_account_info(),
                 destination: owner.to_account_info(),
                 authority: pool.to_account_info(),
