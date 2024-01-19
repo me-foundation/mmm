@@ -22,6 +22,8 @@ import {
 import {
   findMasterEditionV2Pda,
   findMetadataPda,
+  token,
+  tokenProgram,
 } from '@metaplex-foundation/js';
 import {
   AssetData,
@@ -161,6 +163,7 @@ export const createDefaultTokenAuthorizationRules = async (
 const createNewMip1MintTransaction = (
   payer: Keypair,
   mintKeypair: Keypair,
+  tokenProgramId: PublicKey,
   ruleSet?: PublicKey,
 ) => {
   //metadata account associated with mint
@@ -202,7 +205,7 @@ const createNewMip1MintTransaction = (
     mint: mintKeypair.publicKey,
     authority: payer.publicKey,
     payer: payer.publicKey,
-    splTokenProgram: TOKEN_PROGRAM_ID,
+    splTokenProgram: tokenProgramId,
     sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
     updateAuthority: payer.publicKey,
   };
@@ -225,6 +228,7 @@ export const createProgrammableNft = async (
   connection: Connection,
   authorityAndPayer: Keypair,
   recipient: PublicKey,
+  tokenProgramId: PublicKey,
   ruleSet?: PublicKey,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
@@ -245,6 +249,7 @@ export const createProgrammableNft = async (
   const tx = createNewMip1MintTransaction(
     authorityAndPayer,
     mintKeypair,
+    tokenProgramId,
     ruleSet,
   );
   const mintIxAccounts: MintInstructionAccounts = {
@@ -256,7 +261,7 @@ export const createProgrammableNft = async (
     payer: authorityAndPayer.publicKey,
     authority: authorityAndPayer.publicKey,
     sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-    splTokenProgram: TOKEN_PROGRAM_ID,
+    splTokenProgram: tokenProgramId,
     splAtaProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     authorizationRulesProgram: AUTHORIZATION_RULES_PROGRAM_ID,
     authorizationRules: ruleSet,
@@ -286,6 +291,7 @@ export const getInitMigrationIx = (
   authority: PublicKey,
   collectionMint: PublicKey,
   ruleset: PublicKey,
+  tokenProgramId: PublicKey,
 ) => {
   const initArgs: InitializeInstructionArgs = {
     initializeArgs: {
@@ -351,6 +357,7 @@ export const getUpdateMigrationIx = (
 export const getStartMigrationIx = (
   authority: PublicKey,
   collectionMint: PublicKey,
+  tokenProgramId: PublicKey,
 ) => {
   const pas = findMigrationProgramAsSigner();
   const startAccounts: StartInstructionAccounts = {
@@ -360,7 +367,7 @@ export const getStartMigrationIx = (
     collectionMetadata: findMetadataPda(collectionMint),
     delegateRecord: findDelegateRecordPda(pas, collectionMint),
     migrationState: findMigrationState(collectionMint),
-    splTokenProgram: TOKEN_PROGRAM_ID,
+    splTokenProgram: tokenProgramId,
     systemProgram: SystemProgram.programId,
     tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
     programSigner: pas,
@@ -377,6 +384,7 @@ export const getMigrateValidatorMigrateIx = (
   tokenAccount: PublicKey,
   collectionMint: PublicKey,
   ruleset: PublicKey,
+  tokenProgramId: PublicKey,
 ): TransactionInstruction => {
   const pas = findMigrationProgramAsSigner();
   const accounts: AccountMeta[] = [
@@ -423,7 +431,7 @@ export const getMigrateValidatorMigrateIx = (
       isWritable: false,
     },
     {
-      pubkey: TOKEN_PROGRAM_ID,
+      pubkey: tokenProgramId,
       isSigner: false,
       isWritable: false,
     },

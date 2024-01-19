@@ -114,6 +114,7 @@ export const createPoolWithExampleDeposits = async (
   kinds: AllowlistKind[],
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
+  tokenProgramId: PublicKey,
   nftRecipient?: PublicKey,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
@@ -334,7 +335,7 @@ export const createPoolWithExampleDeposits = async (
         sellState: sellState1,
         sellsideEscrowTokenAccount: poolAtaNft,
         systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: tokenProgramId,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       })
@@ -366,7 +367,7 @@ export const createPoolWithExampleDeposits = async (
         sellState: sellState2,
         sellsideEscrowTokenAccount: poolAtaSft,
         systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: tokenProgramId,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       })
@@ -412,6 +413,7 @@ export const createPoolWithExampleOcpDeposits = async (
   connection: Connection,
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
+  tokenProgramId: PublicKey,
   nftRecipient?: PublicKey,
   policy?: PublicKey,
 ) => {
@@ -427,6 +429,7 @@ export const createPoolWithExampleOcpDeposits = async (
           receiver: v,
           closeAccount: true,
         },
+        tokenProgramId,
         policy,
       ),
     ),
@@ -483,7 +486,7 @@ export const createPoolWithExampleOcpDeposits = async (
         cmtProgram: CMT_PROGRAM,
         instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
         systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: tokenProgramId,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       })
@@ -529,12 +532,13 @@ export const createPoolWithExampleMip1Deposits = async (
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
   nftCreator: Keypair,
+  tokenProgramId: PublicKey,
   nftRecipient?: PublicKey,
   ruleset?: PublicKey,
 ) => {
   const [depositNft, extraNft] = await Promise.all(
     [poolArgs.owner, nftRecipient ?? poolArgs.owner].map((v) =>
-      createProgrammableNft(connection, nftCreator, v, ruleset),
+      createProgrammableNft(connection, nftCreator, v, tokenProgramId, ruleset),
     ),
   );
   const mintAddressNft = depositNft.mintAddress;
@@ -595,7 +599,7 @@ export const createPoolWithExampleMip1Deposits = async (
         ).key,
         instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
         systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: tokenProgramId,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       })

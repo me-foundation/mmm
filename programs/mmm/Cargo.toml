@@ -19,11 +19,12 @@ anchor-test = []
 [dependencies]
 anchor-lang = { version = "0.29.0", features = ["init-if-needed"] }
 anchor-spl = "0.29.0"
-solana-program = "~1.16"
+community-managed-token = { version = "0.3.0", features = ["no-entrypoint"] }
 mpl-token-metadata = { version = "4.0.0" }
+open_creator_protocol = { version = "0.4.1", features = ["cpi"] }
+solana-program = "~1.16"
 spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
 spl-associated-token-account = { version = "2.2.0", features = [
     "no-entrypoint",
 ] }
-open_creator_protocol = { version = "0.4.1", features = ["cpi"] }
-community-managed-token = { version = "0.3.0", features = ["no-entrypoint"] }
+spl-token-2022 = "0.9.0"
