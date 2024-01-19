@@ -36,7 +36,8 @@ fn assert_is_ata(
     mint: &Pubkey,
     optional_owner: &Pubkey,
 ) -> Result<spl_token::state::Account> {
-    assert_owned_by(ata, &anchor_spl::token::ID)?;
+    assert_owned_by(ata, &anchor_spl::token::ID)
+        .or(assert_owned_by(ata, &anchor_spl::token_2022::ID))?;
     let ata_account: spl_token::state::Account = assert_initialized(ata)?;
     if ata_account.owner != *optional_owner {
         assert_keys_equal(ata_account.owner, *wallet)?;
