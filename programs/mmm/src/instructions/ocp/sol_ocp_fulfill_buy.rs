@@ -11,11 +11,12 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::sol_fulfill_buy::SolFulfillBuyArgs,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
     util::{
         assert_valid_fees_bp, check_allowlists_for_mint, get_buyside_seller_receives,
         get_lp_fee_bp, get_metadata_royalty_bp, get_sol_fee, get_sol_lp_fee,
-        get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol, try_close_escrow,
+        get_sol_total_price_and_next_price, pay_creator_fees_in_sol, try_close_escrow,
         try_close_pool, try_close_sell_state,
     },
 };
@@ -24,6 +25,7 @@ use crate::{
 // where the pool has some buyside payment liquidity. Therefore,
 // the seller expects a min_payment_amount that goes back to the
 // seller's wallet for the asset_amount that the seller wants to sell.
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:SolFulfillBuyArgs)]
 pub struct SolOcpFulfillBuy<'info> {
@@ -344,7 +346,10 @@ pub fn handler<'info>(
     try_close_sell_state(sell_state, payer.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_sol_ocp_fulfill_buy", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_sol_ocp_fulfill_buy".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!(

@@ -32,6 +32,7 @@ pub fn check_allowlists(allowlists: &[Allowlist]) -> Result<()> {
     Ok(())
 }
 
+#[inline(never)]
 pub fn check_allowlists_for_mint(
     allowlists: &[Allowlist],
     mint: &Account<Mint>,
@@ -147,6 +148,7 @@ pub fn check_curve(curve_type: u8, curve_delta: u64) -> Result<()> {
     Ok(())
 }
 
+#[inline(never)]
 pub fn get_buyside_seller_receives(
     total_sol_price: u64,
     lp_fee_bp: u16,
@@ -168,6 +170,7 @@ pub fn get_buyside_seller_receives(
         .ok_or(MMMErrorCode::NumericOverflow.into())
 }
 
+#[inline(never)]
 pub fn get_lp_fee_bp(pool: &Pool, buyside_sol_escrow_balance: u64) -> u16 {
     if pool.sellside_asset_amount < 1 {
         return 0;
@@ -180,6 +183,7 @@ pub fn get_lp_fee_bp(pool: &Pool, buyside_sol_escrow_balance: u64) -> u16 {
     pool.lp_fee_bp
 }
 
+#[inline(never)]
 pub fn get_sol_lp_fee(
     pool: &Pool,
     buyside_sol_escrow_balance: u64,
@@ -194,6 +198,7 @@ pub fn get_sol_lp_fee(
         .ok_or(MMMErrorCode::NumericOverflow)?) as u64)
 }
 
+#[inline(never)]
 pub fn get_sol_fee(total_sol_price: u64, fee_bp: i16) -> Result<i64> {
     i64::try_from(
         (total_sol_price as i128)
@@ -205,6 +210,7 @@ pub fn get_sol_fee(total_sol_price: u64, fee_bp: i16) -> Result<i64> {
     .map_err(|_| MMMErrorCode::NumericOverflow.into())
 }
 
+#[inline(never)]
 pub fn get_sol_total_price_and_next_price(
     pool: &Pool,
     n: u64,
@@ -327,6 +333,7 @@ pub fn get_sol_total_price_and_next_price(
     }
 }
 
+#[inline(never)]
 pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'info>) -> Result<()> {
     if pool.sellside_asset_amount != 0 {
         return Ok(());
@@ -347,6 +354,7 @@ pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'in
     Ok(())
 }
 
+#[inline(never)]
 pub fn try_close_escrow<'info>(
     escrow: &AccountInfo<'info>,
     pool: &Account<'info, Pool>,
@@ -388,6 +396,7 @@ pub fn try_close_escrow<'info>(
     }
 }
 
+#[inline(never)]
 pub fn try_close_sell_state<'info>(
     sell_state: &Account<'info, SellState>,
     owner: AccountInfo<'info>,
@@ -408,6 +417,7 @@ pub fn try_close_sell_state<'info>(
     Ok(())
 }
 
+#[inline(never)]
 pub fn get_metadata_royalty_bp(
     total_price: u64,
     parsed_metadata: &Metadata,
@@ -425,6 +435,7 @@ pub fn get_metadata_royalty_bp(
 }
 
 #[allow(clippy::too_many_arguments)]
+#[inline(never)]
 pub fn pay_creator_fees_in_sol<'info>(
     buyside_creator_royalty_bp: u16,
     total_price: u64,
@@ -522,6 +533,7 @@ pub fn log_pool(prefix: &str, pool: &Pool) -> Result<()> {
     Ok(())
 }
 
+#[inline(never)]
 pub fn assert_is_programmable(parsed_metadata: &Metadata) -> Result<()> {
     if parsed_metadata.token_standard == Some(TokenStandard::ProgrammableNonFungible) {
         Ok(())
@@ -530,6 +542,7 @@ pub fn assert_is_programmable(parsed_metadata: &Metadata) -> Result<()> {
     }
 }
 
+#[inline(never)]
 pub fn assert_valid_fees_bp(maker_fee_bp: i16, taker_fee_bp: i16) -> Result<()> {
     let bound = MAX_REFERRAL_FEE_BP;
     if !(0..=bound).contains(&taker_fee_bp) {

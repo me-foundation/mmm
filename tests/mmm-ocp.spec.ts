@@ -107,7 +107,7 @@ describe('mmm-ocp', () => {
         assetAmount: new anchor.BN(1),
         allowlistAux: null,
       })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,
@@ -154,7 +154,7 @@ describe('mmm-ocp', () => {
     );
     await program.methods
       .ocpWithdrawSell({ assetAmount: new anchor.BN(1), allowlistAux: null })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,
@@ -251,7 +251,7 @@ describe('mmm-ocp', () => {
         makerFeeBp: 150,
         takerFeeBp: 200,
       })
-      .accountsStrict({
+      .accounts({
         payer: buyer.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
@@ -401,7 +401,7 @@ describe('mmm-ocp', () => {
         makerFeeBp: 350,
         takerFeeBp: 50,
       })
-      .accountsStrict({
+      .accounts({
         payer: seller.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
@@ -576,7 +576,7 @@ describe('mmm-ocp', () => {
           makerFeeBp: -30,
           takerFeeBp: 30,
         })
-        .accountsStrict({
+        .accounts({
           payer: seller.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -703,7 +703,7 @@ describe('mmm-ocp', () => {
           makerFeeBp: -100,
           takerFeeBp: 350,
         })
-        .accountsStrict({
+        .accounts({
           payer: buyer.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,

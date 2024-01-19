@@ -1,6 +1,6 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::log_pool};
+use crate::{constants::*, errors::MMMErrorCode, pool_event::PoolEvent, state::Pool};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolDepositBuyArgs {
@@ -8,6 +8,7 @@ pub struct SolDepositBuyArgs {
 }
 
 // This is targeting the deposit of native payment_mint: SOL
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:SolDepositBuyArgs)]
 pub struct SolDepositBuy<'info> {
@@ -53,6 +54,9 @@ pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<(
     )?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_sol_deposit_buy", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_sol_deposit_buy".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
     Ok(())
 }

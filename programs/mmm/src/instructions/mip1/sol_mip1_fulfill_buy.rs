@@ -14,11 +14,12 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::sol_fulfill_buy::SolFulfillBuyArgs,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
     util::{
         assert_is_programmable, assert_valid_fees_bp, check_allowlists_for_mint,
         get_buyside_seller_receives, get_lp_fee_bp, get_metadata_royalty_bp, get_sol_fee,
-        get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol,
+        get_sol_lp_fee, get_sol_total_price_and_next_price, pay_creator_fees_in_sol,
         try_close_escrow, try_close_pool, try_close_sell_state,
     },
 };
@@ -27,6 +28,7 @@ use crate::{
 // where the pool has some buyside payment liquidity. Therefore,
 // the seller expects a min_payment_amount that goes back to the
 // seller's wallet for the asset_amount that the seller wants to sell.
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:SolFulfillBuyArgs)]
 pub struct SolMip1FulfillBuy<'info> {
@@ -133,7 +135,6 @@ pub struct SolMip1FulfillBuy<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn handler<'info>(
@@ -163,7 +164,10 @@ pub fn handler<'info>(
     let authorization_rules_program = &ctx.accounts.authorization_rules_program;
     let token_metadata_program_ai = &ctx.accounts.token_metadata_program.to_account_info();
 
-    let rent = &ctx.accounts.rent;
+    if !ctx.accounts.payer.is_signer {
+        return Err(MMMErrorCode::InvalidCosigner.into());
+    }
+
     let pool_key = pool.key();
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
@@ -266,7 +270,7 @@ pub fn handler<'info>(
             associated_token_program.to_account_info(),
             token_program.to_account_info(),
             system_program.to_account_info(),
-            rent.to_account_info(),
+            // rent.to_account_info(),
         )?;
 
         let payload = Payload {
@@ -416,7 +420,10 @@ pub fn handler<'info>(
     try_close_sell_state(sell_state, payer.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_sol_mip1_fulfill_buy", pool)?;
+    // emit_cpi!(PoolEvent {
+    //     prefix: "post_sol_mip1_fulfill_buy".to_string(),
+    //     pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    // });
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!(

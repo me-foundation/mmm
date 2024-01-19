@@ -158,7 +158,7 @@ export class MMMClient {
     cosigner: PublicKey,
   ): Promise<TransactionInstruction> {
     const { key: poolKey } = getMMMPoolPDA(MMMProgramID, owner, args.uuid);
-    let builder = this.program.methods.createPool(args).accountsStrict({
+    let builder = this.program.methods.createPool(args).accounts({
       pool: poolKey,
       owner,
       cosigner,
@@ -187,7 +187,7 @@ export class MMMClient {
     args: anchor.IdlTypes<Mmm>['UpdatePoolArgs'],
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
-    let builder = this.program.methods.updatePool(args).accountsStrict({
+    let builder = this.program.methods.updatePool(args).accounts({
       pool: this.poolData.pool,
       owner: this.poolData.owner,
       cosigner: this.poolData.cosigner,
@@ -203,7 +203,7 @@ export class MMMClient {
       MMMProgramID,
       this.poolData.pool,
     );
-    let builder = this.program.methods.solDepositBuy(args).accountsStrict({
+    let builder = this.program.methods.solDepositBuy(args).accounts({
       pool: this.poolData.pool,
       owner: this.poolData.owner,
       cosigner: this.poolData.cosigner,
@@ -221,7 +221,7 @@ export class MMMClient {
       MMMProgramID,
       this.poolData.pool,
     );
-    let builder = this.program.methods.solWithdrawBuy(args).accountsStrict({
+    let builder = this.program.methods.solWithdrawBuy(args).accounts({
       pool: this.poolData.pool,
       owner: this.poolData.owner,
       cosigner: this.poolData.cosigner,
@@ -269,7 +269,7 @@ export class MMMClient {
       | ReturnType<MmmMethodsNamespace['solMip1FulfillBuy']>;
 
     if (ocpMintState) {
-      builder = this.program.methods.solOcpFulfillBuy(args).accountsStrict({
+      builder = this.program.methods.solOcpFulfillBuy(args).accounts({
         payer,
         owner: this.poolData.owner,
         buysideSolEscrowAccount,
@@ -311,7 +311,7 @@ export class MMMClient {
           assetMint,
           sellsideEscrowTokenAccount,
         ).key;
-        builder = this.program.methods.solMip1FulfillBuy(args).accountsStrict({
+        builder = this.program.methods.solMip1FulfillBuy(args).accounts({
           payer,
           owner: this.poolData.owner,
           buysideSolEscrowAccount,
@@ -336,7 +336,7 @@ export class MMMClient {
           ...filteredMip1Accounts,
         });
       } else {
-        builder = this.program.methods.solFulfillBuy(args).accountsStrict({
+        builder = this.program.methods.solFulfillBuy(args).accounts({
           payer,
           owner: this.poolData.owner,
           buysideSolEscrowAccount,
@@ -420,7 +420,7 @@ export class MMMClient {
           makerFeeBp: args.makerFeeBp,
           takerFeeBp: args.takerFeeBp,
         })
-        .accountsStrict({
+        .accounts({
           payer,
           owner: this.poolData.owner,
           buysideSolEscrowAccount,
@@ -455,7 +455,7 @@ export class MMMClient {
             makerFeeBp: args.makerFeeBp,
             takerFeeBp: args.takerFeeBp,
           })
-          .accountsStrict({
+          .accounts({
             payer,
             owner: this.poolData.owner,
             buysideSolEscrowAccount,
@@ -482,7 +482,7 @@ export class MMMClient {
             }),
           });
       } else {
-        builder = this.program.methods.solFulfillSell(args).accountsStrict({
+        builder = this.program.methods.solFulfillSell(args).accounts({
           payer,
           owner: this.poolData.owner,
           buysideSolEscrowAccount,
@@ -555,7 +555,7 @@ export class MMMClient {
       | ReturnType<MmmMethodsNamespace['mip1DepositSell']>;
 
     if (ocpMintState) {
-      builder = this.program.methods.ocpDepositSell(args).accountsStrict({
+      builder = this.program.methods.ocpDepositSell(args).accounts({
         owner: this.poolData.owner,
         pool: this.poolData.pool,
         assetMint,
@@ -580,7 +580,7 @@ export class MMMClient {
       const tokenStandard = metadataProvider.getTokenStandard(assetMint);
       if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
         const ruleset = metadataProvider.getRuleset(assetMint);
-        builder = this.program.methods.mip1DepositSell(args).accountsStrict({
+        builder = this.program.methods.mip1DepositSell(args).accounts({
           owner: this.poolData.owner,
           cosigner: this.poolData.cosigner,
           pool: this.poolData.pool,
@@ -604,7 +604,7 @@ export class MMMClient {
           }),
         });
       } else {
-        builder = this.program.methods.depositSell(args).accountsStrict({
+        builder = this.program.methods.depositSell(args).accounts({
           owner: this.poolData.owner,
           pool: this.poolData.pool,
           assetMint,
@@ -662,7 +662,7 @@ export class MMMClient {
       | ReturnType<MmmMethodsNamespace['mip1WithdrawSell']>;
 
     if (ocpMintState) {
-      builder = this.program.methods.ocpWithdrawSell(args).accountsStrict({
+      builder = this.program.methods.ocpWithdrawSell(args).accounts({
         owner: this.poolData.owner,
         pool: this.poolData.pool,
         assetMint,
@@ -688,7 +688,7 @@ export class MMMClient {
           .pdas()
           .masterEdition({ mint: assetMint });
         const ruleset = metadataProvider.getRuleset(assetMint);
-        builder = this.program.methods.mip1WithdrawSell(args).accountsStrict({
+        builder = this.program.methods.mip1WithdrawSell(args).accounts({
           owner: this.poolData.owner,
           pool: this.poolData.pool,
           assetMint,
@@ -713,7 +713,7 @@ export class MMMClient {
           }),
         });
       } else {
-        builder = this.program.methods.withdrawSell(args).accountsStrict({
+        builder = this.program.methods.withdrawSell(args).accounts({
           owner: this.poolData.owner,
           pool: this.poolData.pool,
           assetMint,

@@ -7,8 +7,9 @@ use anchor_spl::{
 use crate::{
     constants::*,
     errors::MMMErrorCode,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
-    util::{check_allowlists_for_mint, log_pool},
+    util::check_allowlists_for_mint,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -17,6 +18,7 @@ pub struct DepositSellArgs {
     pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:DepositSellArgs)]
 pub struct DepositSell<'info> {
@@ -133,7 +135,10 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
         .asset_amount
         .checked_add(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    log_pool("post_deposit_sell", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_deposit_sell".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
 
     Ok(())
 }

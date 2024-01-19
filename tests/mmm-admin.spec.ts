@@ -67,7 +67,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -136,7 +136,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -158,7 +158,7 @@ describe('mmm-admin', () => {
           cosignerAnnotation: new Array(32).fill(0).map((_, index) => index),
           buysideCreatorRoyaltyBp: 0,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -249,7 +249,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -261,7 +261,7 @@ describe('mmm-admin', () => {
         .updateAllowlists({
           allowlists: newAllowlists,
         })
-        .accountsStrict({
+        .accounts({
           cosigner: cosigner.publicKey,
           owner: wallet.publicKey,
           pool: poolKey,
@@ -344,7 +344,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -358,7 +358,7 @@ describe('mmm-admin', () => {
           .updateAllowlists({
             allowlists: newAllowlists,
           })
-          .accountsStrict({
+          .accounts({
             cosigner: inavlidAuthorityKeypair.publicKey,
             owner: wallet.publicKey,
             pool: poolKey,
@@ -424,7 +424,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -438,7 +438,7 @@ describe('mmm-admin', () => {
           .updateAllowlists({
             allowlists: newAllowlists,
           })
-          .accountsStrict({
+          .accounts({
             cosigner: wallet.publicKey,
             owner: wallet.publicKey,
             pool: poolKey,
@@ -503,7 +503,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: wallet.publicKey,
           pool: poolKey,
@@ -519,7 +519,7 @@ describe('mmm-admin', () => {
         .updateAllowlists({
           allowlists: newAllowlists,
         })
-        .accountsStrict({
+        .accounts({
           cosigner: wallet.publicKey,
           owner: wallet.publicKey,
           pool: poolKey,
@@ -588,7 +588,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -615,7 +615,7 @@ describe('mmm-admin', () => {
           paymentMint: PublicKey.default,
           allowlists,
         })
-        .accountsStrict({
+        .accounts({
           owner: owner2.publicKey,
           cosigner: cosigner2.publicKey,
           pool: poolKey2,
@@ -629,7 +629,7 @@ describe('mmm-admin', () => {
           .updateAllowlists({
             allowlists: newAllowlists,
           })
-          .accountsStrict({
+          .accounts({
             cosigner: cosigner.publicKey,
             owner: owner2.publicKey, // we pass in the correct owner pubkey because it's unchecked
             pool: poolKey2,

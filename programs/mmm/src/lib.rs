@@ -8,6 +8,7 @@ mod ata;
 mod constants;
 mod errors;
 pub mod instructions;
+mod pool_event;
 pub mod state;
 pub mod util;
 

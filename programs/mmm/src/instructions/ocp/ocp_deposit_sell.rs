@@ -9,10 +9,12 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::vanilla::DepositSellArgs,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
-    util::{check_allowlists_for_mint, log_pool},
+    util::check_allowlists_for_mint,
 };
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:DepositSellArgs)]
 pub struct OcpDepositSell<'info> {
@@ -178,7 +180,10 @@ pub fn handler(ctx: Context<OcpDepositSell>, args: DepositSellArgs) -> Result<()
         .asset_amount
         .checked_add(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    log_pool("post_ocp_deposit_sell", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_ocp_deposit_sell".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
 
     Ok(())
 }

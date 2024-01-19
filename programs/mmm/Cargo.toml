@@ -17,7 +17,7 @@ default = []
 anchor-test = []
 
 [dependencies]
-anchor-lang = { version = "0.29.0", features = ["init-if-needed"] }
+anchor-lang = { version = "0.29.0", features = ["init-if-needed", "event-cpi"] }
 anchor-spl = "0.29.0"
 solana-program = "~1.16"
 mpl-token-metadata = { version = "4.0.0" }

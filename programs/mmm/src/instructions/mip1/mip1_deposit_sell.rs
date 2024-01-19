@@ -14,10 +14,12 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::vanilla::DepositSellArgs,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
-    util::{assert_is_programmable, check_allowlists_for_mint, log_pool},
+    util::{assert_is_programmable, check_allowlists_for_mint},
 };
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:DepositSellArgs)]
 pub struct Mip1DepositSell<'info> {
@@ -195,7 +197,11 @@ pub fn handler(ctx: Context<Mip1DepositSell>, args: DepositSellArgs) -> Result<(
         .asset_amount
         .checked_add(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    log_pool("post_mip1_deposit_sell", pool)?;
+
+    emit_cpi!(PoolEvent {
+        prefix: "post_mip1_deposit_sell".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
 
     Ok(())
 }

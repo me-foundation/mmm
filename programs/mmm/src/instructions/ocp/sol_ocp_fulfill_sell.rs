@@ -10,10 +10,11 @@ use crate::{
     ata::init_if_needed_ocp_ata,
     constants::*,
     errors::MMMErrorCode,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
     util::{
         assert_valid_fees_bp, check_allowlists_for_mint, get_metadata_royalty_bp, get_sol_fee,
-        get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol,
+        get_sol_lp_fee, get_sol_total_price_and_next_price, pay_creator_fees_in_sol,
         try_close_pool, try_close_sell_state,
     },
 };
@@ -31,6 +32,7 @@ pub struct SolOcpFulfillSellArgs {
 // where the pool has some sellside asset liquidity. Therefore,
 // the buyer expects to pay a max_payment_amount for the asset_amount
 // that the buyer wants to buy.
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:SolOcpFulfillSellArgs)]
 pub struct SolOcpFulfillSell<'info> {
@@ -325,7 +327,10 @@ pub fn handler<'info>(
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_sol_ocp_fulfill_sell", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_sol_ocp_fulfill_sell".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!(

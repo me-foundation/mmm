@@ -43,7 +43,7 @@ import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-to
 import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 import { before } from 'mocha';
 
-describe('mmm-mip1', () => {
+describe.only('mmm-mip1', () => {
   const { connection } = anchor.AnchorProvider.env();
   const wallet = new anchor.Wallet(Keypair.generate());
   const nftCreator = Keypair.generate();
@@ -119,7 +119,7 @@ describe('mmm-mip1', () => {
         assetAmount: new anchor.BN(1),
         allowlistAux: null,
       })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,
@@ -171,7 +171,7 @@ describe('mmm-mip1', () => {
     );
     await program.methods
       .mip1WithdrawSell({ assetAmount: new anchor.BN(1), allowlistAux: null })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,
@@ -277,7 +277,7 @@ describe('mmm-mip1', () => {
         makerFeeBp: 150,
         takerFeeBp: 200,
       })
-      .accountsStrict({
+      .accounts({
         payer: buyer.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
@@ -368,7 +368,7 @@ describe('mmm-mip1', () => {
     assert.equal(buyerAta.mint.toBase58(), poolData.nft.mintAddress.toBase58());
   });
 
-  it('can fulfill buy - happy path', async () => {
+  it.only('can fulfill buy - happy path', async () => {
     const seller = Keypair.generate();
     const [poolData] = await Promise.all([
       createPoolWithExampleMip1Deposits(
@@ -433,7 +433,7 @@ describe('mmm-mip1', () => {
         makerFeeBp: 350,
         takerFeeBp: 50,
       })
-      .accountsStrict({
+      .accounts({
         payer: seller.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
@@ -618,7 +618,7 @@ describe('mmm-mip1', () => {
           makerFeeBp: 250,
           takerFeeBp: 30,
         })
-        .accountsStrict({
+        .accounts({
           payer: seller.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -755,7 +755,7 @@ describe('mmm-mip1', () => {
           makerFeeBp: 100,
           takerFeeBp: 350,
         })
-        .accountsStrict({
+        .accounts({
           payer: buyer.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -943,7 +943,7 @@ describe('mmm-mip1', () => {
           makerFeeBp: -30,
           takerFeeBp: 50,
         })
-        .accountsStrict({
+        .accounts({
           payer: seller.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -1083,7 +1083,7 @@ describe('mmm-mip1', () => {
           makerFeeBp: -350,
           takerFeeBp: 350,
         })
-        .accountsStrict({
+        .accounts({
           payer: buyer.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,

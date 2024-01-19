@@ -48,6 +48,7 @@ fn assert_is_ata(
 
 // init_if_needed_ata asserts and checks if the ata is matching
 // the owner/mint/program, and then init it if the data is empty
+#[inline(never)]
 #[allow(clippy::too_many_arguments)]
 pub fn init_if_needed_ata<'a>(
     ata: AccountInfo<'a>,
@@ -57,7 +58,7 @@ pub fn init_if_needed_ata<'a>(
     associated_token: AccountInfo<'a>,
     token_program: AccountInfo<'a>,
     system_program: AccountInfo<'a>,
-    rent: AccountInfo<'a>,
+    // rent: AccountInfo<'a>,
 ) -> Result<spl_token::state::Account> {
     if ata.data.borrow().is_empty() {
         anchor_lang::solana_program::program::invoke(
@@ -74,7 +75,7 @@ pub fn init_if_needed_ata<'a>(
                 mint.to_account_info(),
                 associated_token,
                 system_program,
-                rent,
+                // rent,
                 token_program,
             ],
         )?;

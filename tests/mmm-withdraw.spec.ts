@@ -65,7 +65,7 @@ describe('mmm-withdraw', () => {
     let initWalletBalance = await connection.getBalance(wallet.publicKey);
     await program.methods
       .solWithdrawBuy({ paymentAmount: new anchor.BN(6 * LAMPORTS_PER_SOL) })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,
@@ -94,7 +94,7 @@ describe('mmm-withdraw', () => {
 
     await program.methods
       .solWithdrawBuy({ paymentAmount: new anchor.BN(4 * LAMPORTS_PER_SOL) })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,
@@ -135,7 +135,7 @@ describe('mmm-withdraw', () => {
     const poolRent = await connection.getBalance(poolData.poolKey);
     await program.methods
       .solWithdrawBuy({ paymentAmount: new anchor.BN(100 * LAMPORTS_PER_SOL) })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,
@@ -184,7 +184,7 @@ describe('mmm-withdraw', () => {
     );
     await program.methods
       .withdrawSell({ assetAmount: new anchor.BN(1), allowlistAux: null })
-      .accountsStrict({
+      .accounts({
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
         pool: poolData.poolKey,

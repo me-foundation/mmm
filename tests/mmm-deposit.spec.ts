@@ -65,7 +65,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .solDepositBuy({ paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL) })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -101,7 +101,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .solDepositBuy({ paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL) })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -118,7 +118,7 @@ describe('mmm-deposit', () => {
 
       await program.methods
         .solWithdrawBuy({ paymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL) })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -136,7 +136,7 @@ describe('mmm-deposit', () => {
 
       await program.methods
         .solWithdrawBuy({ paymentAmount: new anchor.BN(1 * LAMPORTS_PER_SOL) })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -178,7 +178,7 @@ describe('mmm-deposit', () => {
               makerFeeBp: 0,
               takerFeeBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               payer: seller.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -233,7 +233,7 @@ describe('mmm-deposit', () => {
         );
         await program.methods
           .solDepositBuy({ paymentAmount: new anchor.BN(2 * LAMPORTS_PER_SOL) })
-          .accountsStrict({
+          .accounts({
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
@@ -252,7 +252,7 @@ describe('mmm-deposit', () => {
           .solWithdrawBuy({
             paymentAmount: new anchor.BN(withdrawAmount),
           })
-          .accountsStrict({
+          .accounts({
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
@@ -443,7 +443,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -505,7 +505,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -613,7 +613,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -657,7 +657,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -752,7 +752,7 @@ describe('mmm-deposit', () => {
             assetAmount: new anchor.BN(1),
             allowlistAux: aux,
           })
-          .accountsStrict({
+          .accounts({
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
@@ -833,7 +833,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,
@@ -877,7 +877,7 @@ describe('mmm-deposit', () => {
       );
       await program.methods
         .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
-        .accountsStrict({
+        .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
           pool: poolKey,

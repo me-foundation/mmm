@@ -94,7 +94,7 @@ export const createPool = async (
   };
   const { owner, cosigner: _, ...overrides } = args;
   const finalArgs = { ...defaults, ...overrides };
-  let builder = program.methods.createPool(finalArgs).accountsStrict({
+  let builder = program.methods.createPool(finalArgs).accounts({
     owner: args.owner,
     cosigner: finalArgs.cosigner,
     pool: poolKey,
@@ -316,7 +316,7 @@ export const createPoolWithExampleDeposits = async (
     );
     await program.methods
       .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
-      .accountsStrict({
+      .accounts({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
@@ -348,7 +348,7 @@ export const createPoolWithExampleDeposits = async (
     );
     await program.methods
       .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
-      .accountsStrict({
+      .accounts({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
@@ -381,7 +381,7 @@ export const createPoolWithExampleDeposits = async (
   if (side === 'both' || side === 'buy') {
     await program.methods
       .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
-      .accountsStrict({
+      .accounts({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
@@ -465,7 +465,7 @@ export const createPoolWithExampleOcpDeposits = async (
         assetAmount: new anchor.BN(1),
         allowlistAux: null,
       })
-      .accountsStrict({
+      .accounts({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolData.poolKey,
@@ -501,7 +501,7 @@ export const createPoolWithExampleOcpDeposits = async (
   if (side === 'both' || side === 'buy') {
     await program.methods
       .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
-      .accountsStrict({
+      .accounts({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
@@ -571,7 +571,7 @@ export const createPoolWithExampleMip1Deposits = async (
         assetAmount: new anchor.BN(1),
         allowlistAux: null,
       })
-      .accountsStrict({
+      .accounts({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolData.poolKey,
@@ -613,7 +613,7 @@ export const createPoolWithExampleMip1Deposits = async (
   if (side === 'both' || side === 'buy') {
     await program.methods
       .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
-      .accountsStrict({
+      .accounts({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
