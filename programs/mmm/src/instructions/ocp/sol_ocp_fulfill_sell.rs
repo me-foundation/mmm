@@ -1,8 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize, AnchorSerialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, TokenAccount},
-    token_interface::TokenInterface,
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use open_creator_protocol::state::Policy;
 use std::convert::TryFrom;
@@ -76,7 +75,7 @@ pub struct SolOcpFulfillSell<'info> {
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         associated_token::mint = asset_mint,
@@ -84,7 +83,7 @@ pub struct SolOcpFulfillSell<'info> {
         constraint = sellside_escrow_token_account.amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: checked in init_if_needed_ocp_ata
     #[account(mut)]
     pub payer_asset_account: UncheckedAccount<'info>,

@@ -292,21 +292,25 @@ export const createPoolWithExampleDeposits = async (
     mintAddressNft,
     poolKey,
     true,
+    tokenProgramId,
   );
   const poolAtaSft = await getAssociatedTokenAddress(
     mintAddressSft,
     poolKey,
     true,
+    tokenProgramId,
   );
   const poolAtaExtraNft = await getAssociatedTokenAddress(
     extraNft[0].mintAddress,
     poolKey,
     true,
+    tokenProgramId,
   );
   const poolAtaExtraSft = await getAssociatedTokenAddress(
     extraSft[0].mintAddress,
     poolKey,
     true,
+    tokenProgramId,
   );
 
   if (side === 'both' || side === 'sell') {

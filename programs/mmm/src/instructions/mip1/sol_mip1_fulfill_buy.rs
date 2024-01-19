@@ -1,8 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, TokenAccount},
-    token_interface::TokenInterface,
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use mpl_token_metadata::{
     instructions::TransferCpiBuilder,
@@ -72,7 +71,7 @@ pub struct SolMip1FulfillBuy<'info> {
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub asset_mint: Box<Account<'info, Mint>>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     /// CHECK: will be checked in cpi
     pub asset_master_edition: UncheckedAccount<'info>,
     #[account(
@@ -82,14 +81,14 @@ pub struct SolMip1FulfillBuy<'info> {
         constraint = payer_asset_account.amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
+    pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
         payer = payer,
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: check in init_if_needed_ata
     #[account(mut)]
     pub owner_token_account: UncheckedAccount<'info>,

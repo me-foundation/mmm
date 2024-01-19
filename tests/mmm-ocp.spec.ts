@@ -73,9 +73,9 @@ describe('mmm-ocp', () => {
 
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
     describe(`Token program: ${tokenProgramId}`, () => {
-      it('can deposit and withdraw ocp NFTs - happy path', async () => {
-        DEFAULT_ACCOUNTS.tokenProgram = tokenProgramId;
+      DEFAULT_ACCOUNTS.tokenProgram = tokenProgramId;
 
+      it('can deposit and withdraw ocp NFTs - happy path', async () => {
         const creator = Keypair.generate();
         const nftRes = await createTestMintAndTokenOCP(
           connection,
@@ -214,8 +214,6 @@ describe('mmm-ocp', () => {
       });
 
       it('can fulfill sell - happy path', async () => {
-        DEFAULT_ACCOUNTS.tokenProgram = tokenProgramId;
-
         const buyer = Keypair.generate();
         const [poolData] = await Promise.all([
           createPoolWithExampleOcpDeposits(
@@ -366,8 +364,6 @@ describe('mmm-ocp', () => {
     });
 
     it('can fulfill buy - happy path', async () => {
-      DEFAULT_ACCOUNTS.tokenProgram = tokenProgramId;
-
       const seller = Keypair.generate();
       const policy = await createPolicyFixture(connection, wallet.payer);
       const [poolData] = await Promise.all([
@@ -538,8 +534,6 @@ describe('mmm-ocp', () => {
     });
 
     it('can fulfill two sided with negative maker fees - happy path', async () => {
-      DEFAULT_ACCOUNTS.tokenProgram = tokenProgramId;
-
       const seller = Keypair.generate();
       const buyer = Keypair.generate();
       const policy = await createPolicyFixture(connection, wallet.payer);

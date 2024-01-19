@@ -1,8 +1,7 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, TokenAccount},
-    token_interface::TokenInterface,
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use std::convert::TryFrom;
 
@@ -76,13 +75,13 @@ pub struct SolFulfillBuy<'info> {
     /// CHECK: we will check the master_edtion in check_allowlists_for_mint()
     pub asset_master_edition: UncheckedAccount<'info>,
     /// CHECK: check_allowlists_for_mint
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         token::mint = asset_mint,
         token::authority = payer,
     )]
-    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
+    pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: check in init_if_needed_ata
     #[account(mut)]
     pub sellside_escrow_token_account: UncheckedAccount<'info>,
