@@ -116,4 +116,15 @@ pub mod mmm {
     pub fn close_if_balance_invalid(ctx: Context<CloseIfBalanceInvalid>) -> Result<()> {
         instructions::close_if_balance_invalid::handler(ctx)
     }
+
+    pub fn set_shared_escrow(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Result<()> {
+        instructions::set_shared_escrow::handler(ctx, args)
+    }
+
+    pub fn sol_fulfill_buy_shared_escrow<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolFulfillBuySharedEscrow<'info>>,
+        args: SolFulfillBuySharedEscrowArgs,
+    ) -> Result<()> {
+        instructions::sol_fulfill_buy_shared_escrow::handler(ctx, args)
+    }
 }

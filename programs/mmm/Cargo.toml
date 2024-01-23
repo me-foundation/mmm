@@ -28,3 +28,4 @@ spl-associated-token-account = { version = "2.2.0", features = [
     "no-entrypoint",
 ] }
 spl-token-2022 = "0.9.0"
+m2_interface = { path = "../m2_interface" }

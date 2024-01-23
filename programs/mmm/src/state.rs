@@ -78,6 +78,8 @@ pub struct Pool {
     pub payment_mint: Pubkey,
     pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
     pub buyside_payment_amount: u64,
+
+    pub shared_escrow_account: Option<Pubkey>,
 }
 
 impl Pool {
@@ -90,7 +92,12 @@ impl Pool {
         2 + // bool
         32 + // [u8; 32]
         4 + (1 + 32) * ALLOWLIST_MAX_LEN + // Allowlist
-        392; // padding
+        (1 + 32) + // Option<Pubkey>
+        359; // padding
+
+    pub fn using_shared_escrow(&self) -> bool {
+        self.shared_escrow_account.is_some()
+    }
 }
 
 // seeds = [

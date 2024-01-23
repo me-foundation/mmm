@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token_interface::{Mint, TokenAccount, TokenInterface},
+    token::{Mint, Token, TokenAccount},
 };
 use std::convert::TryFrom;
 
@@ -19,7 +19,7 @@ use crate::{
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct SolFulfillBuyArgs {
+pub struct SolFulfillBuySharedEscrowArgs {
     pub asset_amount: u64,
     pub min_payment_amount: u64,
     pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
@@ -32,8 +32,8 @@ pub struct SolFulfillBuyArgs {
 // the seller expects a min_payment_amount that goes back to the
 // seller's wallet for the asset_amount that the seller wants to sell.
 #[derive(Accounts)]
-#[instruction(args:SolFulfillBuyArgs)]
-pub struct SolFulfillBuy<'info> {
+#[instruction(args:SolFulfillBuySharedEscrowArgs)]
+pub struct SolFulfillBuySharedEscrow<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK: we will check the owner field that matches the pool owner
@@ -57,10 +57,15 @@ pub struct SolFulfillBuy<'info> {
     /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
         mut,
-        seeds = [BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(), pool.key().as_ref()],
+        seeds = [
+            M2_PREFIX.as_bytes(),
+            M2_AUCTION_HOUSE.as_ref(),
+            owner.key().as_ref()
+        ],
         bump,
+        seeds::program = M2_PROGRAM,
     )]
-    pub buyside_sol_escrow_account: UncheckedAccount<'info>,
+    pub buyside_sol_shared_escrow_account: UncheckedAccount<'info>,
     /// CHECK: we will check the metadata in check_allowlists_for_mint()
     #[account(
     seeds = [
@@ -75,14 +80,13 @@ pub struct SolFulfillBuy<'info> {
     /// CHECK: we will check the master_edtion in check_allowlists_for_mint()
     pub asset_master_edition: UncheckedAccount<'info>,
     /// CHECK: check_allowlists_for_mint
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Account<'info, Mint>,
     #[account(
         mut,
         token::mint = asset_mint,
         token::authority = payer,
-        token::token_program = token_program,
     )]
-    pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
     /// CHECK: check in init_if_needed_ata
     #[account(mut)]
     pub sellside_escrow_token_account: UncheckedAccount<'info>,
@@ -104,14 +108,20 @@ pub struct SolFulfillBuy<'info> {
     )]
     pub sell_state: Account<'info, SellState>,
     pub system_program: Program<'info, System>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
+
+    /// CHECK: should be m2 program
+    #[account(
+        constraint = m2_program.key() == M2_PROGRAM,
+    )]
+    pub m2_program: UncheckedAccount<'info>,
 }
 
 pub fn handler<'info>(
-    ctx: Context<'_, '_, '_, 'info, SolFulfillBuy<'info>>,
-    args: SolFulfillBuyArgs,
+    ctx: Context<'_, '_, '_, 'info, SolFulfillBuySharedEscrow<'info>>,
+    args: SolFulfillBuySharedEscrowArgs,
 ) -> Result<()> {
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
@@ -126,12 +136,18 @@ pub fn handler<'info>(
     let asset_mint = &ctx.accounts.asset_mint;
     let payer_asset_metadata = &ctx.accounts.asset_metadata;
     let asset_master_edition = &ctx.accounts.asset_master_edition;
-    let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
+    let buyside_sol_shared_escrow_account = &ctx.accounts.buyside_sol_shared_escrow_account;
+
+    if !pool.using_shared_escrow() {
+        return Err(MMMErrorCode::InvalidAccountState.into());
+    }
+
     let pool_key = pool.key();
-    let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
-        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-        pool_key.as_ref(),
-        &[ctx.bumps.buyside_sol_escrow_account],
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        pool.owner.as_ref(),
+        pool.uuid.as_ref(),
+        &[ctx.bumps.pool],
     ]];
 
     let parsed_metadata = check_allowlists_for_mint(
@@ -146,15 +162,14 @@ pub fn handler<'info>(
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
     let metadata_royalty_bp = get_metadata_royalty_bp(total_price, &parsed_metadata, None);
     let seller_receives = {
-        let lp_fee_bp = get_lp_fee_bp(pool, buyside_sol_escrow_account.lamports());
         get_buyside_seller_receives(
             total_price,
-            lp_fee_bp,
+            0, // lp fee is 0 for shared escrow, because it cannot setup double sided shared escrow pool
             metadata_royalty_bp,
             pool.buyside_creator_royalty_bp,
         )
     }?;
-    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
+    let lp_fee = 0; // lp fee is 0 for shared escrow, because it cannot setup double sided shared escrow pool
 
     assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(seller_receives, args.maker_fee_bp)?;
@@ -166,77 +181,34 @@ pub fn handler<'info>(
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
-    if pool.reinvest_fulfill_buy {
-        if pool.using_shared_escrow() {
-            return Err(MMMErrorCode::InvalidAccountState.into());
-        }
-        let sellside_escrow_token_account =
-            ctx.accounts.sellside_escrow_token_account.to_account_info();
-        init_if_needed_ata(
-            sellside_escrow_token_account.to_account_info(),
-            payer.to_account_info(),
-            pool.to_account_info(),
-            asset_mint.to_account_info(),
-            associated_token_program.to_account_info(),
+    let owner_token_account = ctx.accounts.owner_token_account.to_account_info();
+    init_if_needed_ata(
+        owner_token_account.to_account_info(),
+        payer.to_account_info(),
+        owner.to_account_info(),
+        asset_mint.to_account_info(),
+        associated_token_program.to_account_info(),
+        token_program.to_account_info(),
+        system_program.to_account_info(),
+        rent.to_account_info(),
+    )?;
+    anchor_spl::token::transfer(
+        CpiContext::new(
             token_program.to_account_info(),
-            system_program.to_account_info(),
-            rent.to_account_info(),
-        )?;
-        let sellside_escrow_token_account =
-            ctx.accounts.sellside_escrow_token_account.to_account_info();
-        anchor_spl::token_2022::transfer(
-            CpiContext::new(
-                token_program.to_account_info(),
-                anchor_spl::token_2022::Transfer {
-                    from: payer_asset_account.to_account_info(),
-                    to: sellside_escrow_token_account.to_account_info(),
-                    authority: payer.to_account_info(),
-                },
-            ),
-            args.asset_amount,
-        )?;
-        pool.sellside_asset_amount = pool
-            .sellside_asset_amount
-            .checked_add(args.asset_amount)
-            .ok_or(MMMErrorCode::NumericOverflow)?;
-        sell_state.pool = pool.key();
-        sell_state.pool_owner = owner.key();
-        sell_state.asset_mint = asset_mint.key();
-        sell_state.cosigner_annotation = pool.cosigner_annotation;
-        sell_state.asset_amount = sell_state
-            .asset_amount
-            .checked_add(args.asset_amount)
-            .ok_or(MMMErrorCode::NumericOverflow)?;
-    } else {
-        let owner_token_account = ctx.accounts.owner_token_account.to_account_info();
-        init_if_needed_ata(
-            owner_token_account.to_account_info(),
-            payer.to_account_info(),
-            owner.to_account_info(),
-            asset_mint.to_account_info(),
-            associated_token_program.to_account_info(),
-            token_program.to_account_info(),
-            system_program.to_account_info(),
-            rent.to_account_info(),
-        )?;
-        anchor_spl::token_2022::transfer(
-            CpiContext::new(
-                token_program.to_account_info(),
-                anchor_spl::token_2022::Transfer {
-                    from: payer_asset_account.to_account_info(),
-                    to: owner_token_account.to_account_info(),
-                    authority: payer.to_account_info(),
-                },
-            ),
-            args.asset_amount,
-        )?;
-    }
+            anchor_spl::token::Transfer {
+                from: payer_asset_account.to_account_info(),
+                to: owner_token_account.to_account_info(),
+                authority: payer.to_account_info(),
+            },
+        ),
+        args.asset_amount,
+    )?;
 
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
-        anchor_spl::token_2022::close_account(CpiContext::new(
+        anchor_spl::token::close_account(CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token_2022::CloseAccount {
+            anchor_spl::token::CloseAccount {
                 account: payer_asset_account.to_account_info(),
                 destination: payer.to_account_info(),
                 authority: payer.to_account_info(),
@@ -284,21 +256,6 @@ pub fn handler<'info>(
         buyside_sol_escrow_account_seeds,
     )?;
 
-    if lp_fee > 0 {
-        anchor_lang::solana_program::program::invoke_signed(
-            &anchor_lang::solana_program::system_instruction::transfer(
-                buyside_sol_escrow_account.key,
-                owner.key,
-                lp_fee,
-            ),
-            &[
-                buyside_sol_escrow_account.to_account_info(),
-                owner.to_account_info(),
-                system_program.to_account_info(),
-            ],
-            buyside_sol_escrow_account_seeds,
-        )?;
-    }
     if referral_fee > 0 {
         anchor_lang::solana_program::program::invoke_signed(
             &anchor_lang::solana_program::system_instruction::transfer(
@@ -321,16 +278,7 @@ pub fn handler<'info>(
         .ok_or(MMMErrorCode::NumericOverflow)?;
     pool.spot_price = next_price;
 
-    try_close_escrow(
-        &buyside_sol_escrow_account.to_account_info(),
-        pool,
-        system_program,
-        buyside_sol_escrow_account_seeds,
-    )?;
-    try_close_sell_state(sell_state, payer.to_account_info())?;
-
-    pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-
+    pool.buyside_payment_amount = 0; // it should always be 0 for shared escrow fulfillment
     log_pool("post_sol_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 

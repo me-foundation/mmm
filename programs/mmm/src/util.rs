@@ -1,10 +1,11 @@
 use crate::{
     constants::{
-        MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
-        MIN_SOL_ESCROW_BALANCE_BP,
+        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX, MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP,
+        MAX_TOTAL_PRICE, MIN_SOL_ESCROW_BALANCE_BP, M2_PREFIX, M2_AUCTION_HOUSE, M2_PROGRAM,
     },
     errors::MMMErrorCode,
     state::*,
+    ID,
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
@@ -13,6 +14,7 @@ use mpl_token_metadata::{
     types::TokenStandard,
 };
 use open_creator_protocol::state::Policy;
+use solana_program::pubkey;
 use std::convert::TryFrom;
 
 // copied from mpl-token-metadata
@@ -336,6 +338,10 @@ pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'in
         return Ok(());
     }
 
+    if pool.using_shared_escrow() {
+        return Ok(());
+    }
+
     pool.to_account_info()
         .data
         .borrow_mut()
@@ -353,6 +359,12 @@ pub fn try_close_escrow<'info>(
     system_program: &Program<'info, System>,
     escrow_seeds: &[&[&[u8]]],
 ) -> Result<()> {
+    // if the pool is using shared escrow, then we don't need to close the escrow
+    // because the buyside escrow cannot be deposited to
+    if pool.using_shared_escrow() {
+        return Ok(());
+    }
+
     // minimum rent needed to sustain a 0 data account
     let min_rent = Rent::get()?.minimum_balance(0);
     // if the balance is less than a small percentage of the spot price, then close the escrow
@@ -422,6 +434,98 @@ pub fn get_metadata_royalty_bp(
             }
         },
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn pay_creator_fees_in_sol_with_shared_escrow<'info>(
+    buyside_creator_royalty_bp: u16,
+    total_price: u64,
+    parsed_metadata: &Metadata,
+    creator_accounts: &[AccountInfo<'info>],
+    payer: AccountInfo<'info>,
+    metadata_royalty_bp: u16,
+    payer_seeds: &[&[&[u8]]],
+    m2_program: AccountInfo<'info>,
+) -> Result<u64> {
+    // total royalty paid by the buyer, it's one of the following
+    //   - buyside_sol_escrow_account (when fulfill buy)
+    //   - payer                      (when fulfill sell)
+    // returns the total royalty paid
+    //   royalty = spot_price * (royalty_bp / 10000) * (buyside_creator_royalty_bp / 10000)
+    let royalty = ((total_price as u128)
+        .checked_mul(metadata_royalty_bp as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_mul(buyside_creator_royalty_bp as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?) as u64;
+
+    if royalty == 0 {
+        return Ok(0);
+    }
+
+    let creators = if let Some(creators) = &parsed_metadata.creators {
+        creators
+    } else {
+        return Ok(0);
+    };
+
+    if payer.lamports() < royalty {
+        return Err(MMMErrorCode::NotEnoughBalance.into());
+    }
+
+    // hardcoded the max threshold for InvalidMetadataCreatorRoyalty
+    if parsed_metadata.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
+        return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
+    }
+    let min_rent = Rent::get()?.minimum_balance(0);
+    let mut total_royalty: u64 = 0;
+
+    let creator_accounts_iter = &mut creator_accounts.iter();
+    for (index, creator) in creators.iter().enumerate() {
+        let creator_fee = if index == creators.len() - 1 {
+            royalty
+                .checked_sub(total_royalty)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+        } else {
+            (royalty as u128)
+                .checked_mul(creator.share as u128)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                .checked_div(100)
+                .ok_or(MMMErrorCode::NumericOverflow)? as u64
+        };
+        let current_creator_info = next_account_info(creator_accounts_iter)?;
+        if creator.address.ne(current_creator_info.key) {
+            return Err(MMMErrorCode::InvalidCreatorAddress.into());
+        }
+        let current_creator_lamports = current_creator_info.lamports();
+        if creator_fee > 0
+            && current_creator_lamports
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                > min_rent
+        {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    payer.key,
+                    current_creator_info.key,
+                    creator_fee,
+                ),
+                &[
+                    payer.to_account_info(),
+                    current_creator_info.to_account_info(),
+                    system_program.to_account_info(),
+                ],
+                payer_seeds,
+            )?;
+            total_royalty = total_royalty
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?;
+        }
+    }
+    Ok(total_royalty)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -546,4 +650,36 @@ pub fn assert_valid_fees_bp(maker_fee_bp: i16, taker_fee_bp: i16) -> Result<()> 
     }
 
     Ok(())
+}
+
+pub fn check_buyside_sol_escrow_account(
+    pda: &Pubkey,
+    pool_key: &Pubkey,
+    buyer: &Pubkey,
+) -> Result<Pubkey> {
+    let (single_pool_pda, _) = Pubkey::find_program_address(
+        &[
+            BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
+            pool_key.as_ref(),
+        ],
+        &ID,
+    );
+
+    if single_pool_pda == *pda {
+       return Ok(ID);
+    }
+
+    let (m2_shared_escrow_pda, _) = Pubkey::find_program_address(
+        &[
+            M2_PREFIX.as_bytes(),
+            M2_AUCTION_HOUSE.as_ref(),
+            buyer.as_ref(),
+        ],
+        &M2_PROGRAM,
+    );
+    if m2_shared_escrow_pda == *pda {
+       return Ok(M2_PROGRAM);
+    }
+
+    Err(MMMErrorCode::InvalidAccountState.into())
 }

@@ -1,6 +1,9 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::log_pool};
+use crate::{
+    constants::*, errors::MMMErrorCode,
+    state::Pool, util::log_pool,
+};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolDepositBuyArgs {
@@ -38,6 +41,10 @@ pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<(
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let system_program = &ctx.accounts.system_program;
     let pool = &mut ctx.accounts.pool;
+
+    if pool.using_shared_escrow() {
+        return Err(MMMErrorCode::InvalidAccountState.into());
+    }
 
     anchor_lang::solana_program::program::invoke(
         &anchor_lang::solana_program::system_instruction::transfer(

@@ -17,3 +17,7 @@ pub const CANCEL_AUTHORITY: Pubkey = if cfg!(feature = "anchor-test") {
     pubkey!("CNTuB1JiQD8Xh5SoRcEmF61yivN9F7uzdSaGnRex36wi")
 };
 pub const MPL_TOKEN_AUTH_RULES: Pubkey = pubkey!("auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg");
+
+pub const M2_PROGRAM: Pubkey = pubkey!("M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K");
+pub const M2_PREFIX: &str = "m2";
+pub const M2_AUCTION_HOUSE: Pubkey = pubkey!("E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe");
