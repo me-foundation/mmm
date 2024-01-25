@@ -4,8 +4,10 @@ import {
   Metaplex,
   PublicKey,
   token as getSplTokenAmount,
+  Amount,
+  CreateCompressedNftOutput,
 } from '@metaplex-foundation/js';
-import { Connection } from '@solana/web3.js';
+import { Connection, Signer } from '@solana/web3.js';
 import { getKeypair } from './generic';
 
 export const getMetaplexInstance = (conn: Connection) => {

@@ -2,13 +2,24 @@ import {
   CMT_PROGRAM,
   PROGRAM_ID as OCP_PROGRAM_ID,
 } from '@magiceden-oss/open_creator_protocol';
+import {
+  assertAccountExists,
+  createAmount,
+  generateSigner,
+  percentAmount,
+  publicKey,
+  Program as UmiProgram,
+} from '@metaplex-foundation/umi';
+import { createUmi } from '@metaplex-foundation/umi-bundle-tests';
+import {
+  createNft,
+  createV1,
+  TokenStandard,
+  mplTokenMetadata,
+  fetchDigitalAsset,
+} from '@metaplex-foundation/mpl-token-metadata';
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
-import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
-} from '@solana/spl-token';
 import {
   ComputeBudgetProgram,
   Connection,
@@ -19,6 +30,17 @@ import {
   SYSVAR_INSTRUCTIONS_PUBKEY,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
+import {
+  getAssociatedTokenAddress,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from '@solana/spl-token';
+import {
+  fromWeb3JsPublicKey,
+  toWeb3JsPublicKey,
+  toWeb3JsKeypair,
+  fromWeb3JsKeypair,
+} from '@metaplex-foundation/umi-web3js-adapters';
+import { PROGRAM_ID as AUTHORIZATION_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
 import {
   AllowlistKind,
   CurveKind,
@@ -37,9 +59,28 @@ import {
 } from './generic';
 import { createProgrammableNft } from './mip1';
 import { getMetaplexInstance, mintCollection, mintNfts } from './nfts';
+import { umiMintNfts, Nft } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
-import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
-import { PROGRAM_ID as AUTHORIZATION_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
+
+const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
+  'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
+);
+
+interface PoolData {
+  referral: anchor.web3.Keypair;
+  uuid: anchor.web3.Keypair;
+  poolKey: anchor.web3.PublicKey;
+  nft: Nft;
+  sft: Nft;
+  extraNft: Nft;
+  extraSft: Nft;
+  poolAtaNft: PublicKey;
+  poolAtaSft: PublicKey;
+  poolAtaExtraSft: PublicKey;
+  poolAtaExtraNft: PublicKey;
+  poolPaymentEscrow: anchor.web3.PublicKey;
+  nftCreator: anchor.web3.Keypair;
+}
 
 export const createPool = async (
   program: Program<Mmm>,
@@ -119,6 +160,7 @@ export const createPoolWithExampleDeposits = async (
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   const creator = Keypair.generate();
+
   const [nfts, sfts, extraNft, extraSft, allowlistValue] = await (async () => {
     const kindToUse = kinds[0];
     switch (kindToUse) {
@@ -344,7 +386,7 @@ export const createPoolWithExampleDeposits = async (
         rent: SYSVAR_RENT_PUBKEY,
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
-      .rpc();
+      .rpc({ skipPreflight: true });
 
     const { key: sellState2 } = getMMMSellStatePDA(
       program.programId,
@@ -376,7 +418,7 @@ export const createPoolWithExampleDeposits = async (
         rent: SYSVAR_RENT_PUBKEY,
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
-      .rpc();
+      .rpc({ skipPreflight: true });
   }
 
   const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
@@ -394,7 +436,7 @@ export const createPoolWithExampleDeposits = async (
         systemProgram: SystemProgram.programId,
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
-      .rpc();
+      .rpc({ skipPreflight: true });
   }
 
   return {
@@ -529,6 +571,284 @@ export const createPoolWithExampleOcpDeposits = async (
     ...poolData,
   };
 };
+
+export async function createPoolWithExampleDepositsUmi(
+  program: Program<Mmm>,
+  connection: Connection,
+  kinds: AllowlistKind[],
+  poolArgs: Parameters<typeof createPool>[1],
+  side: 'buy' | 'sell' | 'both',
+  tokenProgramId: PublicKey,
+  nftRecipient: PublicKey,
+): Promise<PoolData> {
+  const umi = (await createUmi('http://127.0.0.1:8899')).use(
+    mplTokenMetadata(),
+  );
+
+  const mint = generateSigner(umi);
+  await createNft(umi, {
+    mint,
+    tokenOwner: umi.identity.publicKey,
+    name: 'test',
+    uri: `nft://0.json`,
+    sellerFeeBasisPoints: createAmount(100, '%', 2),
+    collection: null,
+    creators: null,
+    splTokenProgram: fromWeb3JsPublicKey(tokenProgramId),
+  }).sendAndConfirm(umi, { send: { skipPreflight: true } });
+
+  const creator = generateSigner(umi);
+
+  const token2022Program: UmiProgram = {
+    name: 'splToken2022',
+    publicKey: publicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+    getErrorFromCode: () => null,
+    getErrorFromName: () => null,
+    isOnCluster: () => true,
+  };
+  umi.programs.add(token2022Program);
+
+  const kindToUse = kinds[0];
+
+  const nfts: Nft[] = [];
+  const sfts: Nft[] = [];
+  const extraNfts: Nft[] = [];
+  const extraSfts: Nft[] = [];
+  let allowlistValue = null;
+
+  try {
+    switch (kindToUse) {
+      case AllowlistKind.any:
+      case AllowlistKind.mint:
+        nfts.push(
+          ...(await umiMintNfts(
+            umi,
+            {
+              nftNumber: 1,
+              recipient: fromWeb3JsPublicKey(poolArgs.owner),
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+            },
+            tokenProgramId,
+          )),
+        );
+        sfts.push(
+          ...(await umiMintNfts(
+            umi,
+            {
+              nftNumber: 1,
+              recipient: fromWeb3JsPublicKey(poolArgs.owner),
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              sftAmount: 10,
+            },
+            tokenProgramId,
+          )),
+        );
+        extraNfts.push(
+          ...(await umiMintNfts(
+            umi,
+            {
+              nftNumber: 1,
+              recipient: fromWeb3JsPublicKey(nftRecipient),
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+            },
+            tokenProgramId,
+          )),
+        );
+        extraSfts.push(
+          ...(await umiMintNfts(
+            umi,
+            {
+              nftNumber: 1,
+              recipient: fromWeb3JsPublicKey(nftRecipient),
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              sftAmount: 10,
+            },
+            tokenProgramId,
+          )),
+        );
+        break;
+      default:
+        console.log("don't know how to handle this kind");
+        throw new Error(
+          `unsupported allowlist kind passed while minting test nfts: ${kindToUse}`,
+        );
+    }
+  } catch (e) {
+    console.log(`error minting nfts: ${e}`);
+  }
+
+  const mintAddressNft = toWeb3JsPublicKey(nfts[0].mintAddress);
+  const metadataAddressNft = toWeb3JsPublicKey(nfts[0].metadataAddress);
+  const editionAddressNft = toWeb3JsPublicKey(nfts[0].masterEditionAddress);
+  const mintAddressSft = toWeb3JsPublicKey(sfts[0].mintAddress);
+  const metadataAddressSft = toWeb3JsPublicKey(sfts[0].metadataAddress);
+  const editionAddressSft = toWeb3JsPublicKey(sfts[0].masterEditionAddress);
+
+  const allowlists = fillAllowlists(
+    kinds
+      .map((kind) => {
+        switch (kind) {
+          case AllowlistKind.fvca:
+            return [{ kind: AllowlistKind.fvca, value: allowlistValue! }];
+          case AllowlistKind.mcc:
+            return [{ kind: AllowlistKind.mcc, value: allowlistValue! }];
+          case AllowlistKind.mint:
+            return [
+              { kind: AllowlistKind.mint, value: mintAddressNft },
+              { kind: AllowlistKind.mint, value: mintAddressSft },
+              {
+                kind: AllowlistKind.mint,
+                value: toWeb3JsPublicKey(extraNfts[0].mintAddress),
+              },
+              {
+                kind: AllowlistKind.mint,
+                value: toWeb3JsPublicKey(extraSfts[0].mintAddress),
+              },
+            ];
+          case AllowlistKind.metadata:
+            return [
+              {
+                kind: AllowlistKind.metadata,
+                value: toWeb3JsPublicKey(nfts[0].metadataAddress),
+              },
+            ];
+          case AllowlistKind.any:
+            return [{ kind: AllowlistKind.any, value: PublicKey.default }];
+          default:
+            throw new Error(
+              `unsupported allowlist kind while building allowlist: ${kind}`,
+            );
+        }
+      })
+      .flat(),
+    6,
+  );
+
+  const poolData = await createPool(program, {
+    ...poolArgs,
+    allowlists,
+  });
+  const poolKey = poolData.poolKey;
+
+  const poolAtaNft = await getAssociatedTokenAddress(
+    mintAddressNft,
+    poolKey,
+    true,
+    tokenProgramId,
+  );
+  const poolAtaSft = await getAssociatedTokenAddress(
+    mintAddressSft,
+    poolKey,
+    true,
+    tokenProgramId,
+  );
+  const poolAtaExtraNft = await getAssociatedTokenAddress(
+    toWeb3JsPublicKey(extraNfts[0].mintAddress),
+    poolKey,
+    true,
+    tokenProgramId,
+  );
+  const poolAtaExtraSft = await getAssociatedTokenAddress(
+    toWeb3JsPublicKey(extraSfts[0].mintAddress),
+    poolKey,
+    true,
+    tokenProgramId,
+  );
+
+  if (side === 'both' || side === 'sell') {
+    const { key: sellState1 } = getMMMSellStatePDA(
+      program.programId,
+      poolKey,
+      mintAddressNft,
+    );
+    await program.methods
+      .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        assetMetadata: metadataAddressNft,
+        assetMasterEdition: editionAddressNft,
+        assetMint: mintAddressNft,
+        assetTokenAccount: nfts[0].tokenAddress!,
+        allowlistAuxAccount: SystemProgram.programId,
+        sellState: sellState1,
+        sellsideEscrowTokenAccount: poolAtaNft,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: tokenProgramId,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+
+    const { key: sellState2 } = getMMMSellStatePDA(
+      program.programId,
+      poolKey,
+      mintAddressSft,
+    );
+    await program.methods
+      .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        assetMetadata: metadataAddressSft,
+        assetMasterEdition: editionAddressSft,
+        assetMint: mintAddressSft,
+        assetTokenAccount: sfts[0].tokenAddress!,
+        allowlistAuxAccount: SystemProgram.programId,
+        sellState: sellState2,
+        sellsideEscrowTokenAccount: poolAtaSft,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: tokenProgramId,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+    program.programId,
+    poolKey,
+  );
+  if (side === 'both' || side === 'buy') {
+    await program.methods
+      .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        buysideSolEscrowAccount: solEscrowKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  return {
+    nft: nfts[0],
+    sft: sfts[0],
+    extraNft: extraNfts[0],
+    extraSft: extraSfts[0],
+    poolAtaNft: poolAtaNft,
+    poolAtaSft: poolAtaSft,
+    poolAtaExtraSft,
+    poolAtaExtraNft,
+    poolPaymentEscrow: solEscrowKey,
+    nftCreator: toWeb3JsKeypair(creator),
+    ...poolData,
+  };
+}
 
 export const createPoolWithExampleMip1Deposits = async (
   program: Program<Mmm>,

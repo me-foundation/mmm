@@ -5,8 +5,10 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
+  unpackAccount,
 } from '@solana/spl-token';
 import {
+  ComputeBudgetProgram,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
@@ -25,12 +27,15 @@ import {
 import {
   airdrop,
   createPoolWithExampleDeposits,
+  createPoolWithExampleDepositsUmi,
   getEmptyAllowLists,
   getMetaplexInstance,
   sendAndAssertTx,
 } from './utils';
+import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
+import { token } from '@metaplex-foundation/js';
 
-describe('mmm-any-allowlist', () => {
+describe.only('mmm-any-allowlist', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   // only testing any allowlist, not many balance checks done
@@ -48,16 +53,16 @@ describe('mmm-any-allowlist', () => {
 
   beforeEach(async () => {
     await airdrop(connection, wallet.publicKey, 50);
+    await airdrop(connection, cosigner.publicKey, 50);
   });
 
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
-    describe(`Token program: ${tokenProgramId}`, () => {
-      it('can fulfill with allowlist set to any', async () => {
+    describe.only(`Token program: ${tokenProgramId}`, () => {
+      it.only('can fulfill with allowlist set to any', async () => {
         const seller = Keypair.generate();
         const buyer = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
         const [poolData] = await Promise.all([
-          createPoolWithExampleDeposits(
+          createPoolWithExampleDepositsUmi(
             program,
             connection,
             [AllowlistKind.any],
@@ -76,6 +81,7 @@ describe('mmm-any-allowlist', () => {
           airdrop(connection, seller.publicKey, 10),
           airdrop(connection, buyer.publicKey, 10),
         ]);
+
         const poolAccount = await program.account.pool.fetch(poolData.poolKey);
         assert.deepEqual(poolAccount.allowlists, [
           { kind: AllowlistKind.any, value: PublicKey.default },
@@ -83,13 +89,15 @@ describe('mmm-any-allowlist', () => {
         ]);
 
         const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
-          poolData.extraNft.mintAddress,
+          toWeb3JsPublicKey(poolData.extraNft.mintAddress),
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: extraNftSellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.extraNft.mintAddress,
+          toWeb3JsPublicKey(poolData.extraNft.mintAddress),
         );
         const sellTx = await program.methods
           .solFulfillBuy({
@@ -106,38 +114,47 @@ describe('mmm-any-allowlist', () => {
             referral: poolData.referral.publicKey,
             pool: poolData.poolKey,
             buysideSolEscrowAccount: poolData.poolPaymentEscrow,
-            assetMetadata: poolData.extraNft.metadataAddress,
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: poolData.extraNft.mintAddress }),
-            assetMint: poolData.extraNft.mintAddress,
-            payerAssetAccount: poolData.extraNft.tokenAddress!,
+            assetMetadata: toWeb3JsPublicKey(poolData.extraNft.metadataAddress),
+            assetMasterEdition: toWeb3JsPublicKey(
+              poolData.extraNft.masterEditionAddress,
+            ),
+            assetMint: toWeb3JsPublicKey(poolData.extraNft.mintAddress),
+            payerAssetAccount: toWeb3JsPublicKey(
+              poolData.extraNft.tokenAddress!,
+            ),
             sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
             ownerTokenAccount: ownerExtraNftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
             systemProgram: SystemProgram.programId,
-            tokenProgram: TOKEN_PROGRAM_ID,
+            tokenProgram: tokenProgramId,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             rent: SYSVAR_RENT_PUBKEY,
             sellState: extraNftSellState,
           })
+          .preInstructions([
+            ComputeBudgetProgram.setComputeUnitLimit({ units: 500_0000 }),
+          ])
           .transaction();
 
         const blockhashData = await connection.getLatestBlockhash();
         sellTx.feePayer = seller.publicKey;
         sellTx.recentBlockhash = blockhashData.blockhash;
         sellTx.partialSign(cosigner, seller);
-
         await sendAndAssertTx(connection, sellTx, blockhashData, true);
-        const poolAtaExtraNft = await getTokenAccount(
-          connection,
+
+        const account = await connection.getAccountInfo(
           poolData.poolAtaExtraNft,
         );
+        const poolAtaExtraNft = unpackAccount(
+          poolData.poolAtaExtraNft,
+          account,
+          tokenProgramId,
+        );
+
         assert.equal(Number(poolAtaExtraNft.amount), 1);
         assert.equal(
           poolAtaExtraNft.mint.toBase58(),
-          poolData.extraNft.mintAddress.toBase58(),
+          toWeb3JsPublicKey(poolData.extraNft.mintAddress).toBase58(),
         );
         assert.equal(
           poolAtaExtraNft.owner.toBase58(),
@@ -145,14 +162,24 @@ describe('mmm-any-allowlist', () => {
         );
 
         const buyerNftAtaAddress = await getAssociatedTokenAddress(
-          poolData.nft.mintAddress,
+          toWeb3JsPublicKey(poolData.nft.mintAddress),
           buyer.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: nftSellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.nft.mintAddress,
+          toWeb3JsPublicKey(poolData.nft.mintAddress),
         );
+
+        // console.log('mint asset', poolData.nft.mintAddress.toString());
+        // console.log('pool', poolData.poolKey.toString());
+        // console.log('programID', tokenProgramId.toString());
+        // console.log(
+        //   'sellsideEscrowTokenAccount',
+        //   poolData.poolAtaNft.toString(),
+        // );
 
         const buyTx = await program.methods
           .solFulfillSell({
@@ -170,18 +197,17 @@ describe('mmm-any-allowlist', () => {
             referral: poolData.referral.publicKey,
             pool: poolData.poolKey,
             buysideSolEscrowAccount: poolData.poolPaymentEscrow,
-            assetMetadata: poolData.nft.metadataAddress,
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: poolData.nft.mintAddress }),
-            assetMint: poolData.nft.mintAddress,
+            assetMetadata: toWeb3JsPublicKey(poolData.nft.metadataAddress),
+            assetMasterEdition: toWeb3JsPublicKey(
+              poolData.nft.masterEditionAddress,
+            ),
+            assetMint: toWeb3JsPublicKey(poolData.nft.mintAddress),
             sellsideEscrowTokenAccount: poolData.poolAtaNft,
             payerAssetAccount: buyerNftAtaAddress,
             allowlistAuxAccount: SystemProgram.programId,
             sellState: nftSellState,
             systemProgram: SystemProgram.programId,
-            tokenProgram: TOKEN_PROGRAM_ID,
+            tokenProgram: tokenProgramId,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             rent: SYSVAR_RENT_PUBKEY,
           })
@@ -191,14 +217,18 @@ describe('mmm-any-allowlist', () => {
         buyTx.partialSign(cosigner, buyer);
 
         await sendAndAssertTx(connection, buyTx, blockhashData, true);
-        const buyerAtaNft = await getTokenAccount(
-          connection,
+
+        const a = await connection.getAccountInfo(buyerNftAtaAddress);
+        const buyerAtaNft = unpackAccount(
           buyerNftAtaAddress,
+          a,
+          tokenProgramId,
         );
+
         assert.equal(Number(buyerAtaNft.amount), 1);
         assert.equal(
           buyerAtaNft.mint.toBase58(),
-          poolData.nft.mintAddress.toBase58(),
+          poolData.nft.mintAddress.toString(),
         );
         assert.equal(buyerAtaNft.owner.toBase58(), buyer.publicKey.toBase58());
       });
