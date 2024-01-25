@@ -127,7 +127,3 @@ anchor test
 
 ## Security
 [Audit by Halborn](./docs/Security_Audit_Report_Halborn_Final.pdf)
-
-## License
-- Apache 2.0 for `./sdk` and the anchor generated cpi of MMM.
-- AGPL 3.0 for `./programs`.
