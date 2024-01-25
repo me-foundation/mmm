@@ -137,6 +137,7 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
             associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             payer: owner.to_account_info(),
         },
+        &token_program.key(),
     )?;
 
     open_creator_protocol::cpi::transfer(CpiContext::new_with_signer(

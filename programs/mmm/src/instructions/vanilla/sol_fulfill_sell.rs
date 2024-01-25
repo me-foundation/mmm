@@ -80,6 +80,7 @@ pub struct SolFulfillSell<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
+        associated_token::token_program = token_program,
     )]
     pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(

@@ -202,6 +202,7 @@ pub fn handler<'info>(
             associated_token_program: associated_token_program.to_account_info(),
             payer: payer.to_account_info(),
         },
+        &token_program.key(),
     )?;
 
     open_creator_protocol::cpi::transfer(CpiContext::new(

@@ -194,6 +194,7 @@ pub fn handler<'info>(
             associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             payer: payer.to_account_info(),
         },
+        &token_program.key(),
     )?;
 
     // TODO: make sure that the lp fee is paid with the correct amount
