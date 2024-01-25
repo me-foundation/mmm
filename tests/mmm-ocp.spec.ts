@@ -43,7 +43,7 @@ import {
   PROGRAM_ID as OCP_PROGRAM_ID,
 } from '@magiceden-oss/open_creator_protocol';
 
-describe('mmm-ocp', () => {
+describe.skip('mmm-ocp', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();

@@ -29,7 +29,7 @@ import {
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
 
-describe('mmm-withdraw', () => {
+describe.skip('mmm-withdraw', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();

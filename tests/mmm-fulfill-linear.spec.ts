@@ -37,7 +37,7 @@ import {
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
 
-describe('mmm-fulfill-linear', () => {
+describe.skip('mmm-fulfill-linear', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();

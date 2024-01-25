@@ -80,6 +80,7 @@ pub struct SolFulfillBuy<'info> {
         mut,
         token::mint = asset_mint,
         token::authority = payer,
+        token::token_program = token_program,
     )]
     pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: check in init_if_needed_ata

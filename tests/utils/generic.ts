@@ -1,4 +1,4 @@
-import { AccountLayout } from '@solana/spl-token';
+import { Account, AccountLayout, unpackAccount } from '@solana/spl-token';
 import * as anchor from '@project-serum/anchor';
 import {
   Connection,
@@ -160,3 +160,21 @@ export const assertFailedTx = (
     })}`,
   );
 };
+
+export async function getTokenAccount2022(
+  connection: Connection,
+  address: PublicKey,
+  tokenProgramId: PublicKey,
+): Promise<Account> {
+  const accountInfo = await connection.getAccountInfo(address);
+  if (!accountInfo) {
+    throw new Error(`Account ${address.toBase58()} does not exist`);
+  }
+  if (!accountInfo.owner.equals(tokenProgramId)) {
+    throw new Error(
+      `Account ${address.toBase58()} is not owned by the token program`,
+    );
+  }
+
+  return unpackAccount(address, accountInfo, tokenProgramId);
+}

@@ -35,7 +35,7 @@ import {
 import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 import { token } from '@metaplex-foundation/js';
 
-describe.only('mmm-any-allowlist', () => {
+describe('mmm-any-allowlist', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   // only testing any allowlist, not many balance checks done
@@ -57,8 +57,8 @@ describe.only('mmm-any-allowlist', () => {
   });
 
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
-    describe.only(`Token program: ${tokenProgramId}`, () => {
-      it.only('can fulfill with allowlist set to any', async () => {
+    describe(`Token program: ${tokenProgramId}`, () => {
+      it('can fulfill with allowlist set to any', async () => {
         const seller = Keypair.generate();
         const buyer = Keypair.generate();
         const [poolData] = await Promise.all([
@@ -172,14 +172,6 @@ describe.only('mmm-any-allowlist', () => {
           poolData.poolKey,
           toWeb3JsPublicKey(poolData.nft.mintAddress),
         );
-
-        // console.log('mint asset', poolData.nft.mintAddress.toString());
-        // console.log('pool', poolData.poolKey.toString());
-        // console.log('programID', tokenProgramId.toString());
-        // console.log(
-        //   'sellsideEscrowTokenAccount',
-        //   poolData.poolAtaNft.toString(),
-        // );
 
         const buyTx = await program.methods
           .solFulfillSell({

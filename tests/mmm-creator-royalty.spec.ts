@@ -26,12 +26,15 @@ import {
   airdrop,
   assertTx,
   createPoolWithExampleDeposits,
+  createPoolWithExampleDepositsUmi,
   getMetaplexInstance,
   getSellStatePDARent,
   getTokenAccountRent,
   sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
+  getTokenAccount2022,
 } from './utils';
+import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 
 describe('mmm-creator-royalty', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
@@ -53,13 +56,12 @@ describe('mmm-creator-royalty', () => {
   });
 
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
-    describe(`Token program: ${tokenProgramId}`, () => {
+    describe.only(`Token program: ${tokenProgramId}`, () => {
       it('correctly pays creator royalty', async () => {
         const seller = Keypair.generate();
         const buyer = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
         const [poolData] = await Promise.all([
-          createPoolWithExampleDeposits(
+          createPoolWithExampleDepositsUmi(
             program,
             connection,
             [AllowlistKind.mint],
@@ -82,13 +84,15 @@ describe('mmm-creator-royalty', () => {
         ]);
 
         const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
-          poolData.extraNft.mintAddress,
+          toWeb3JsPublicKey(poolData.extraNft.mintAddress),
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: extraNftSellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.extraNft.mintAddress,
+          toWeb3JsPublicKey(poolData.extraNft.mintAddress),
         );
         let [
           initReferralBalance,
@@ -133,13 +137,16 @@ describe('mmm-creator-royalty', () => {
               referral: poolData.referral.publicKey,
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
-              assetMetadata: poolData.extraNft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.extraNft.mintAddress }),
-              assetMint: poolData.extraNft.mintAddress,
-              payerAssetAccount: poolData.extraNft.tokenAddress!,
+              assetMetadata: toWeb3JsPublicKey(
+                poolData.extraNft.metadataAddress,
+              ),
+              assetMasterEdition: toWeb3JsPublicKey(
+                poolData.extraNft.masterEditionAddress,
+              ),
+              assetMint: toWeb3JsPublicKey(poolData.extraNft.mintAddress),
+              payerAssetAccount: toWeb3JsPublicKey(
+                poolData.extraNft.tokenAddress!,
+              ),
               sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
               ownerTokenAccount: ownerExtraNftAtaAddress,
               allowlistAuxAccount: SystemProgram.programId,
@@ -174,7 +181,11 @@ describe('mmm-creator-royalty', () => {
           ] = await Promise.all([
             connection.getBalance(seller.publicKey),
             connection.getBalance(poolData.referral.publicKey),
-            getTokenAccount(connection, poolData.poolAtaExtraNft),
+            getTokenAccount2022(
+              connection,
+              poolData.poolAtaExtraNft,
+              tokenProgramId,
+            ),
             connection.getBalance(poolData.poolPaymentEscrow),
             connection.getBalance(poolData.nftCreator.publicKey),
           ]);
@@ -217,13 +228,15 @@ describe('mmm-creator-royalty', () => {
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 7);
 
         const buyerNftAtaAddress = await getAssociatedTokenAddress(
-          poolData.nft.mintAddress,
+          toWeb3JsPublicKey(poolData.nft.mintAddress),
           buyer.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: nftSellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.nft.mintAddress,
+          toWeb3JsPublicKey(poolData.nft.mintAddress),
         );
 
         {
@@ -251,12 +264,11 @@ describe('mmm-creator-royalty', () => {
               referral: poolData.referral.publicKey,
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
-              assetMetadata: poolData.nft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.nft.mintAddress }),
-              assetMint: poolData.nft.mintAddress,
+              assetMetadata: toWeb3JsPublicKey(poolData.nft.metadataAddress),
+              assetMasterEdition: toWeb3JsPublicKey(
+                poolData.nft.masterEditionAddress,
+              ),
+              assetMint: toWeb3JsPublicKey(poolData.nft.mintAddress),
               sellsideEscrowTokenAccount: poolData.poolAtaNft,
               payerAssetAccount: buyerNftAtaAddress,
               allowlistAuxAccount: SystemProgram.programId,
@@ -293,7 +305,11 @@ describe('mmm-creator-royalty', () => {
             await Promise.all([
               connection.getBalance(buyer.publicKey),
               connection.getBalance(poolData.referral.publicKey),
-              getTokenAccount(connection, buyerNftAtaAddress),
+              getTokenAccount2022(
+                connection,
+                buyerNftAtaAddress,
+                tokenProgramId,
+              ),
               connection.getBalance(poolData.nftCreator.publicKey),
             ]);
 

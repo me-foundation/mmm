@@ -22,7 +22,7 @@ describe('mmm-admin', () => {
   const wallet = new anchor.Wallet(Keypair.generate());
   const provider = new anchor.AnchorProvider(connection, wallet, {
     commitment: 'processed',
-  });
+  }); 
   const program = new anchor.Program(
     IDL,
     MMMProgramID,

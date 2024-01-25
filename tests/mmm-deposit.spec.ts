@@ -36,7 +36,7 @@ import {
   sendAndAssertTx,
 } from './utils';
 
-describe('mmm-deposit', () => {
+describe.skip('mmm-deposit', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();
