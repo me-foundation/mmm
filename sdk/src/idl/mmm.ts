@@ -1568,6 +1568,34 @@ export type Mmm = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "setSharedEscrow",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "SetSharedEscrowArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1663,6 +1691,12 @@ export type Mmm = {
           {
             "name": "buysidePaymentAmount",
             "type": "u64"
+          },
+          {
+            "name": "sharedEscrowAccount",
+            "type": {
+              "option": "publicKey"
+            }
           }
         ]
       }
@@ -1770,6 +1804,18 @@ export type Mmm = {
                 6
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SetSharedEscrowArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sharedEscrowAccount",
+            "type": "publicKey"
           }
         ]
       }
@@ -2192,6 +2238,11 @@ export type Mmm = {
       "code": 6028,
       "name": "UnexpectedMetadataUri",
       "msg": "Unexpected metadata uri"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidRemainingAccounts",
+      "msg": "Invalid remaining accounts"
     }
   ]
 };
@@ -3766,6 +3817,34 @@ export const IDL: Mmm = {
         }
       ],
       "args": []
+    },
+    {
+      "name": "setSharedEscrow",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "SetSharedEscrowArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -3861,6 +3940,12 @@ export const IDL: Mmm = {
           {
             "name": "buysidePaymentAmount",
             "type": "u64"
+          },
+          {
+            "name": "sharedEscrowAccount",
+            "type": {
+              "option": "publicKey"
+            }
           }
         ]
       }
@@ -3968,6 +4053,18 @@ export const IDL: Mmm = {
                 6
               ]
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SetSharedEscrowArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "sharedEscrowAccount",
+            "type": "publicKey"
           }
         ]
       }
@@ -4390,6 +4487,11 @@ export const IDL: Mmm = {
       "code": 6028,
       "name": "UnexpectedMetadataUri",
       "msg": "Unexpected metadata uri"
+    },
+    {
+      "code": 6029,
+      "name": "InvalidRemainingAccounts",
+      "msg": "Invalid remaining accounts"
     }
   ]
 };

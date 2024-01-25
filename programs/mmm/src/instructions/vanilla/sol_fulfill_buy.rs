@@ -107,6 +107,13 @@ pub struct SolFulfillBuy<'info> {
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
+    // Remaining accounts
+    // Branch: using shared escrow accounts
+    //   0: m2_program
+    //   1: shared_escrow_account
+    //   2+: creator accounts
+    // Branch: not using shared escrow accounts
+    //   0+: creator accounts
 }
 
 pub fn handler<'info>(

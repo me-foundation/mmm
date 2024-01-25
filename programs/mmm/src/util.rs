@@ -14,7 +14,6 @@ use mpl_token_metadata::{
     types::TokenStandard,
 };
 use open_creator_protocol::state::Policy;
-use solana_program::pubkey;
 use std::convert::TryFrom;
 
 // copied from mpl-token-metadata
@@ -434,98 +433,6 @@ pub fn get_metadata_royalty_bp(
             }
         },
     }
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn pay_creator_fees_in_sol_with_shared_escrow<'info>(
-    buyside_creator_royalty_bp: u16,
-    total_price: u64,
-    parsed_metadata: &Metadata,
-    creator_accounts: &[AccountInfo<'info>],
-    payer: AccountInfo<'info>,
-    metadata_royalty_bp: u16,
-    payer_seeds: &[&[&[u8]]],
-    m2_program: AccountInfo<'info>,
-) -> Result<u64> {
-    // total royalty paid by the buyer, it's one of the following
-    //   - buyside_sol_escrow_account (when fulfill buy)
-    //   - payer                      (when fulfill sell)
-    // returns the total royalty paid
-    //   royalty = spot_price * (royalty_bp / 10000) * (buyside_creator_royalty_bp / 10000)
-    let royalty = ((total_price as u128)
-        .checked_mul(metadata_royalty_bp as u128)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_div(10000)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_mul(buyside_creator_royalty_bp as u128)
-        .ok_or(MMMErrorCode::NumericOverflow)?
-        .checked_div(10000)
-        .ok_or(MMMErrorCode::NumericOverflow)?) as u64;
-
-    if royalty == 0 {
-        return Ok(0);
-    }
-
-    let creators = if let Some(creators) = &parsed_metadata.creators {
-        creators
-    } else {
-        return Ok(0);
-    };
-
-    if payer.lamports() < royalty {
-        return Err(MMMErrorCode::NotEnoughBalance.into());
-    }
-
-    // hardcoded the max threshold for InvalidMetadataCreatorRoyalty
-    if parsed_metadata.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
-        return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
-    }
-    let min_rent = Rent::get()?.minimum_balance(0);
-    let mut total_royalty: u64 = 0;
-
-    let creator_accounts_iter = &mut creator_accounts.iter();
-    for (index, creator) in creators.iter().enumerate() {
-        let creator_fee = if index == creators.len() - 1 {
-            royalty
-                .checked_sub(total_royalty)
-                .ok_or(MMMErrorCode::NumericOverflow)?
-        } else {
-            (royalty as u128)
-                .checked_mul(creator.share as u128)
-                .ok_or(MMMErrorCode::NumericOverflow)?
-                .checked_div(100)
-                .ok_or(MMMErrorCode::NumericOverflow)? as u64
-        };
-        let current_creator_info = next_account_info(creator_accounts_iter)?;
-        if creator.address.ne(current_creator_info.key) {
-            return Err(MMMErrorCode::InvalidCreatorAddress.into());
-        }
-        let current_creator_lamports = current_creator_info.lamports();
-        if creator_fee > 0
-            && current_creator_lamports
-                .checked_add(creator_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)?
-                > min_rent
-        {
-            anchor_lang::solana_program::program::invoke_signed(
-                &anchor_lang::solana_program::system_instruction::transfer(
-                    payer.key,
-                    current_creator_info.key,
-                    creator_fee,
-                ),
-                &[
-                    payer.to_account_info(),
-                    current_creator_info.to_account_info(),
-                    system_program.to_account_info(),
-                ],
-                payer_seeds,
-            )?;
-            total_royalty = total_royalty
-                .checked_add(creator_fee)
-                .ok_or(MMMErrorCode::NumericOverflow)?;
-        }
-    }
-    Ok(total_royalty)
 }
 
 #[allow(clippy::too_many_arguments)]
