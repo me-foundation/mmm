@@ -9,6 +9,7 @@ import {
 } from '@metaplex-foundation/js';
 import { Connection, Signer } from '@solana/web3.js';
 import { getKeypair } from './generic';
+import { umiMintNfts } from './umiNfts';
 
 export const getMetaplexInstance = (conn: Connection) => {
   return Metaplex.make(conn).use(keypairIdentity(getKeypair()));

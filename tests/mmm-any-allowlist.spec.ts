@@ -1,7 +1,6 @@
 import * as anchor from '@project-serum/anchor';
 import {
   getAssociatedTokenAddress,
-  getAccount as getTokenAccount,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
@@ -26,14 +25,11 @@ import {
 } from '../sdk/src';
 import {
   airdrop,
-  createPoolWithExampleDeposits,
   createPoolWithExampleDepositsUmi,
   getEmptyAllowLists,
-  getMetaplexInstance,
   sendAndAssertTx,
 } from './utils';
 import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
-import { token } from '@metaplex-foundation/js';
 
 describe('mmm-any-allowlist', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];

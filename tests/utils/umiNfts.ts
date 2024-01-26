@@ -4,6 +4,7 @@ import {
   createAmount,
   PublicKey,
   KeypairSigner,
+  OptionOrNullable,
 } from '@metaplex-foundation/umi';
 import {
   createFungibleAsset,
@@ -14,6 +15,12 @@ import {
   mintV1,
   TokenStandard,
   createV1,
+  Collection,
+  fetchMetadataFromSeeds,
+  updateV1,
+  collectionToggle,
+  verifyCollectionV1,
+  verifyCreatorV1,
 } from '@metaplex-foundation/mpl-token-metadata';
 import {
   fromWeb3JsPublicKey,
@@ -33,9 +40,12 @@ export interface Nft {
 export async function umiMintNfts(
   umi: Umi,
   config: {
-    nftNumber: number;
-    creators: Creator[];
+    numNfts: number;
+    creators?: Creator[];
     recipient?: PublicKey;
+    collectionAddress?: PublicKey;
+    verifyCollection: boolean;
+    creatorSigner?: KeypairSigner;
     sftAmount?: number; // if this is set, will mint sft instread of nft
   },
   splTokenProgramId: Web3PublicKey,
@@ -45,14 +55,14 @@ export async function umiMintNfts(
   const splTokenProgram = fromWeb3JsPublicKey(splTokenProgramId);
 
   // Derive all the NFT accounts.
-  for (let i = 0; i < config.nftNumber; i++) {
+  for (let i = 0; i < config.numNfts; i++) {
     const mint = generateSigner(umi);
     const metadata = findMetadataPda(umi, { mint: mint.publicKey })[0];
     const edition = findMasterEditionPda(umi, { mint: mint.publicKey })[0];
     const token = fromWeb3JsPublicKey(
       await getAssociatedTokenAddress(
         toWeb3JsPublicKey(mint.publicKey),
-        toWeb3JsPublicKey(config.recipient!),
+        toWeb3JsPublicKey(config.recipient ?? umi.identity.publicKey),
         true,
         splTokenProgramId,
       ),
@@ -67,6 +77,14 @@ export async function umiMintNfts(
     });
   }
 
+  let collection: OptionOrNullable<Collection> = null;
+  if (config.collectionAddress) {
+    collection = {
+      key: config.collectionAddress,
+      verified: false,
+    };
+  }
+
   // Create all the NFTs.
   try {
     await Promise.all(
@@ -77,7 +95,7 @@ export async function umiMintNfts(
             name: `TEST #${i}`,
             uri: `nft://${i}.json`,
             sellerFeeBasisPoints: createAmount(100, '%', 2),
-            collection: null,
+            collection,
             creators: config.creators,
             tokenStandard: TokenStandard.NonFungible,
             splTokenProgram,
@@ -98,7 +116,7 @@ export async function umiMintNfts(
             name: `TEST #${i}`,
             uri: `nft://${i}.json`,
             sellerFeeBasisPoints: createAmount(100, '%', 2),
-            collection: null,
+            collection,
             creators: config.creators,
             splTokenProgram,
           }).sendAndConfirm(umi, { send: { skipPreflight: true } });
@@ -112,6 +130,21 @@ export async function umiMintNfts(
             splTokenProgram,
           }).sendAndConfirm(umi, { send: { skipPreflight: true } });
         }
+        // Verify the collection on the NFT.
+        if (config.verifyCollection) {
+          await verifyCollectionV1(umi, {
+            metadata: nft.metadataAddress,
+            collectionMint: config.collectionAddress!,
+            authority: umi.identity,
+          }).sendAndConfirm(umi);
+        }
+
+        if (config.creatorSigner) {
+          await verifyCreatorV1(umi, {
+            metadata: nft.metadataAddress,
+            authority: config.creatorSigner,
+          }).sendAndConfirm(umi);
+        }
       }),
     );
   } catch (e) {
@@ -120,3 +153,41 @@ export async function umiMintNfts(
 
   return nfts;
 }
+
+export const umiMintCollection = async (
+  umi: Umi,
+  config: {
+    numNfts: number;
+    legacy: boolean;
+    recipient?: PublicKey;
+    verifyCollection: boolean;
+    creators?: Creator[];
+  },
+  tokenProgramId: Web3PublicKey,
+) => {
+  const collectionNft = (
+    await umiMintNfts(
+      umi,
+      {
+        numNfts: 1,
+        creators: config.creators,
+        verifyCollection: config.verifyCollection,
+      },
+      tokenProgramId,
+    )
+  )[0];
+
+  const collectionMembers = await umiMintNfts(
+    umi,
+    {
+      numNfts: config.numNfts,
+      recipient: config.recipient,
+      collectionAddress: collectionNft.mintAddress,
+      verifyCollection: config.verifyCollection,
+      creators: config.creators,
+    },
+    tokenProgramId,
+  );
+
+  return { collection: collectionNft, members: collectionMembers };
+};

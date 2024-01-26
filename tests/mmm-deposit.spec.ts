@@ -1,7 +1,6 @@
 import * as anchor from '@project-serum/anchor';
 import {
   getAssociatedTokenAddress,
-  getAccount as getTokenAccount,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
@@ -13,6 +12,11 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
+import {
+  Program as UmiProgram,
+  generateSigner,
+  publicKey,
+} from '@metaplex-foundation/umi';
 import { assert } from 'chai';
 import {
   Mmm,
@@ -24,19 +28,30 @@ import {
   CurveKind,
 } from '../sdk/src';
 import {
+  PoolData,
   airdrop,
   createPool,
-  createPoolWithExampleDeposits,
+  createPoolWithExampleDepositsUmi,
   getEmptyAllowLists,
   getMetadataURI,
-  getMetaplexInstance,
   getPoolRent,
-  mintCollection,
-  mintNfts,
+  getTokenAccount2022,
   sendAndAssertTx,
+  umiMintCollection,
+  umiMintNfts,
 } from './utils';
+import {
+  fromWeb3JsPublicKey,
+  toWeb3JsPublicKey,
+} from '@metaplex-foundation/umi-web3js-adapters';
+import { createUmi } from '@metaplex-foundation/umi-bundle-tests';
+import {
+  findMasterEditionPda,
+  findMetadataPda,
+  mplTokenMetadata,
+} from '@metaplex-foundation/mpl-token-metadata';
 
-describe.skip('mmm-deposit', () => {
+describe('mmm-deposit', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();
@@ -165,20 +180,21 @@ describe.skip('mmm-deposit', () => {
           poolData,
           seller,
         }: {
-          poolData: Awaited<ReturnType<typeof createPoolWithExampleDeposits>>;
+          poolData: PoolData;
           seller: Keypair;
         }) => {
           const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
-            poolData.extraNft.mintAddress,
+            toWeb3JsPublicKey(poolData.extraNft.mintAddress),
             wallet.publicKey,
+            true,
+            tokenProgramId,
           );
-          const metaplexInstance = getMetaplexInstance(connection);
 
           {
             const { key: sellState } = getMMMSellStatePDA(
               program.programId,
               poolData.poolKey,
-              poolData.extraNft.mintAddress,
+              toWeb3JsPublicKey(poolData.extraNft.mintAddress),
             );
             const tx = await program.methods
               .solFulfillBuy({
@@ -196,10 +212,7 @@ describe.skip('mmm-deposit', () => {
                 pool: poolData.poolKey,
                 buysideSolEscrowAccount: poolData.poolPaymentEscrow,
                 assetMetadata: poolData.extraNft.metadataAddress,
-                assetMasterEdition: metaplexInstance
-                  .nfts()
-                  .pdas()
-                  .masterEdition({ mint: poolData.extraNft.mintAddress }),
+                assetMasterEdition: poolData.extraNft.masterEditionAddress,
                 assetMint: poolData.extraNft.mintAddress,
                 payerAssetAccount: poolData.extraNft.tokenAddress!,
                 sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
@@ -289,7 +302,7 @@ describe.skip('mmm-deposit', () => {
         it('fulfill buy - amount below rent', async () => {
           const seller = Keypair.generate();
           const [poolData] = await Promise.all([
-            createPoolWithExampleDeposits(
+            createPoolWithExampleDepositsUmi(
               program,
               connection,
               [AllowlistKind.mcc],
@@ -336,7 +349,7 @@ describe.skip('mmm-deposit', () => {
         it('fulfill buy - amount below 1% but more than 0 data rent', async () => {
           const seller = Keypair.generate();
           const [poolData] = await Promise.all([
-            createPoolWithExampleDeposits(
+            createPoolWithExampleDepositsUmi(
               program,
               connection,
               [AllowlistKind.mcc],
@@ -382,7 +395,7 @@ describe.skip('mmm-deposit', () => {
         });
 
         it('withdraw buy - should not close pool if reinvest flag is true and pool has nfts', async () => {
-          const poolData = await createPoolWithExampleDeposits(
+          const poolData = await createPoolWithExampleDepositsUmi(
             program,
             connection,
             [AllowlistKind.mcc],
@@ -402,6 +415,7 @@ describe.skip('mmm-deposit', () => {
             },
             'sell',
             tokenProgramId,
+            PublicKey.default, // throwaway receipient
           );
           await checkPoolClosedAfterWithdraw({
             poolKey: poolData.poolKey,
@@ -416,32 +430,63 @@ describe.skip('mmm-deposit', () => {
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
     describe(`deposit_sell ${tokenProgramId}`, () => {
       it('correctly verifies fvca-only allowlists when depositing items', async () => {
-        const creator = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
+        const umi = (await createUmi('http://127.0.0.1:8899')).use(
+          mplTokenMetadata(),
+        );
+
+        const creator = generateSigner(umi);
+
+        const token2022Program: UmiProgram = {
+          name: 'splToken2022',
+          publicKey: publicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+          getErrorFromCode: () => null,
+          getErrorFromName: () => null,
+          isOnCluster: () => true,
+        };
+
+        umi.programs.add(token2022Program);
+
+        const allowlists = [
+          {
+            kind: AllowlistKind.fvca,
+            value: toWeb3JsPublicKey(creator.publicKey),
+          },
+          ...getEmptyAllowLists(5),
+        ];
+
         const [{ poolKey }, nfts, sfts] = await Promise.all([
           createPool(program, {
             owner: wallet.publicKey,
             cosigner,
-            allowlists: [
-              { kind: AllowlistKind.fvca, value: creator.publicKey },
-              ...getEmptyAllowLists(5),
-            ],
+            allowlists,
           }),
-          mintNfts(connection, {
-            numNfts: 1,
-            creators: [
-              { address: creator.publicKey, share: 100, authority: creator },
-            ],
-            recipient: wallet.publicKey,
-          }),
-          mintNfts(connection, {
-            numNfts: 1,
-            creators: [
-              { address: creator.publicKey, share: 100, authority: creator },
-            ],
-            sftAmount: 10,
-            recipient: wallet.publicKey,
-          }),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: false,
+              creatorSigner: creator,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: false,
+              creatorSigner: creator,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              sftAmount: 10,
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
         ]);
 
         const mintAddress1 = nfts[0].mintAddress;
@@ -451,29 +496,27 @@ describe.skip('mmm-deposit', () => {
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
         const poolAta1 = await getAssociatedTokenAddress(
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
           poolKey,
           true,
+          tokenProgramId,
         );
         const { key: sellState1 } = getMMMSellStatePDA(
           program.programId,
           poolKey,
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
         );
+
         await program.methods
           .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
           .accountsStrict({
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
-            assetMetadata: metaplexInstance
-              .nfts()
-              .pdas()
-              .metadata({ mint: mintAddress1 }),
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: mintAddress1 }),
+            assetMetadata: findMetadataPda(umi, { mint: mintAddress1 })[0],
+            assetMasterEdition: findMasterEditionPda(umi, {
+              mint: mintAddress1,
+            })[0],
             assetMint: mintAddress1,
             assetTokenAccount: nfts[0].tokenAddress!,
             sellsideEscrowTokenAccount: poolAta1,
@@ -485,14 +528,21 @@ describe.skip('mmm-deposit', () => {
             rent: SYSVAR_RENT_PUBKEY,
           })
           .signers([cosigner])
-          .rpc();
+          .rpc({ skipPreflight: true });
 
-        let nftEscrow = await getTokenAccount(connection, poolAta1);
+        let nftEscrow = await getTokenAccount2022(
+          connection,
+          poolAta1,
+          tokenProgramId,
+        );
         assert.equal(Number(nftEscrow.amount), 1);
         assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
         poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
-        assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
+        assert.equal(
+          await connection.getBalance(toWeb3JsPublicKey(nfts[0].tokenAddress!)),
+          0,
+        );
 
         const sellState1AccountInfo = await program.account.sellState.fetch(
           sellState1,
@@ -504,7 +554,7 @@ describe.skip('mmm-deposit', () => {
         );
         assert.equal(
           sellState1AccountInfo.assetMint.toBase58(),
-          mintAddress1.toBase58(),
+          mintAddress1.toString(),
         );
         assert.equal(sellState1AccountInfo.assetAmount.toNumber(), 1);
         assert.deepEqual(
@@ -513,14 +563,15 @@ describe.skip('mmm-deposit', () => {
         );
 
         const poolAta2 = await getAssociatedTokenAddress(
-          mintAddress2,
+          toWeb3JsPublicKey(mintAddress2),
           poolKey,
           true,
+          tokenProgramId,
         );
         let { key: sellState2 } = getMMMSellStatePDA(
           program.programId,
           poolKey,
-          mintAddress2,
+          toWeb3JsPublicKey(mintAddress2),
         );
         await program.methods
           .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
@@ -528,14 +579,10 @@ describe.skip('mmm-deposit', () => {
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
-            assetMetadata: metaplexInstance
-              .nfts()
-              .pdas()
-              .metadata({ mint: mintAddress2 }),
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: mintAddress2 }),
+            assetMetadata: findMetadataPda(umi, { mint: mintAddress2 })[0],
+            assetMasterEdition: findMasterEditionPda(umi, {
+              mint: mintAddress2,
+            })[0],
             assetMint: mintAddress2,
             assetTokenAccount: sfts[0].tokenAddress!,
             sellsideEscrowTokenAccount: poolAta2,
@@ -551,12 +598,17 @@ describe.skip('mmm-deposit', () => {
 
         poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
-        nftEscrow = await getTokenAccount(connection, poolAta2);
+        nftEscrow = await getTokenAccount2022(
+          connection,
+          poolAta2,
+          tokenProgramId,
+        );
         assert.equal(Number(nftEscrow.amount), 5);
         assert.deepEqual(nftEscrow.owner.toBase58(), poolKey.toBase58());
-        const sftAccount = await getTokenAccount(
+        const sftAccount = await getTokenAccount2022(
           connection,
-          sfts[0].tokenAddress!,
+          toWeb3JsPublicKey(sfts[0].tokenAddress!),
+          tokenProgramId,
         );
         assert.equal(Number(sftAccount.amount), 5);
         assert.deepEqual(
@@ -574,7 +626,7 @@ describe.skip('mmm-deposit', () => {
         );
         assert.equal(
           sellState2AccountInfo.assetMint.toBase58(),
-          mintAddress2.toBase58(),
+          mintAddress2.toString(),
         );
         assert.equal(sellState2AccountInfo.assetAmount.toNumber(), 5);
         assert.deepEqual(
@@ -584,34 +636,73 @@ describe.skip('mmm-deposit', () => {
       });
 
       it('correctly verifies mcc-only allowlists when depositing items', async () => {
-        const metaplexInstance = getMetaplexInstance(connection);
-        const { collection } = await mintCollection(connection, {
-          numNfts: 0,
-          legacy: true,
-          verifyCollection: true,
-        });
+        const umi = (await createUmi('http://127.0.0.1:8899')).use(
+          mplTokenMetadata(),
+        );
+
+        const creator = generateSigner(umi);
+
+        const token2022Program: UmiProgram = {
+          name: 'splToken2022',
+          publicKey: publicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+          getErrorFromCode: () => null,
+          getErrorFromName: () => null,
+          isOnCluster: () => true,
+        };
+
+        umi.programs.add(token2022Program);
+
+        const { collection } = await umiMintCollection(
+          umi,
+          {
+            numNfts: 0,
+            legacy: true,
+            verifyCollection: false,
+          },
+          tokenProgramId,
+        );
+
         const [{ poolKey }, nfts, sfts] = await Promise.all([
           createPool(program, {
             owner: wallet.publicKey,
             cosigner,
             allowlists: [
-              { kind: AllowlistKind.mcc, value: collection.mintAddress },
+              {
+                kind: AllowlistKind.mcc,
+                value: toWeb3JsPublicKey(collection.mintAddress),
+              },
               ...getEmptyAllowLists(5),
             ],
           }),
-          mintNfts(connection, {
-            numNfts: 1,
-            collectionAddress: collection.mintAddress,
-            verifyCollection: true,
-            recipient: wallet.publicKey,
-          }),
-          mintNfts(connection, {
-            numNfts: 1,
-            sftAmount: 10,
-            collectionAddress: collection.mintAddress,
-            verifyCollection: true,
-            recipient: wallet.publicKey,
-          }),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: true,
+              collectionAddress: collection.mintAddress,
+              creatorSigner: creator,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: true,
+              creatorSigner: creator,
+              collectionAddress: collection.mintAddress,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              sftAmount: 10,
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
         ]);
 
         const mintAddress1 = nfts[0].mintAddress;
@@ -621,14 +712,15 @@ describe.skip('mmm-deposit', () => {
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
         const poolAta1 = await getAssociatedTokenAddress(
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
           poolKey,
           true,
+          tokenProgramId,
         );
         const { key: sellState1 } = getMMMSellStatePDA(
           program.programId,
           poolKey,
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
         );
         await program.methods
           .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
@@ -636,14 +728,12 @@ describe.skip('mmm-deposit', () => {
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
-            assetMetadata: metaplexInstance
-              .nfts()
-              .pdas()
-              .metadata({ mint: mintAddress1 }),
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: mintAddress1 }),
+            assetMetadata: findMetadataPda(umi, {
+              mint: mintAddress1,
+            })[0],
+            assetMasterEdition: findMasterEditionPda(umi, {
+              mint: mintAddress1,
+            })[0],
             assetMint: mintAddress1,
             assetTokenAccount: nfts[0].tokenAddress!,
             sellsideEscrowTokenAccount: poolAta1,
@@ -657,22 +747,30 @@ describe.skip('mmm-deposit', () => {
           .signers([cosigner])
           .rpc();
 
-        let nftEscrow = await getTokenAccount(connection, poolAta1);
+        let nftEscrow = await getTokenAccount2022(
+          connection,
+          poolAta1,
+          tokenProgramId,
+        );
         assert.equal(Number(nftEscrow.amount), 1);
         assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
         poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
-        assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
+        assert.equal(
+          await connection.getBalance(toWeb3JsPublicKey(nfts[0].tokenAddress!)),
+          0,
+        );
 
         const poolAta2 = await getAssociatedTokenAddress(
-          mintAddress2,
+          toWeb3JsPublicKey(mintAddress2),
           poolKey,
           true,
+          tokenProgramId,
         );
         const { key: sellState2 } = getMMMSellStatePDA(
           program.programId,
           poolKey,
-          mintAddress2,
+          toWeb3JsPublicKey(mintAddress2),
         );
         await program.methods
           .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
@@ -680,14 +778,10 @@ describe.skip('mmm-deposit', () => {
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
-            assetMetadata: metaplexInstance
-              .nfts()
-              .pdas()
-              .metadata({ mint: mintAddress2 }),
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: mintAddress2 }),
+            assetMetadata: findMetadataPda(umi, { mint: mintAddress2 })[0],
+            assetMasterEdition: findMasterEditionPda(umi, {
+              mint: mintAddress2,
+            })[0],
             assetMint: mintAddress2,
             assetTokenAccount: sfts[0].tokenAddress!,
             sellsideEscrowTokenAccount: poolAta2,
@@ -703,12 +797,17 @@ describe.skip('mmm-deposit', () => {
 
         poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
-        nftEscrow = await getTokenAccount(connection, poolAta2);
+        nftEscrow = await getTokenAccount2022(
+          connection,
+          poolAta2,
+          tokenProgramId,
+        );
         assert.equal(Number(nftEscrow.amount), 5);
         assert.deepEqual(nftEscrow.owner.toBase58(), poolKey.toBase58());
-        const sftAccount = await getTokenAccount(
+        const sftAccount = await getTokenAccount2022(
           connection,
-          sfts[0].tokenAddress!,
+          toWeb3JsPublicKey(sfts[0].tokenAddress!),
+          tokenProgramId,
         );
         assert.equal(Number(sftAccount.amount), 5);
         assert.deepEqual(
@@ -718,35 +817,77 @@ describe.skip('mmm-deposit', () => {
       });
 
       it('correctly verifies metadata+mcc allowlists when depositing items', async () => {
-        const metaplexInstance = getMetaplexInstance(connection);
-        const { collection } = await mintCollection(connection, {
-          numNfts: 0,
-          legacy: true,
-          verifyCollection: true,
-        });
+        const umi = (await createUmi('http://127.0.0.1:8899')).use(
+          mplTokenMetadata(),
+        );
+
+        const creator = generateSigner(umi);
+
+        const token2022Program: UmiProgram = {
+          name: 'splToken2022',
+          publicKey: publicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+          getErrorFromCode: () => null,
+          getErrorFromName: () => null,
+          isOnCluster: () => true,
+        };
+
+        umi.programs.add(token2022Program);
+
+        const { collection } = await umiMintCollection(
+          umi,
+          {
+            numNfts: 0,
+            legacy: true,
+            verifyCollection: false,
+          },
+          tokenProgramId,
+        );
+
         const [{ poolKey }, nfts, sfts] = await Promise.all([
           createPool(program, {
             owner: wallet.publicKey,
             cosigner,
             allowlists: [
-              { kind: AllowlistKind.mcc, value: collection.mintAddress },
-              { kind: AllowlistKind.metadata, value: collection.mintAddress },
+              {
+                kind: AllowlistKind.mcc,
+                value: toWeb3JsPublicKey(collection.mintAddress),
+              },
+              {
+                kind: AllowlistKind.metadata,
+                value: toWeb3JsPublicKey(collection.mintAddress),
+              },
               ...getEmptyAllowLists(4),
             ],
           }),
-          mintNfts(connection, {
-            numNfts: 1,
-            collectionAddress: collection.mintAddress,
-            verifyCollection: true,
-            recipient: wallet.publicKey,
-          }),
-          mintNfts(connection, {
-            numNfts: 1,
-            sftAmount: 10,
-            collectionAddress: collection.mintAddress,
-            verifyCollection: true,
-            recipient: wallet.publicKey,
-          }),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: true,
+              collectionAddress: collection.mintAddress,
+              creatorSigner: creator,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: true,
+              creatorSigner: creator,
+              collectionAddress: collection.mintAddress,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              sftAmount: 10,
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
         ]);
 
         const mintAddress1 = nfts[0].mintAddress;
@@ -756,14 +897,15 @@ describe.skip('mmm-deposit', () => {
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
         const poolAta1 = await getAssociatedTokenAddress(
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
           poolKey,
           true,
+          tokenProgramId,
         );
         const { key: sellState1 } = getMMMSellStatePDA(
           program.programId,
           poolKey,
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
         );
         const depositSellCall = (aux: string) =>
           program.methods
@@ -775,14 +917,10 @@ describe.skip('mmm-deposit', () => {
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
               pool: poolKey,
-              assetMetadata: metaplexInstance
-                .nfts()
-                .pdas()
-                .metadata({ mint: mintAddress1 }),
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: mintAddress1 }),
+              assetMetadata: findMetadataPda(umi, { mint: mintAddress1 })[0],
+              assetMasterEdition: findMasterEditionPda(umi, {
+                mint: mintAddress1,
+              })[0],
               assetMint: mintAddress1,
               assetTokenAccount: nfts[0].tokenAddress!,
               sellsideEscrowTokenAccount: poolAta1,
@@ -804,26 +942,66 @@ describe.skip('mmm-deposit', () => {
 
         await depositSellCall(getMetadataURI(0));
 
-        let nftEscrow = await getTokenAccount(connection, poolAta1);
+        let nftEscrow = await getTokenAccount2022(
+          connection,
+          poolAta1,
+          tokenProgramId,
+        );
         assert.equal(Number(nftEscrow.amount), 1);
         assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
         poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
-        assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
+        assert.equal(
+          await connection.getBalance(toWeb3JsPublicKey(nfts[0].tokenAddress!)),
+          0,
+        );
       });
 
       it('correctly verifies mint-only allowlists when depositing items', async () => {
-        const metaplexInstance = getMetaplexInstance(connection);
+        const umi = (await createUmi('http://127.0.0.1:8899')).use(
+          mplTokenMetadata(),
+        );
+
+        const creator = generateSigner(umi);
+
+        const token2022Program: UmiProgram = {
+          name: 'splToken2022',
+          publicKey: publicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+          getErrorFromCode: () => null,
+          getErrorFromName: () => null,
+          isOnCluster: () => true,
+        };
+
+        umi.programs.add(token2022Program);
+
         const [nfts, sfts] = await Promise.all([
-          mintNfts(connection, {
-            numNfts: 1,
-            recipient: wallet.publicKey,
-          }),
-          mintNfts(connection, {
-            numNfts: 1,
-            sftAmount: 10,
-            recipient: wallet.publicKey,
-          }),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: false,
+              creatorSigner: creator,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
+          umiMintNfts(
+            umi,
+            {
+              numNfts: 1,
+              verifyCollection: false,
+              creatorSigner: creator,
+              creators: [
+                { address: creator.publicKey, share: 100, verified: false },
+              ],
+              sftAmount: 10,
+              recipient: fromWeb3JsPublicKey(wallet.publicKey),
+            },
+            tokenProgramId,
+          ),
         ]);
         const mintAddress1 = nfts[0].mintAddress;
         const mintAddress2 = sfts[0].mintAddress;
@@ -831,8 +1009,14 @@ describe.skip('mmm-deposit', () => {
           owner: wallet.publicKey,
           cosigner,
           allowlists: [
-            { kind: AllowlistKind.mint, value: mintAddress1 },
-            { kind: AllowlistKind.mint, value: mintAddress2 },
+            {
+              kind: AllowlistKind.mint,
+              value: toWeb3JsPublicKey(mintAddress1),
+            },
+            {
+              kind: AllowlistKind.mint,
+              value: toWeb3JsPublicKey(mintAddress2),
+            },
             ...getEmptyAllowLists(4),
           ],
         });
@@ -841,14 +1025,15 @@ describe.skip('mmm-deposit', () => {
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
         const poolAta1 = await getAssociatedTokenAddress(
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
           poolKey,
           true,
+          tokenProgramId,
         );
         const { key: sellState1 } = getMMMSellStatePDA(
           program.programId,
           poolKey,
-          mintAddress1,
+          toWeb3JsPublicKey(mintAddress1),
         );
         await program.methods
           .depositSell({ assetAmount: new anchor.BN(1), allowlistAux: '' })
@@ -856,14 +1041,10 @@ describe.skip('mmm-deposit', () => {
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
-            assetMetadata: metaplexInstance
-              .nfts()
-              .pdas()
-              .metadata({ mint: mintAddress1 }),
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: mintAddress1 }),
+            assetMetadata: findMetadataPda(umi, { mint: mintAddress1 })[0],
+            assetMasterEdition: findMasterEditionPda(umi, {
+              mint: mintAddress1,
+            })[0],
             assetMint: mintAddress1,
             assetTokenAccount: nfts[0].tokenAddress!,
             sellsideEscrowTokenAccount: poolAta1,
@@ -877,22 +1058,30 @@ describe.skip('mmm-deposit', () => {
           .signers([cosigner])
           .rpc();
 
-        let nftEscrow = await getTokenAccount(connection, poolAta1);
+        let nftEscrow = await getTokenAccount2022(
+          connection,
+          poolAta1,
+          tokenProgramId,
+        );
         assert.equal(Number(nftEscrow.amount), 1);
         assert.equal(nftEscrow.owner.toBase58(), poolKey.toBase58());
         poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
-        assert.equal(await connection.getBalance(nfts[0].tokenAddress!), 0);
+        assert.equal(
+          await connection.getBalance(toWeb3JsPublicKey(nfts[0].tokenAddress!)),
+          0,
+        );
 
         const poolAta2 = await getAssociatedTokenAddress(
-          mintAddress2,
+          toWeb3JsPublicKey(mintAddress2),
           poolKey,
           true,
+          tokenProgramId,
         );
         const { key: sellState2 } = getMMMSellStatePDA(
           program.programId,
           poolKey,
-          mintAddress2,
+          toWeb3JsPublicKey(mintAddress2),
         );
         await program.methods
           .depositSell({ assetAmount: new anchor.BN(5), allowlistAux: '' })
@@ -900,14 +1089,10 @@ describe.skip('mmm-deposit', () => {
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolKey,
-            assetMetadata: metaplexInstance
-              .nfts()
-              .pdas()
-              .metadata({ mint: mintAddress2 }),
-            assetMasterEdition: metaplexInstance
-              .nfts()
-              .pdas()
-              .masterEdition({ mint: mintAddress2 }),
+            assetMetadata: findMetadataPda(umi, { mint: mintAddress2 })[0],
+            assetMasterEdition: findMasterEditionPda(umi, {
+              mint: mintAddress2,
+            })[0],
             assetMint: mintAddress2,
             assetTokenAccount: sfts[0].tokenAddress!,
             sellsideEscrowTokenAccount: poolAta2,
@@ -923,12 +1108,17 @@ describe.skip('mmm-deposit', () => {
 
         poolAccountInfo = await program.account.pool.fetch(poolKey);
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 6);
-        nftEscrow = await getTokenAccount(connection, poolAta2);
+        nftEscrow = await getTokenAccount2022(
+          connection,
+          poolAta2,
+          tokenProgramId,
+        );
         assert.equal(Number(nftEscrow.amount), 5);
         assert.deepEqual(nftEscrow.owner.toBase58(), poolKey.toBase58());
-        const sftAccount = await getTokenAccount(
+        const sftAccount = await getTokenAccount2022(
           connection,
-          sfts[0].tokenAddress!,
+          toWeb3JsPublicKey(sfts[0].tokenAddress!),
+          tokenProgramId,
         );
         assert.equal(Number(sftAccount.amount), 5);
         assert.deepEqual(

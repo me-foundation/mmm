@@ -57,7 +57,7 @@ describe('mmm-creator-royalty', () => {
   });
 
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
-    describe.only(`Token program: ${tokenProgramId}`, () => {
+    describe(`Token program: ${tokenProgramId}`, () => {
       it('correctly pays creator royalty', async () => {
         const seller = Keypair.generate();
         const buyer = Keypair.generate();

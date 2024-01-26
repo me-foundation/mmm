@@ -17,6 +17,7 @@ import {
   TokenStandard,
   mplTokenMetadata,
   fetchDigitalAsset,
+  verifyCollection,
 } from '@metaplex-foundation/mpl-token-metadata';
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
@@ -59,14 +60,14 @@ import {
 } from './generic';
 import { createProgrammableNft } from './mip1';
 import { getMetaplexInstance, mintCollection, mintNfts } from './nfts';
-import { umiMintNfts, Nft } from './umiNfts';
+import { umiMintNfts, Nft, umiMintCollection } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
 );
 
-interface PoolData {
+export interface PoolData {
   referral: anchor.web3.Keypair;
   uuid: anchor.web3.Keypair;
   poolKey: anchor.web3.PublicKey;
@@ -144,7 +145,7 @@ export const createPool = async (
   if (args.cosigner) {
     builder = builder.signers([args.cosigner]);
   }
-  await builder.rpc();
+  await builder.rpc({ skipPreflight: true });
 
   return { referral, uuid, poolKey };
 };
@@ -585,18 +586,6 @@ export async function createPoolWithExampleDepositsUmi(
     mplTokenMetadata(),
   );
 
-  const mint = generateSigner(umi);
-  await createNft(umi, {
-    mint,
-    tokenOwner: umi.identity.publicKey,
-    name: 'test',
-    uri: `nft://0.json`,
-    sellerFeeBasisPoints: createAmount(100, '%', 2),
-    collection: null,
-    creators: null,
-    splTokenProgram: fromWeb3JsPublicKey(tokenProgramId),
-  }).sendAndConfirm(umi, { send: { skipPreflight: true } });
-
   const creator = generateSigner(umi);
 
   const token2022Program: UmiProgram = {
@@ -614,66 +603,99 @@ export async function createPoolWithExampleDepositsUmi(
   const sfts: Nft[] = [];
   const extraNfts: Nft[] = [];
   const extraSfts: Nft[] = [];
-  let allowlistValue = null;
+  let allowlistValue: PublicKey;
+  let collection: Nft | null = null;
 
   try {
+    // Mint NFTs
+    if (kindToUse === AllowlistKind.mcc) {
+      // Mint the collection parent.
+      collection = (
+        await umiMintCollection(
+          umi,
+          {
+            numNfts: 0,
+            verifyCollection: false,
+            legacy: true,
+          },
+          tokenProgramId,
+        )
+      ).collection;
+    }
+
+    nfts.push(
+      ...(await umiMintNfts(
+        umi,
+        {
+          numNfts: 1,
+          recipient: fromWeb3JsPublicKey(poolArgs.owner),
+          creators: [
+            { address: creator.publicKey, share: 100, verified: false },
+          ],
+          verifyCollection: kindToUse === AllowlistKind.mcc, // only verify collection if we're using mcc
+          collectionAddress: collection ? collection.mintAddress : undefined,
+        },
+        tokenProgramId,
+      )),
+    );
+    sfts.push(
+      ...(await umiMintNfts(
+        umi,
+        {
+          numNfts: 1,
+          recipient: fromWeb3JsPublicKey(poolArgs.owner),
+          creators: [
+            { address: creator.publicKey, share: 100, verified: false },
+          ],
+          sftAmount: 10,
+          verifyCollection: kindToUse === AllowlistKind.mcc,
+          collectionAddress: collection ? collection.mintAddress : undefined,
+        },
+        tokenProgramId,
+      )),
+    );
+    extraNfts.push(
+      ...(await umiMintNfts(
+        umi,
+        {
+          numNfts: 1,
+          recipient: fromWeb3JsPublicKey(nftRecipient),
+          creators: [
+            { address: creator.publicKey, share: 100, verified: false },
+          ],
+          verifyCollection: kindToUse === AllowlistKind.mcc,
+          collectionAddress: collection ? collection.mintAddress : undefined,
+        },
+        tokenProgramId,
+      )),
+    );
+    extraSfts.push(
+      ...(await umiMintNfts(
+        umi,
+        {
+          numNfts: 1,
+          recipient: fromWeb3JsPublicKey(nftRecipient),
+          creators: [
+            { address: creator.publicKey, share: 100, verified: false },
+          ],
+          sftAmount: 10,
+          verifyCollection: kindToUse === AllowlistKind.mcc,
+          collectionAddress: collection ? collection.mintAddress : undefined,
+        },
+        tokenProgramId,
+      )),
+    );
+
     switch (kindToUse) {
       case AllowlistKind.any:
       case AllowlistKind.mint:
-        nfts.push(
-          ...(await umiMintNfts(
-            umi,
-            {
-              nftNumber: 1,
-              recipient: fromWeb3JsPublicKey(poolArgs.owner),
-              creators: [
-                { address: creator.publicKey, share: 100, verified: false },
-              ],
-            },
-            tokenProgramId,
-          )),
-        );
-        sfts.push(
-          ...(await umiMintNfts(
-            umi,
-            {
-              nftNumber: 1,
-              recipient: fromWeb3JsPublicKey(poolArgs.owner),
-              creators: [
-                { address: creator.publicKey, share: 100, verified: false },
-              ],
-              sftAmount: 10,
-            },
-            tokenProgramId,
-          )),
-        );
-        extraNfts.push(
-          ...(await umiMintNfts(
-            umi,
-            {
-              nftNumber: 1,
-              recipient: fromWeb3JsPublicKey(nftRecipient),
-              creators: [
-                { address: creator.publicKey, share: 100, verified: false },
-              ],
-            },
-            tokenProgramId,
-          )),
-        );
-        extraSfts.push(
-          ...(await umiMintNfts(
-            umi,
-            {
-              nftNumber: 1,
-              recipient: fromWeb3JsPublicKey(nftRecipient),
-              creators: [
-                { address: creator.publicKey, share: 100, verified: false },
-              ],
-              sftAmount: 10,
-            },
-            tokenProgramId,
-          )),
-        );
+        allowlistValue = PublicKey.default;
+        break;
+      case AllowlistKind.fvca:
+        allowlistValue = toWeb3JsPublicKey(creator.publicKey);
+        break;
+      case AllowlistKind.mcc:
+        allowlistValue = toWeb3JsPublicKey(collection!.mintAddress);
         break;
       default:
         console.log("don't know how to handle this kind");
