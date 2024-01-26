@@ -88,6 +88,7 @@ pub struct SolFulfillSell<'info> {
         payer = payer,
         associated_token::mint = asset_mint,
         associated_token::authority = payer,
+        associated_token::token_program = token_program,
     )]
     pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: will be used for allowlist checks

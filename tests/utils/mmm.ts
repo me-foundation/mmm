@@ -575,7 +575,6 @@ export const createPoolWithExampleOcpDeposits = async (
 
 export async function createPoolWithExampleDepositsUmi(
   program: Program<Mmm>,
-  connection: Connection,
   kinds: AllowlistKind[],
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
@@ -629,6 +628,7 @@ export async function createPoolWithExampleDepositsUmi(
         {
           numNfts: 1,
           recipient: fromWeb3JsPublicKey(poolArgs.owner),
+          creatorSigner: creator,
           creators: [
             { address: creator.publicKey, share: 100, verified: false },
           ],
@@ -644,6 +644,7 @@ export async function createPoolWithExampleDepositsUmi(
         {
           numNfts: 1,
           recipient: fromWeb3JsPublicKey(poolArgs.owner),
+          creatorSigner: creator,
           creators: [
             { address: creator.publicKey, share: 100, verified: false },
           ],
@@ -663,6 +664,7 @@ export async function createPoolWithExampleDepositsUmi(
           creators: [
             { address: creator.publicKey, share: 100, verified: false },
           ],
+          creatorSigner: creator,
           verifyCollection: kindToUse === AllowlistKind.mcc,
           collectionAddress: collection ? collection.mintAddress : undefined,
         },
@@ -678,6 +680,7 @@ export async function createPoolWithExampleDepositsUmi(
           creators: [
             { address: creator.publicKey, share: 100, verified: false },
           ],
+          creatorSigner: creator,
           sftAmount: 10,
           verifyCollection: kindToUse === AllowlistKind.mcc,
           collectionAddress: collection ? collection.mintAddress : undefined,

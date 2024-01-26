@@ -304,7 +304,6 @@ describe('mmm-deposit', () => {
           const [poolData] = await Promise.all([
             createPoolWithExampleDepositsUmi(
               program,
-              connection,
               [AllowlistKind.mcc],
               {
                 owner: wallet.publicKey,
@@ -351,7 +350,6 @@ describe('mmm-deposit', () => {
           const [poolData] = await Promise.all([
             createPoolWithExampleDepositsUmi(
               program,
-              connection,
               [AllowlistKind.mcc],
               {
                 owner: wallet.publicKey,
@@ -397,7 +395,6 @@ describe('mmm-deposit', () => {
         it('withdraw buy - should not close pool if reinvest flag is true and pool has nfts', async () => {
           const poolData = await createPoolWithExampleDepositsUmi(
             program,
-            connection,
             [AllowlistKind.mcc],
             {
               owner: wallet.publicKey,
