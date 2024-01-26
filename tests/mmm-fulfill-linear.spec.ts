@@ -1,7 +1,6 @@
 import * as anchor from '@project-serum/anchor';
 import {
   getAssociatedTokenAddress,
-  getAccount as getTokenAccount,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
@@ -28,16 +27,21 @@ import {
   assertIsBetween,
   assertTx,
   createPoolWithExampleDeposits,
+  createPoolWithExampleDepositsUmi,
   getMetadataURI,
   getMetaplexInstance,
   getSellStatePDARent,
+  getTokenAccount2022,
   getTokenAccountRent,
+  IMMUTABLE_OWNER_EXTENSION_LAMPORTS,
   LAMPORT_ERROR_RANGE,
   sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
+import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
+import { token } from '@metaplex-foundation/js';
 
-describe.skip('mmm-fulfill-linear', () => {
+describe.only('mmm-fulfill-linear', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();
@@ -60,11 +64,9 @@ describe.skip('mmm-fulfill-linear', () => {
     describe(`Token program: ${tokenProgramId}`, () => {
       it('Sellside only', async () => {
         const buyer = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
         const [poolData] = await Promise.all([
-          createPoolWithExampleDeposits(
+          createPoolWithExampleDepositsUmi(
             program,
-            connection,
             [AllowlistKind.fvca],
             {
               owner: wallet.publicKey,
@@ -79,18 +81,23 @@ describe.skip('mmm-fulfill-linear', () => {
             },
             'sell',
             tokenProgramId,
+            buyer.publicKey,
           ),
           airdrop(connection, buyer.publicKey, 10),
         ]);
 
+        const nftMintAddress = toWeb3JsPublicKey(poolData.nft.mintAddress);
+
         const buyerNftAtaAddress = await getAssociatedTokenAddress(
-          poolData.nft.mintAddress,
+          nftMintAddress,
           buyer.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.nft.mintAddress,
+          nftMintAddress,
         );
         let initWalletBalance = await connection.getBalance(wallet.publicKey);
         let initReferralBalance = await connection.getBalance(
@@ -119,10 +126,7 @@ describe.skip('mmm-fulfill-linear', () => {
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
               assetMetadata: poolData.nft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.nft.mintAddress }),
+              assetMasterEdition: poolData.nft.masterEditionAddress,
               assetMint: poolData.nft.mintAddress,
               sellsideEscrowTokenAccount: poolData.poolAtaNft,
               payerAssetAccount: buyerNftAtaAddress,
@@ -154,7 +158,13 @@ describe.skip('mmm-fulfill-linear', () => {
           assertTx(txId, confirmedTx);
         }
 
-        const tokenAccountRent = await getTokenAccountRent(connection);
+        let extension_rent = 0;
+        if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
+          extension_rent = IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        }
+
+        const tokenAccountRent =
+          (await getTokenAccountRent(connection)) + extension_rent;
         const sellStatePDARent = await getSellStatePDARent(connection);
 
         const expectedTxFees =
@@ -216,9 +226,13 @@ describe.skip('mmm-fulfill-linear', () => {
           1.1 * LAMPORTS_PER_SOL,
         );
 
+        const sftMintAddress = toWeb3JsPublicKey(poolData.sft.mintAddress);
+
         const buyerSftAtaAddress = await getAssociatedTokenAddress(
-          poolData.sft.mintAddress,
+          sftMintAddress,
           buyer.publicKey,
+          true,
+          tokenProgramId,
         );
         {
           // update pool to reinvest = false and price to 2.1
@@ -252,7 +266,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
             poolData.poolKey,
-            poolData.sft.mintAddress,
+            sftMintAddress,
           );
           const expectedTakerFees = 4.5 * LAMPORTS_PER_SOL * 0.015;
           const tx = await program.methods
@@ -274,10 +288,7 @@ describe.skip('mmm-fulfill-linear', () => {
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
               assetMetadata: poolData.sft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.sft.mintAddress }),
+              assetMasterEdition: poolData.sft.masterEditionAddress,
               assetMint: poolData.sft.mintAddress,
               sellsideEscrowTokenAccount: poolData.poolAtaSft,
               payerAssetAccount: buyerSftAtaAddress,
@@ -352,7 +363,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
             poolData.poolKey,
-            poolData.sft.mintAddress,
+            sftMintAddress,
           );
           const sellStateAccountInfo = await program.account.sellState.fetch(
             sellState,
@@ -363,7 +374,7 @@ describe.skip('mmm-fulfill-linear', () => {
           );
           assert.equal(
             sellStateAccountInfo.assetMint.toBase58(),
-            poolData.sft.mintAddress.toBase58(),
+            poolData.sft.mintAddress.toString(),
           );
           assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 3);
         }
@@ -385,7 +396,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
             poolData.poolKey,
-            poolData.sft.mintAddress,
+            sftMintAddress,
           );
           const tx = await program.methods
             .solFulfillSell({
@@ -404,10 +415,7 @@ describe.skip('mmm-fulfill-linear', () => {
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
               assetMetadata: poolData.sft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.sft.mintAddress }),
+              assetMasterEdition: poolData.sft.masterEditionAddress,
               assetMint: poolData.sft.mintAddress,
               sellsideEscrowTokenAccount: poolData.poolAtaSft,
               payerAssetAccount: buyerSftAtaAddress,
@@ -491,11 +499,9 @@ describe.skip('mmm-fulfill-linear', () => {
 
       it('Buyside only', async () => {
         const seller = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
         const [poolData] = await Promise.all([
-          createPoolWithExampleDeposits(
+          createPoolWithExampleDepositsUmi(
             program,
-            connection,
             [AllowlistKind.mcc],
             {
               owner: wallet.publicKey,
@@ -516,9 +522,15 @@ describe.skip('mmm-fulfill-linear', () => {
           airdrop(connection, seller.publicKey, 10),
         ]);
 
-        const ownerExtraSftAtaAddress = await getAssociatedTokenAddress(
+        const extraSftMintAddress = toWeb3JsPublicKey(
           poolData.extraSft.mintAddress,
+        );
+
+        const ownerExtraSftAtaAddress = await getAssociatedTokenAddress(
+          extraSftMintAddress,
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
         let initWalletBalance = await connection.getBalance(wallet.publicKey);
         let initReferralBalance = await connection.getBalance(
@@ -532,7 +544,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
             poolData.poolKey,
-            poolData.extraSft.mintAddress,
+            extraSftMintAddress,
           );
           const tx = await program.methods
             .solFulfillBuy({
@@ -552,10 +564,7 @@ describe.skip('mmm-fulfill-linear', () => {
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
               assetMetadata: poolData.extraSft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.extraSft.mintAddress }),
+              assetMasterEdition: poolData.extraSft.masterEditionAddress,
               assetMint: poolData.extraSft.mintAddress,
               payerAssetAccount: poolData.extraSft.tokenAddress!,
               sellsideEscrowTokenAccount: poolData.poolAtaExtraSft,
@@ -589,7 +598,13 @@ describe.skip('mmm-fulfill-linear', () => {
           assert.equal(await connection.getBalance(sellState), 0);
         }
 
-        const tokenAccountRent = await getTokenAccountRent(connection);
+        const extension_rent =
+          tokenProgramId === TOKEN_2022_PROGRAM_ID
+            ? IMMUTABLE_OWNER_EXTENSION_LAMPORTS
+            : 0;
+
+        const tokenAccountRent =
+          (await getTokenAccountRent(connection)) + extension_rent;
         const sellStatePDARent = await getSellStatePDARent(connection);
         {
           const expectedTakerFees = 2.7 * LAMPORTS_PER_SOL * 0.04;
@@ -645,9 +660,15 @@ describe.skip('mmm-fulfill-linear', () => {
           7.3 * LAMPORTS_PER_SOL - totalMakerFees,
         );
 
-        const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+        const extraNftMintAddress = toWeb3JsPublicKey(
           poolData.extraNft.mintAddress,
+        );
+
+        const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+          extraNftMintAddress,
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
 
         {
@@ -682,7 +703,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
             poolData.poolKey,
-            poolData.extraNft.mintAddress,
+            extraNftMintAddress,
           );
           const tx = await program.methods
             .solFulfillBuy({
@@ -700,10 +721,7 @@ describe.skip('mmm-fulfill-linear', () => {
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
               assetMetadata: poolData.extraNft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.extraNft.mintAddress }),
+              assetMasterEdition: poolData.extraNft.masterEditionAddress,
               assetMint: poolData.extraNft.mintAddress,
               payerAssetAccount: poolData.extraNft.tokenAddress!,
               sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
@@ -753,7 +771,11 @@ describe.skip('mmm-fulfill-linear', () => {
             connection.getBalance(poolData.poolAtaExtraNft),
             connection.getBalance(poolData.poolPaymentEscrow),
             connection.getBalance(wallet.publicKey),
-            getTokenAccount(connection, poolData.poolAtaExtraNft),
+            getTokenAccount2022(
+              connection,
+              poolData.poolAtaExtraNft,
+              tokenProgramId,
+            ),
           ]);
           assert.equal(
             sellerBalance,
@@ -777,7 +799,7 @@ describe.skip('mmm-fulfill-linear', () => {
           assert.equal(poolAta.owner.toBase58(), poolData.poolKey.toBase58());
           assert.equal(
             poolAta.mint.toBase58(),
-            poolData.extraNft.mintAddress.toBase58(),
+            poolData.extraNft.mintAddress.toString(),
           );
 
           initReferralBalance = referralBalance;
@@ -788,7 +810,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
             poolData.poolKey,
-            poolData.extraNft.mintAddress,
+            extraNftMintAddress,
           );
           const sellStateAccountInfo = await program.account.sellState.fetch(
             sellState,
@@ -799,7 +821,7 @@ describe.skip('mmm-fulfill-linear', () => {
           );
           assert.equal(
             sellStateAccountInfo.assetMint.toBase58(),
-            poolData.extraNft.mintAddress.toBase58(),
+            poolData.extraNft.mintAddress.toString(),
           );
           assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 1);
         }
@@ -819,11 +841,10 @@ describe.skip('mmm-fulfill-linear', () => {
       it('Two sides', async () => {
         const seller = Keypair.generate();
         const buyer = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
+
         const [poolData] = await Promise.all([
-          createPoolWithExampleDeposits(
+          createPoolWithExampleDepositsUmi(
             program,
-            connection,
             [AllowlistKind.mint],
             {
               owner: wallet.publicKey,
@@ -842,14 +863,20 @@ describe.skip('mmm-fulfill-linear', () => {
           airdrop(connection, buyer.publicKey, 10),
         ]);
 
-        const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+        const extraNftMintAddress = toWeb3JsPublicKey(
           poolData.extraNft.mintAddress,
+        );
+
+        const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+          extraNftMintAddress,
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: extraNftSellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.extraNft.mintAddress,
+          extraNftMintAddress,
         );
         let [initReferralBalance, initSellerBalance, initBuyerBalance] =
           await Promise.all([
@@ -883,10 +910,7 @@ describe.skip('mmm-fulfill-linear', () => {
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
               assetMetadata: poolData.extraNft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.extraNft.mintAddress }),
+              assetMasterEdition: poolData.extraNft.masterEditionAddress,
               assetMint: poolData.extraNft.mintAddress,
               payerAssetAccount: poolData.extraNft.tokenAddress!,
               sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
@@ -908,7 +932,13 @@ describe.skip('mmm-fulfill-linear', () => {
           await sendAndAssertTx(connection, tx, blockhashData, false);
         }
 
-        const tokenAccountRent = await getTokenAccountRent(connection);
+        const extension_rent =
+          tokenProgramId === TOKEN_2022_PROGRAM_ID
+            ? IMMUTABLE_OWNER_EXTENSION_LAMPORTS
+            : 0;
+
+        const tokenAccountRent =
+          (await getTokenAccountRent(connection)) + extension_rent;
         const sellStatePDARent = await getSellStatePDARent(connection);
 
         const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer
@@ -916,7 +946,11 @@ describe.skip('mmm-fulfill-linear', () => {
           const [sellerBalance, referralBalance, poolAta] = await Promise.all([
             connection.getBalance(seller.publicKey),
             connection.getBalance(poolData.referral.publicKey),
-            getTokenAccount(connection, poolData.poolAtaExtraNft),
+            getTokenAccount2022(
+              connection,
+              poolData.poolAtaExtraNft,
+              tokenProgramId,
+            ),
           ]);
 
           assert.equal(
@@ -947,14 +981,18 @@ describe.skip('mmm-fulfill-linear', () => {
         );
         assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 7);
 
+        const nftMintAddress = toWeb3JsPublicKey(poolData.nft.mintAddress);
+
         const buyerNftAtaAddress = await getAssociatedTokenAddress(
-          poolData.nft.mintAddress,
+          nftMintAddress,
           buyer.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: nftSellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.nft.mintAddress,
+          nftMintAddress,
         );
         const expectedSellLpFees = LAMPORTS_PER_SOL * 0.02;
         const expectedSellTakerFees = LAMPORTS_PER_SOL * 0.01;
@@ -979,10 +1017,7 @@ describe.skip('mmm-fulfill-linear', () => {
               pool: poolData.poolKey,
               buysideSolEscrowAccount: poolData.poolPaymentEscrow,
               assetMetadata: poolData.nft.metadataAddress,
-              assetMasterEdition: metaplexInstance
-                .nfts()
-                .pdas()
-                .masterEdition({ mint: poolData.nft.mintAddress }),
+              assetMasterEdition: poolData.nft.masterEditionAddress,
               assetMint: poolData.nft.mintAddress,
               sellsideEscrowTokenAccount: poolData.poolAtaNft,
               payerAssetAccount: buyerNftAtaAddress,
@@ -1010,7 +1045,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const [buyerBalance, referralBalance, buyerAta] = await Promise.all([
             connection.getBalance(buyer.publicKey),
             connection.getBalance(poolData.referral.publicKey),
-            getTokenAccount(connection, buyerNftAtaAddress),
+            getTokenAccount2022(connection, buyerNftAtaAddress, tokenProgramId),
           ]);
 
           assert.equal(
@@ -1053,11 +1088,9 @@ describe.skip('mmm-fulfill-linear', () => {
 
       it('BuySide with URI aux', async () => {
         const seller = Keypair.generate();
-        const metaplexInstance = getMetaplexInstance(connection);
         const [poolData] = await Promise.all([
-          createPoolWithExampleDeposits(
+          createPoolWithExampleDepositsUmi(
             program,
-            connection,
             // Must match MCC as well as validating URI against allowlist aux.
             [AllowlistKind.mcc, AllowlistKind.metadata],
             {
@@ -1079,9 +1112,15 @@ describe.skip('mmm-fulfill-linear', () => {
           airdrop(connection, seller.publicKey, 10),
         ]);
 
-        const ownerExtraSftAtaAddress = await getAssociatedTokenAddress(
+        const extraSftMintAddress = toWeb3JsPublicKey(
           poolData.extraSft.mintAddress,
+        );
+
+        const ownerExtraSftAtaAddress = await getAssociatedTokenAddress(
+          extraSftMintAddress,
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
 
         {
@@ -1089,7 +1128,7 @@ describe.skip('mmm-fulfill-linear', () => {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
             poolData.poolKey,
-            poolData.extraSft.mintAddress,
+            extraSftMintAddress,
           );
 
           const fulfillBuyCall = (allowlistAux: string) => {
@@ -1111,10 +1150,7 @@ describe.skip('mmm-fulfill-linear', () => {
                 pool: poolData.poolKey,
                 buysideSolEscrowAccount: poolData.poolPaymentEscrow,
                 assetMetadata: poolData.extraSft.metadataAddress,
-                assetMasterEdition: metaplexInstance
-                  .nfts()
-                  .pdas()
-                  .masterEdition({ mint: poolData.extraSft.mintAddress }),
+                assetMasterEdition: poolData.extraSft.masterEditionAddress,
                 assetMint: poolData.extraSft.mintAddress,
                 payerAssetAccount: poolData.extraSft.tokenAddress!,
                 sellsideEscrowTokenAccount: poolData.poolAtaExtraSft,

@@ -1,7 +1,6 @@
 import * as anchor from '@project-serum/anchor';
 import {
   getAssociatedTokenAddress,
-  getAccount as getTokenAccount,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
@@ -12,11 +11,7 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
-import {
-  generateSigner,
-  publicKey,
-  Program as UmiProgram,
-} from '@metaplex-foundation/umi';
+import { publicKey, Program as UmiProgram } from '@metaplex-foundation/umi';
 import { assert } from 'chai';
 import {
   Mmm,
@@ -31,9 +26,7 @@ import {
   airdrop,
   assertIsBetween,
   assertTx,
-  createPoolWithExampleDeposits,
   createPoolWithExampleDepositsUmi,
-  getMetaplexInstance,
   getSellStatePDARent,
   getTokenAccount2022,
   getTokenAccountRent,
@@ -43,17 +36,11 @@ import {
   sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
-import {
-  fromWeb3JsPublicKey,
-  toWeb3JsPublicKey,
-} from '@metaplex-foundation/umi-web3js-adapters';
-import {
-  findMasterEditionPda,
-  mplTokenMetadata,
-} from '@metaplex-foundation/mpl-token-metadata';
+import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
+import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import { createUmi } from '@metaplex-foundation/umi-bundle-tests';
 
-describe.only('mmm-fulfill-exp', () => {
+describe('mmm-fulfill-exp', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();
