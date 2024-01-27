@@ -1,8 +1,7 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, TokenAccount},
-    token_interface::TokenInterface,
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 
 use crate::{
@@ -32,20 +31,22 @@ pub struct WithdrawSell<'info> {
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
         init_if_needed,
         payer = owner,
         associated_token::mint = asset_mint,
         associated_token::authority = owner,
+        associated_token::token_program = token_program
     )]
-    pub asset_token_account: Box<Account<'info, TokenAccount>>,
+    pub asset_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
+        associated_token::token_program = token_program
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
         mut,

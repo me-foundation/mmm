@@ -1,7 +1,6 @@
 import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAccount as getTokenAccount,
   getAssociatedTokenAddress,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
@@ -24,12 +23,14 @@ import {
 import {
   airdrop,
   assertIsBetween,
-  createPoolWithExampleDeposits,
+  createPoolWithExampleDepositsUmi,
+  getTokenAccount2022,
   LAMPORT_ERROR_RANGE,
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
+import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 
-describe.skip('mmm-withdraw', () => {
+describe('mmm-withdraw', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();
@@ -51,9 +52,8 @@ describe.skip('mmm-withdraw', () => {
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
     describe(`Token program: ${tokenProgramId}`, () => {
       it('Withdraw payment', async () => {
-        const poolData = await createPoolWithExampleDeposits(
+        const poolData = await createPoolWithExampleDepositsUmi(
           program,
-          connection,
           [AllowlistKind.fvca],
           {
             owner: wallet.publicKey,
@@ -66,6 +66,7 @@ describe.skip('mmm-withdraw', () => {
           },
           'buy',
           tokenProgramId,
+          wallet.publicKey,
         );
 
         let initWalletBalance = await connection.getBalance(wallet.publicKey);
@@ -81,7 +82,7 @@ describe.skip('mmm-withdraw', () => {
             systemProgram: SystemProgram.programId,
           })
           .signers([cosigner])
-          .rpc();
+          .rpc({ skipPreflight: true });
 
         {
           const poolAccountInfo = await program.account.pool.fetch(
@@ -129,9 +130,8 @@ describe.skip('mmm-withdraw', () => {
       });
 
       it('Withdraw payment - withdraws the maximum amount possible', async () => {
-        const poolData = await createPoolWithExampleDeposits(
+        const poolData = await createPoolWithExampleDepositsUmi(
           program,
-          connection,
           [AllowlistKind.fvca],
           {
             owner: wallet.publicKey,
@@ -144,6 +144,7 @@ describe.skip('mmm-withdraw', () => {
           },
           'buy',
           tokenProgramId,
+          wallet.publicKey,
         );
 
         const initWalletBalance = await connection.getBalance(wallet.publicKey);
@@ -174,9 +175,8 @@ describe.skip('mmm-withdraw', () => {
       });
 
       it('Withdraw assets', async () => {
-        const poolData = await createPoolWithExampleDeposits(
+        const poolData = await createPoolWithExampleDepositsUmi(
           program,
-          connection,
           [AllowlistKind.mint],
           {
             owner: wallet.publicKey,
@@ -189,16 +189,21 @@ describe.skip('mmm-withdraw', () => {
           },
           'sell',
           tokenProgramId,
+          wallet.publicKey,
         );
 
+        const mintAddress = toWeb3JsPublicKey(poolData.nft.mintAddress);
+
         const ownerNftAtaAddress = await getAssociatedTokenAddress(
-          poolData.nft.mintAddress,
+          mintAddress,
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
         const { key: nftSellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
-          poolData.nft.mintAddress,
+          mintAddress,
         );
         await program.methods
           .withdrawSell({ assetAmount: new anchor.BN(1), allowlistAux: null })
@@ -220,9 +225,10 @@ describe.skip('mmm-withdraw', () => {
           .signers([cosigner])
           .rpc();
 
-        const ownerNftAta = await getTokenAccount(
+        const ownerNftAta = await getTokenAccount2022(
           connection,
           ownerNftAtaAddress,
+          tokenProgramId,
         );
         assert.equal(Number(ownerNftAta.amount), 1);
         assert.equal(ownerNftAta.owner.toBase58(), wallet.publicKey.toBase58());

@@ -72,7 +72,7 @@ describe.skip('mmm-ocp', () => {
   });
 
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
-    describe(`Token program: ${tokenProgramId}`, () => {
+    describe.skip(`Token program: ${tokenProgramId}`, () => {
       DEFAULT_ACCOUNTS.tokenProgram = tokenProgramId;
 
       it('can deposit and withdraw ocp NFTs - happy path', async () => {
