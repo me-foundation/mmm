@@ -109,7 +109,11 @@ describe('mmm-creator-royalty', () => {
           connection.getBalance(poolData.nftCreator.publicKey),
         ]);
 
-        const tokenAccountRent = await getTokenAccountRent(connection);
+        let tokenAccountRent = await getTokenAccountRent(connection);
+        if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
+          tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        }
+
         const sellStatePDARent = await getSellStatePDARent(connection);
 
         const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer
@@ -314,11 +318,6 @@ describe('mmm-creator-royalty', () => {
               connection.getBalance(poolData.nftCreator.publicKey),
             ]);
 
-          let extension_rent = 0;
-          if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
-            extension_rent = IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
-          }
-
           assert.equal(
             buyerBalance,
             initBuyerBalance -
@@ -327,7 +326,6 @@ describe('mmm-creator-royalty', () => {
               expectedTakerFees -
               expectedTxFees -
               tokenAccountRent -
-              extension_rent - // Metaplex NFT ATAs have the immutable extension
               expectedCreatorFees, // no token account rent bc seller ata was closed and pool ata opened
           );
           assert.equal(

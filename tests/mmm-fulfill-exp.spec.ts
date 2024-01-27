@@ -167,13 +167,10 @@ describe('mmm-fulfill-exp', () => {
         assertTx(txId, confirmedTx);
       }
 
-      let extension_rent = 0;
+      let tokenAccountRent = await getTokenAccountRent(connection);
       if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
-        extension_rent = IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
       }
-
-      const tokenAccountRent =
-        (await getTokenAccountRent(connection)) + extension_rent;
       const sellStatePDARent = await getSellStatePDARent(connection);
 
       const expectedTxFees =
@@ -729,13 +726,10 @@ describe('mmm-fulfill-exp', () => {
         assert.equal(await connection.getBalance(sellState), 0);
       }
 
-      let extension_rent = 0;
+      let tokenAccountRent = await getTokenAccountRent(connection);
       if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
-        extension_rent = IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
       }
-
-      const tokenAccountRent =
-        (await getTokenAccountRent(connection)) + extension_rent;
       const sellStatePDARent = await getSellStatePDARent(connection);
       {
         const expectedTakerFees = expectedTotalPrice * LAMPORTS_PER_SOL * 0.04;
@@ -1075,13 +1069,11 @@ describe('mmm-fulfill-exp', () => {
         await sendAndAssertTx(connection, tx, blockhashData, false);
       }
 
-      let extension_rent = 0;
+      let tokenAccountRent = await getTokenAccountRent(connection);
       if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
-        extension_rent = IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
       }
 
-      const tokenAccountRent =
-        (await getTokenAccountRent(connection)) + extension_rent;
       const sellStatePDARent = await getSellStatePDARent(connection);
 
       const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer

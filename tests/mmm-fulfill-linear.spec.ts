@@ -155,13 +155,10 @@ describe('mmm-fulfill-linear', () => {
           assertTx(txId, confirmedTx);
         }
 
-        let extension_rent = 0;
+        let tokenAccountRent = await getTokenAccountRent(connection);
         if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
-          extension_rent = IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+          tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
         }
-
-        const tokenAccountRent =
-          (await getTokenAccountRent(connection)) + extension_rent;
         const sellStatePDARent = await getSellStatePDARent(connection);
 
         const expectedTxFees =
