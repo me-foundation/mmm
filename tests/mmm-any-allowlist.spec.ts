@@ -60,7 +60,6 @@ describe('mmm-any-allowlist', () => {
         const [poolData] = await Promise.all([
           createPoolWithExampleDepositsUmi(
             program,
-            connection,
             [AllowlistKind.any],
             {
               owner: wallet.publicKey,

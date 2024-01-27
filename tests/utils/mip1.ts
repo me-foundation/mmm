@@ -15,14 +15,20 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import {
+  Umi,
+  generateSigner,
+  KeypairSigner as UmiSigner,
+  percentAmount,
+  OptionOrNullable,
+  PublicKey as UmiPublicKey,
+} from '@metaplex-foundation/umi';
+import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
 } from '@solana/spl-token';
 import {
   findMasterEditionV2Pda,
   findMetadataPda,
-  token,
-  tokenProgram,
 } from '@metaplex-foundation/js';
 import {
   AssetData,
@@ -40,6 +46,14 @@ import {
   TokenState,
   SetTokenStandardInstructionAccounts,
   createSetTokenStandardInstruction,
+  findMetadataPda as findMetadataPda2,
+  findMasterEditionPda as findMasterEditionV2Pda2,
+  findTokenRecordPda as getTokenRecordPda2,
+  createV1,
+  createNft,
+  createProgrammableNft,
+  verifyCreatorV1,
+  mintV1,
 } from '@metaplex-foundation/mpl-token-metadata';
 import { getMetaplexInstance, sendAndAssertTx } from '.';
 import {
@@ -63,6 +77,11 @@ import {
   findMigrationState,
   findMigrationProgramAsSigner,
 } from './migrationPdas';
+import {
+  fromWeb3JsPublicKey,
+  toWeb3JsKeypair,
+  toWeb3JsPublicKey,
+} from '@metaplex-foundation/umi-web3js-adapters';
 
 const getAmountRuleIxData = (name: string, owner: PublicKey): Uint8Array => {
   return encode([
@@ -159,6 +178,58 @@ export const createDefaultTokenAuthorizationRules = async (
   return { ruleSetAddress, txId: sig };
 };
 
+// const createNewMip1MintTransactionUmi = (
+//   umi: Umi,
+//   payer: UmiSigner,
+//   mintKeypair: UmiSigner,
+//   tokenProgramId: PublicKey,
+//   ruleSet?: PublicKey,
+// ) => {
+//   const metadataPda = findMetadataPda2(umi, {
+//     mint: mintKeypair.publicKey,
+//   })[0];
+//   const masterEditionPDA = findMasterEditionV2Pda2(umi, {
+//     mint: mintKeypair.publicKey,
+//   })[0];
+//   const ata = getAssociatedTokenAddress(
+//     toWeb3JsPublicKey(mintKeypair.publicKey),
+//     toWeb3JsPublicKey(payer.publicKey),
+//     true,
+//     tokenProgramId,
+//   );
+
+//   const data: AssetData = {
+//     name: 'ProgrammableNonFungible',
+//     symbol: 'PNF',
+//     uri: 'uri',
+//     sellerFeeBasisPoints: 150,
+//     creators: [
+//       {
+//         address: payer.publicKey,
+//         share: 100,
+//         verified: true,
+//       },
+//     ],
+//     primarySaleHappened: false,
+//     isMutable: true,
+//     tokenStandard: TokenStandard.ProgrammableNonFungible,
+//     collection: null,
+//     uses: null,
+//     collectionDetails: null,
+//     ruleSet: ruleSet ?? null,
+//   };
+
+//   const create = createNft(umi, {
+//     mint: mintKeypair,
+//     name: 'ProgrammableNonFungible',
+//     symbol: 'PNF',
+//     uri: 'uri',
+//     sellerFeeBasisPoints: percentAmount(5.5),
+//     token:
+//     tokenStandard: TokenStandard.ProgrammableNonFungible,
+//   }).sendAndConfirm(umi);
+// };
+
 const createNewMip1MintTransaction = (
   payer: Keypair,
   mintKeypair: Keypair,
@@ -223,7 +294,51 @@ const createNewMip1MintTransaction = (
   return createNewTokenTransaction;
 };
 
-export const createProgrammableNft = async (
+export const createProgrammableNftUmi = async (
+  umi: Umi,
+  authorityAndPayer: UmiSigner,
+  recipient: PublicKey,
+  tokenProgramId: PublicKey,
+  ruleSet: OptionOrNullable<UmiPublicKey> | undefined,
+) => {
+  const mintKeypair = generateSigner(umi);
+
+  const targetTokenAccount = await getAssociatedTokenAddress(
+    toWeb3JsPublicKey(mintKeypair.publicKey),
+    recipient,
+    true,
+    tokenProgramId,
+  );
+  const metadataPda = findMetadataPda2(umi, { mint: mintKeypair.publicKey })[0];
+  const masterEditionPDA = findMasterEditionV2Pda2(umi, {
+    mint: mintKeypair.publicKey,
+  })[0];
+
+  await createProgrammableNft(umi, {
+    mint: mintKeypair,
+    authority: authorityAndPayer,
+    name: 'ProgrammableNonFungible',
+    symbol: 'PNF',
+    uri: 'uri',
+    sellerFeeBasisPoints: percentAmount(1.5),
+    creators: [
+      { address: authorityAndPayer.publicKey, share: 100, verified: true },
+    ],
+    token: fromWeb3JsPublicKey(targetTokenAccount),
+    tokenOwner: fromWeb3JsPublicKey(recipient),
+    ruleSet,
+    splTokenProgram: fromWeb3JsPublicKey(tokenProgramId),
+  }).sendAndConfirm(umi, { send: { skipPreflight: true } });
+
+  return {
+    mintAddress: toWeb3JsPublicKey(mintKeypair.publicKey),
+    metadataAddress: toWeb3JsPublicKey(metadataPda),
+    masterEditionAddress: toWeb3JsPublicKey(masterEditionPDA),
+    tokenAddress: targetTokenAccount,
+  };
+};
+
+export const createProgrammableNftMip1 = async (
   connection: Connection,
   authorityAndPayer: Keypair,
   recipient: PublicKey,

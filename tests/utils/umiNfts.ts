@@ -8,7 +8,6 @@ import {
 } from '@metaplex-foundation/umi';
 import {
   createFungibleAsset,
-  createNft,
   Creator,
   findMetadataPda,
   findMasterEditionPda,
@@ -16,9 +15,6 @@ import {
   TokenStandard,
   createV1,
   Collection,
-  fetchMetadataFromSeeds,
-  updateV1,
-  collectionToggle,
   verifyCollectionV1,
   verifyCreatorV1,
 } from '@metaplex-foundation/mpl-token-metadata';

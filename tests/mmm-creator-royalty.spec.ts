@@ -64,7 +64,6 @@ describe('mmm-creator-royalty', () => {
         const [poolData] = await Promise.all([
           createPoolWithExampleDepositsUmi(
             program,
-            connection,
             [AllowlistKind.mint],
             {
               owner: wallet.publicKey,

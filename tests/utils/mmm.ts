@@ -6,9 +6,14 @@ import {
   assertAccountExists,
   createAmount,
   generateSigner,
+  OptionOrNullable,
   percentAmount,
   publicKey,
+  some,
+  PublicKey as UmiPublicKey,
   Program as UmiProgram,
+  none,
+  createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-tests';
 import {
@@ -58,7 +63,7 @@ import {
   MIP1_COMPUTE_UNITS,
   OCP_COMPUTE_UNITS,
 } from './generic';
-import { createProgrammableNft } from './mip1';
+import { createProgrammableNftMip1, createProgrammableNftUmi } from './mip1';
 import { getMetaplexInstance, mintCollection, mintNfts } from './nfts';
 import { umiMintNfts, Nft, umiMintCollection } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
@@ -877,7 +882,6 @@ export async function createPoolWithExampleDepositsUmi(
 
 export const createPoolWithExampleMip1Deposits = async (
   program: Program<Mmm>,
-  connection: Connection,
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
   nftCreator: Keypair,
@@ -885,9 +889,35 @@ export const createPoolWithExampleMip1Deposits = async (
   nftRecipient?: PublicKey,
   ruleset?: PublicKey,
 ) => {
+  const umi = (await createUmi('http://127.0.0.1:8899')).use(
+    mplTokenMetadata(),
+  );
+
+  const token2022Program: UmiProgram = {
+    name: 'splToken2022',
+    publicKey: publicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+    getErrorFromCode: () => null,
+    getErrorFromName: () => null,
+    isOnCluster: () => true,
+  };
+
+  umi.programs.add(token2022Program);
+
+  const creatorSigner = createSignerFromKeypair(
+    umi,
+    fromWeb3JsKeypair(nftCreator),
+  );
+
+  let rs: OptionOrNullable<UmiPublicKey>;
+  if (ruleset) {
+    rs = some(fromWeb3JsPublicKey(ruleset));
+  } else {
+    rs = none();
+  }
+
   const [depositNft, extraNft] = await Promise.all(
     [poolArgs.owner, nftRecipient ?? poolArgs.owner].map((v) =>
-      createProgrammableNft(connection, nftCreator, v, tokenProgramId, ruleset),
+      createProgrammableNftUmi(umi, creatorSigner, v, tokenProgramId, rs),
     ),
   );
   const mintAddressNft = depositNft.mintAddress;
@@ -906,11 +936,13 @@ export const createPoolWithExampleMip1Deposits = async (
     mintAddressNft,
     poolKey,
     true,
+    tokenProgramId,
   );
   const poolAtaExtraNft = await getAssociatedTokenAddress(
     extraNft.mintAddress,
     poolKey,
     true,
+    tokenProgramId,
   );
 
   if (side === 'both' || side === 'sell') {

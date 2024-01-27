@@ -1,7 +1,6 @@
 import * as anchor from '@project-serum/anchor';
 import {
   getAssociatedTokenAddress,
-  getAccount as getTokenAccount,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
@@ -16,6 +15,14 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from '@solana/web3.js';
 import { assert } from 'chai';
+import {
+  generateSigner,
+  publicKey,
+  some,
+  Program as UmiProgram,
+} from '@metaplex-foundation/umi';
+import { createUmi } from '@metaplex-foundation/umi-bundle-tests';
+import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import {
   Mmm,
   AllowlistKind,
@@ -32,19 +39,25 @@ import {
   createDefaultTokenAuthorizationRules,
   createPool,
   createPoolWithExampleMip1Deposits,
-  createProgrammableNft,
+  createProgrammableNftUmi,
   getEmptyAllowLists,
   getSellStatePDARent,
+  getTokenAccount2022,
   getTokenAccountRent,
+  IMMUTABLE_OWNER_EXTENSION_LAMPORTS,
   MIP1_COMPUTE_UNITS,
   sendAndAssertTx,
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
 import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
-import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
+import { MPL_TOKEN_METADATA_PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 import { before } from 'mocha';
+import {
+  fromWeb3JsPublicKey,
+  toWeb3JsPublicKey,
+} from '@metaplex-foundation/umi-web3js-adapters';
 
-describe.skip('mmm-mip1', () => {
+describe('mmm-mip1', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();
@@ -87,24 +100,44 @@ describe.skip('mmm-mip1', () => {
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
     describe(`Token program: ${tokenProgramId}`, () => {
       it('can deposit and withdraw mip1 NFTs - happy path', async () => {
+        const umi = (await createUmi('http://127.0.0.1:8899')).use(
+          mplTokenMetadata(),
+        );
+
+        const token2022Program: UmiProgram = {
+          name: 'splToken2022',
+          publicKey: publicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'),
+          getErrorFromCode: () => null,
+          getErrorFromName: () => null,
+          isOnCluster: () => true,
+        };
+
+        umi.programs.add(token2022Program);
+
         DEFAULT_ACCOUNTS.tokenProgram = tokenProgramId;
 
-        const nftRes = await createProgrammableNft(
-          connection,
-          nftCreator,
+        const creator = generateSigner(umi);
+
+        const nftRes = await createProgrammableNftUmi(
+          umi,
+          creator,
           wallet.publicKey,
           tokenProgramId,
-          defaultRules,
+          some(fromWeb3JsPublicKey(defaultRules)),
         );
 
         const poolData = await createPool(program, {
           owner: wallet.publicKey,
           cosigner,
           allowlists: [
-            { value: nftCreator.publicKey, kind: AllowlistKind.fvca },
+            {
+              value: toWeb3JsPublicKey(creator.publicKey),
+              kind: AllowlistKind.fvca,
+            },
             ...getEmptyAllowLists(5),
           ],
         });
+
         const poolAta = await getAssociatedTokenAddress(
           nftRes.mintAddress,
           poolData.poolKey,
@@ -162,7 +195,7 @@ describe.skip('mmm-mip1', () => {
           .rpc({ skipPreflight: true });
 
         const [poolTokenEscrow, sellStateAccountInfo] = await Promise.all([
-          getTokenAccount(connection, poolAta),
+          getTokenAccount2022(connection, poolAta, tokenProgramId),
           program.account.sellState.fetch(sellState),
         ]);
         assert.equal(Number(poolTokenEscrow.amount), 1);
@@ -172,11 +205,11 @@ describe.skip('mmm-mip1', () => {
         );
         assert.equal(
           poolTokenEscrow.mint.toBase58(),
-          nftRes.mintAddress.toBase58(),
+          nftRes.mintAddress.toString(),
         );
         assert.equal(
           sellStateAccountInfo.assetMint.toBase58(),
-          nftRes.mintAddress.toBase58(),
+          nftRes.mintAddress.toString(),
         );
         assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 1);
         poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
@@ -222,9 +255,10 @@ describe.skip('mmm-mip1', () => {
           ])
           .rpc({ skipPreflight: true });
 
-        const ownerTokenAccount = await getTokenAccount(
+        const ownerTokenAccount = await getTokenAccount2022(
           connection,
           nftRes.tokenAddress,
+          tokenProgramId,
         );
         assert.equal(Number(ownerTokenAccount.amount), 1);
         assert.equal(
@@ -233,7 +267,7 @@ describe.skip('mmm-mip1', () => {
         );
         assert.equal(
           ownerTokenAccount.mint.toBase58(),
-          nftRes.mintAddress.toBase58(),
+          nftRes.mintAddress.toString(),
         );
         // pool should now be closed as a consequence of having no NFTs and no payment
         assert.equal(await connection.getBalance(poolData.poolKey), 0);
@@ -246,7 +280,6 @@ describe.skip('mmm-mip1', () => {
         const [poolData] = await Promise.all([
           createPoolWithExampleMip1Deposits(
             program,
-            connection,
             {
               owner: wallet.publicKey,
               cosigner,
@@ -267,10 +300,12 @@ describe.skip('mmm-mip1', () => {
         const buyerNftAtaAddress = await getAssociatedTokenAddress(
           poolData.nft.mintAddress,
           buyer.publicKey,
+          true,
+          tokenProgramId,
         );
         assert.equal(await connection.getBalance(buyerNftAtaAddress), 0);
 
-        const [
+        let [
           initBuyerBalance,
           initWalletBalance,
           initCreatorBalance,
@@ -288,6 +323,9 @@ describe.skip('mmm-mip1', () => {
           connection.getBalance(poolData.poolKey),
         ]);
 
+        if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
+          tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        }
         const { key: sellState } = getMMMSellStatePDA(
           program.programId,
           poolData.poolKey,
@@ -295,11 +333,14 @@ describe.skip('mmm-mip1', () => {
         );
 
         // sale price should be 1.5 * 1.05 = 1.575 SOL
+        // royalites = 1.5%
         // with taker fee and royalties should be 1.575 * (1 + 0.02 + 0.015) = 1.630125 SOL
+        const maxPaymentAmount = (1575 * 1035 * LAMPORTS_PER_SOL) / 1000000;
+
         const tx = await program.methods
           .solMip1FulfillSell({
             assetAmount: new anchor.BN(1),
-            maxPaymentAmount: new anchor.BN(1.630125 * LAMPORTS_PER_SOL),
+            maxPaymentAmount: new anchor.BN(maxPaymentAmount),
             allowlistAux: null,
             makerFeeBp: 150,
             takerFeeBp: 200,
@@ -366,7 +407,7 @@ describe.skip('mmm-mip1', () => {
           connection.getBalance(poolData.nftCreator.publicKey),
           connection.getBalance(poolData.referral.publicKey),
           connection.getBalance(poolData.poolKey),
-          getTokenAccount(connection, buyerNftAtaAddress),
+          getTokenAccount2022(connection, buyerNftAtaAddress, tokenProgramId),
         ]);
 
         assert.equal(
@@ -408,7 +449,6 @@ describe.skip('mmm-mip1', () => {
         const [poolData] = await Promise.all([
           createPoolWithExampleMip1Deposits(
             program,
-            connection,
             {
               owner: wallet.publicKey,
               cosigner,
@@ -449,6 +489,8 @@ describe.skip('mmm-mip1', () => {
         const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
           poolData.extraNft.mintAddress,
           wallet.publicKey,
+          true,
+          tokenProgramId,
         );
 
         // sale price should be 2.2 SOL
@@ -533,7 +575,11 @@ describe.skip('mmm-mip1', () => {
           connection.getBalance(poolData.poolPaymentEscrow),
           connection.getBalance(poolData.nftCreator.publicKey),
           connection.getBalance(poolData.referral.publicKey),
-          getTokenAccount(connection, poolData.poolAtaExtraNft),
+          getTokenAccount2022(
+            connection,
+            poolData.poolAtaExtraNft,
+            tokenProgramId,
+          ),
         ]);
 
         assert.equal(
@@ -595,7 +641,6 @@ describe.skip('mmm-mip1', () => {
         const [poolData] = await Promise.all([
           createPoolWithExampleMip1Deposits(
             program,
-            connection,
             {
               owner: wallet.publicKey,
               cosigner,
@@ -638,6 +683,10 @@ describe.skip('mmm-mip1', () => {
         ]);
         let cumulativeLpFees = 0;
 
+        if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
+          tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        }
+
         {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
@@ -648,6 +697,8 @@ describe.skip('mmm-mip1', () => {
           const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
             poolData.extraNft.mintAddress,
             wallet.publicKey,
+            true,
+            tokenProgramId,
           );
 
           // sale price should be 2.5 SOL
@@ -736,7 +787,11 @@ describe.skip('mmm-mip1', () => {
             connection.getBalance(poolData.nftCreator.publicKey),
             connection.getBalance(poolData.referral.publicKey),
             connection.getBalance(sellState),
-            getTokenAccount(connection, ownerExtraNftAtaAddress),
+            getTokenAccount2022(
+              connection,
+              ownerExtraNftAtaAddress,
+              tokenProgramId,
+            ),
           ]);
 
           assert.equal(
@@ -795,6 +850,8 @@ describe.skip('mmm-mip1', () => {
           const buyerNftAtaAddress = await getAssociatedTokenAddress(
             poolData.nft.mintAddress,
             buyer.publicKey,
+            true,
+            tokenProgramId,
           );
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
@@ -874,7 +931,7 @@ describe.skip('mmm-mip1', () => {
             connection.getBalance(poolData.nftCreator.publicKey),
             connection.getBalance(poolData.referral.publicKey),
             connection.getBalance(wallet.publicKey),
-            getTokenAccount(connection, buyerNftAtaAddress),
+            getTokenAccount2022(connection, buyerNftAtaAddress, tokenProgramId),
           ]);
 
           assert.equal(
@@ -929,7 +986,6 @@ describe.skip('mmm-mip1', () => {
         const [poolData] = await Promise.all([
           createPoolWithExampleMip1Deposits(
             program,
-            connection,
             {
               owner: wallet.publicKey,
               cosigner,
@@ -972,6 +1028,10 @@ describe.skip('mmm-mip1', () => {
         ]);
         let cumulativeLpFees = 0;
 
+        if (tokenProgramId === TOKEN_2022_PROGRAM_ID) {
+          tokenAccountRent += IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
+        }
+
         {
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
@@ -982,6 +1042,8 @@ describe.skip('mmm-mip1', () => {
           const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
             poolData.extraNft.mintAddress,
             wallet.publicKey,
+            true,
+            tokenProgramId,
           );
 
           // sale price should be 3 SOL
@@ -1070,7 +1132,11 @@ describe.skip('mmm-mip1', () => {
             connection.getBalance(poolData.nftCreator.publicKey),
             connection.getBalance(poolData.referral.publicKey),
             connection.getBalance(sellState),
-            getTokenAccount(connection, ownerExtraNftAtaAddress),
+            getTokenAccount2022(
+              connection,
+              ownerExtraNftAtaAddress,
+              tokenProgramId,
+            ),
           ]);
 
           assert.equal(
@@ -1129,6 +1195,8 @@ describe.skip('mmm-mip1', () => {
           const buyerNftAtaAddress = await getAssociatedTokenAddress(
             poolData.nft.mintAddress,
             buyer.publicKey,
+            true,
+            tokenProgramId,
           );
           const { key: sellState } = getMMMSellStatePDA(
             program.programId,
@@ -1208,7 +1276,7 @@ describe.skip('mmm-mip1', () => {
             connection.getBalance(poolData.nftCreator.publicKey),
             connection.getBalance(poolData.referral.publicKey),
             connection.getBalance(wallet.publicKey),
-            getTokenAccount(connection, buyerNftAtaAddress),
+            getTokenAccount2022(connection, buyerNftAtaAddress, tokenProgramId),
           ]);
 
           assert.equal(

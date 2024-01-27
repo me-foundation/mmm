@@ -76,6 +76,7 @@ pub struct SolMip1FulfillSell<'info> {
     pub asset_metadata: UncheckedAccount<'info>,
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidMip1AssetParams,
+
     )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     /// CHECK: will be checked in cpi
@@ -84,6 +85,7 @@ pub struct SolMip1FulfillSell<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
+        associated_token::token_program = token_program,
         constraint = sellside_escrow_token_account.amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
     )]

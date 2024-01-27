@@ -26,10 +26,8 @@ import {
   assertFailedTx,
   assertIsBetween,
   assertTx,
-  createPoolWithExampleDeposits,
   createPoolWithExampleDepositsUmi,
   getMetadataURI,
-  getMetaplexInstance,
   getSellStatePDARent,
   getTokenAccount2022,
   getTokenAccountRent,
@@ -39,9 +37,8 @@ import {
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
 import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
-import { token } from '@metaplex-foundation/js';
 
-describe.only('mmm-fulfill-linear', () => {
+describe('mmm-fulfill-linear', () => {
   const TOKEN_PROGRAM_IDS = [TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID];
 
   const { connection } = anchor.AnchorProvider.env();
