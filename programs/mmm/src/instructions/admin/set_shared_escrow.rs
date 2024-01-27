@@ -34,7 +34,8 @@ pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Resu
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
-    // not support for reinvest
+    // not support for reinvest yet, and we will start with collection offers
+    // for shared escrow first.
     if pool.reinvest_fulfill_buy || pool.reinvest_fulfill_sell {
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
