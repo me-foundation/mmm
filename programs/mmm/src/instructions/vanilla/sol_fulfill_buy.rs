@@ -9,6 +9,7 @@ use crate::{
     ata::init_if_needed_ata,
     constants::*,
     errors::MMMErrorCode,
+    instructions::{check_buyside_sol_escrow_account, withdraw_m2},
     state::{Pool, SellState},
     util::{
         assert_valid_fees_bp, check_allowlists_for_mint, get_buyside_seller_receives,
@@ -173,6 +174,43 @@ pub fn handler<'info>(
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
+    // check creator_accounts and verify the remaining accounts
+    let creator_accounts = if pool.using_shared_escrow() {
+        // check the remaining accounts at position 0 and 1
+        // 0 has to be the m2_program
+        // 1 has to be the shared_escrow_account pda of the m2_program
+        if ctx.remaining_accounts.len() < 2 {
+            return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+        }
+        if *ctx.remaining_accounts[0].key != M2_PROGRAM {
+            return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+        }
+        let shared_escrow_account = &ctx.remaining_accounts[1];
+        let pda_program =
+            check_buyside_sol_escrow_account(&shared_escrow_account.key(), &pool_key, &pool.owner)?;
+        if pda_program != M2_PROGRAM {
+            return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+        }
+
+        // TODO
+        // Change to the correct amount to be withdrawn from shared escrow
+        // into the buyside_sol_escrow_account
+        let amount = 0; // it should be non-zero with the correct amount
+        withdraw_m2(
+            pool,
+            ctx.bumps.pool,
+            buyside_sol_escrow_account,
+            shared_escrow_account,
+            system_program,
+            pool.owner,
+            amount,
+        )?;
+
+        &ctx.remaining_accounts[2..]
+    } else {
+        ctx.remaining_accounts
+    };
+
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {
             return Err(MMMErrorCode::InvalidAccountState.into());
@@ -256,7 +294,7 @@ pub fn handler<'info>(
         pool.buyside_creator_royalty_bp,
         seller_receives,
         &parsed_metadata,
-        ctx.remaining_accounts,
+        creator_accounts,
         buyside_sol_escrow_account.to_account_info(),
         metadata_royalty_bp,
         buyside_sol_escrow_account_seeds,

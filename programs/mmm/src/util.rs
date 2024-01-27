@@ -1,7 +1,8 @@
 use crate::{
     constants::{
-        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX, MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP,
-        MAX_TOTAL_PRICE, MIN_SOL_ESCROW_BALANCE_BP, M2_PREFIX, M2_AUCTION_HOUSE, M2_PROGRAM,
+        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX, M2_AUCTION_HOUSE, M2_PREFIX, M2_PROGRAM,
+        MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
+        MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
     },
     errors::MMMErrorCode,
     state::*,
@@ -9,6 +10,10 @@ use crate::{
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
+use m2_interface::{
+    withdraw_by_mmm_invoke_signed_with_program_id, WithdrawByMMMArgs, WithdrawByMmmAccounts,
+    WithdrawByMmmIxArgs,
+};
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
     types::TokenStandard,
@@ -573,7 +578,7 @@ pub fn check_buyside_sol_escrow_account(
     );
 
     if single_pool_pda == *pda {
-       return Ok(ID);
+        return Ok(ID);
     }
 
     let (m2_shared_escrow_pda, _) = Pubkey::find_program_address(
@@ -585,8 +590,47 @@ pub fn check_buyside_sol_escrow_account(
         &M2_PROGRAM,
     );
     if m2_shared_escrow_pda == *pda {
-       return Ok(M2_PROGRAM);
+        return Ok(M2_PROGRAM);
     }
 
     Err(MMMErrorCode::InvalidAccountState.into())
+}
+
+pub fn withdraw_m2<'info>(
+    pool: &Account<'info, Pool>,
+    pool_bump: u8,
+    to: &AccountInfo<'info>,
+    m2_buyer_escrow: &AccountInfo<'info>,
+    system_program: &AccountInfo<'info>,
+    wallet: Pubkey,
+    amount: u64,
+) -> Result<()> {
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        pool.owner.as_ref(),
+        pool.uuid.as_ref(),
+        &[pool_bump],
+    ]];
+
+    match withdraw_by_mmm_invoke_signed_with_program_id(
+        ID,
+        WithdrawByMmmAccounts {
+            mmm_pool: &pool.to_account_info(),
+            to,
+            escrow_payment_account: m2_buyer_escrow,
+            system_program,
+        },
+        WithdrawByMmmIxArgs {
+            args: WithdrawByMMMArgs {
+                wallet,
+                auction_house: M2_AUCTION_HOUSE,
+                amount,
+                mmm_pool_uuid: pool.uuid,
+            },
+        },
+        pool_seeds,
+    ) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.into()),
+    }
 }

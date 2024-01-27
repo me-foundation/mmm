@@ -117,7 +117,10 @@ pub mod mmm {
         instructions::close_if_balance_invalid::handler(ctx)
     }
 
-    pub fn set_shared_escrow(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Result<()> {
+    pub fn set_shared_escrow(
+        ctx: Context<SetSharedEscrow>,
+        args: SetSharedEscrowArgs,
+    ) -> Result<()> {
         instructions::set_shared_escrow::handler(ctx, args)
     }
 }

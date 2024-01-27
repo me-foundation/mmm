@@ -40,11 +40,8 @@ pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Resu
     }
 
     // currently we only support m2 escrow
-    let escrow_account_program = check_buyside_sol_escrow_account(
-        &args.shared_escrow_account,
-        &pool.key(),
-        &pool.owner,
-    )?;
+    let escrow_account_program =
+        check_buyside_sol_escrow_account(&args.shared_escrow_account, &pool.key(), &pool.owner)?;
     if escrow_account_program != M2_PROGRAM {
         return Err(MMMErrorCode::InvalidAccountState.into());
     }

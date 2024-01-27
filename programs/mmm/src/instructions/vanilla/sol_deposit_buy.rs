@@ -1,9 +1,6 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-use crate::{
-    constants::*, errors::MMMErrorCode,
-    state::Pool, util::log_pool,
-};
+use crate::{constants::*, errors::MMMErrorCode, state::Pool, util::log_pool};
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolDepositBuyArgs {

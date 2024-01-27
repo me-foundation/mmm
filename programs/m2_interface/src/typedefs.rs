@@ -7,7 +7,6 @@ pub struct WithdrawByMMMArgs {
     pub auction_house: Pubkey,
     pub amount: u64,
     pub mmm_pool_uuid: Pubkey,
-    pub mmm_pool_bump: u8,
 }
 #[derive(Clone, Debug, BorshDeserialize, BorshSerialize, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
