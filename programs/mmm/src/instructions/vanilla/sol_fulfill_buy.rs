@@ -374,6 +374,26 @@ pub fn handler<'info>(
     )?;
     try_close_sell_state(sell_state, payer.to_account_info())?;
 
+    // return the remaining per pool escrow balance to the shared escrow account
+    if pool.using_shared_escrow() {
+        let min_rent = Rent::get()?.minimum_balance(0);
+        let shared_escrow_account = ctx.remaining_accounts[1].to_account_info();
+        if shared_escrow_account.lamports() + buyside_sol_escrow_account.lamports() > min_rent {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    buyside_sol_escrow_account.key,
+                    shared_escrow_account.key,
+                    buyside_sol_escrow_account.lamports(),
+                ),
+                &[
+                    buyside_sol_escrow_account.to_account_info(),
+                    shared_escrow_account,
+                    system_program.to_account_info(),
+                ],
+                buyside_sol_escrow_account_seeds,
+            )?;
+        }
+    }
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
 
     log_pool("post_sol_fulfill_buy", pool)?;
