@@ -39,6 +39,7 @@ import {
 import {
   getAssociatedTokenAddress,
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
   fromWeb3JsPublicKey,
@@ -465,7 +466,6 @@ export const createPoolWithExampleOcpDeposits = async (
   connection: Connection,
   poolArgs: Parameters<typeof createPool>[1],
   side: 'buy' | 'sell' | 'both',
-  tokenProgramId: PublicKey,
   nftRecipient?: PublicKey,
   policy?: PublicKey,
 ) => {
@@ -481,7 +481,6 @@ export const createPoolWithExampleOcpDeposits = async (
           receiver: v,
           closeAccount: true,
         },
-        tokenProgramId,
         policy,
       ),
     ),
@@ -538,7 +537,7 @@ export const createPoolWithExampleOcpDeposits = async (
         cmtProgram: CMT_PROGRAM,
         instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
         systemProgram: SystemProgram.programId,
-        tokenProgram: tokenProgramId,
+        tokenProgram: TOKEN_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       })

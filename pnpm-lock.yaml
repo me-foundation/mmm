@@ -38,6 +38,9 @@ dependencies:
   borsh:
     specifier: ^0.7.0
     version: 0.7.0
+  old-mpl-token-metadata:
+    specifier: npm:@metaplex-foundation/mpl-token-metadata@2.12.0
+    version: /@metaplex-foundation/mpl-token-metadata@2.12.0(fastestsmallesttextencoderdecoder@1.0.22)
 
 devDependencies:
   '@magiceden-oss/mmm':
@@ -866,6 +869,24 @@ packages:
       '@solana/spl-token': 0.3.11(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/web3.js': 1.89.1
       bn.js: 5.2.1
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - fastestsmallesttextencoderdecoder
+      - supports-color
+      - utf-8-validate
+    dev: false
+
+  /@metaplex-foundation/mpl-token-metadata@2.12.0(fastestsmallesttextencoderdecoder@1.0.22):
+    resolution: {integrity: sha512-DetC2F5MwMRt4TmLXwj8PJ8nClRYGMecSQ4pr9iKKa+rWertHgKoJHl2XhheRa084GtL7i0ssOKbX2gfYFosuQ==}
+    dependencies:
+      '@metaplex-foundation/beet': 0.7.2
+      '@metaplex-foundation/beet-solana': 0.4.1
+      '@metaplex-foundation/cusper': 0.0.2
+      '@solana/spl-token': 0.3.11(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/web3.js': 1.89.1
+      bn.js: 5.2.1
+      debug: 4.3.4
     transitivePeerDependencies:
       - bufferutil
       - encoding

@@ -2,7 +2,7 @@ import {
   DataV2,
   createCreateMetadataAccountV3Instruction,
   createSignMetadataInstruction,
-} from '@metaplex-foundation/mpl-token-metadata';
+} from 'old-mpl-token-metadata';
 import {
   getAssociatedTokenAddress,
   getMinimumBalanceForRentExemptMint,
@@ -53,7 +53,6 @@ export async function createTestMintAndTokenOCP(
   payer: Keypair,
   creator: Keypair,
   receiverArgs: ReceiverArgs,
-  tokenProgramId: PublicKey,
   policy = DEVNET_POLICY_ALL,
 ) {
   const metaplexInstance = getMetaplexInstance(connection);
@@ -77,7 +76,6 @@ export async function createTestMintAndTokenOCP(
     mintKeypair,
     payer.publicKey,
     payer.publicKey,
-    tokenProgramId,
   );
   const recentBlockhashData = await connection.getLatestBlockhash();
   mintTx.recentBlockhash = recentBlockhashData.blockhash;
@@ -200,7 +198,6 @@ const createNewMintTransaction = async (
   mintKeypair: Keypair,
   mintAuthority: PublicKey,
   freezeAuthority: PublicKey,
-  tokenProgramId: PublicKey,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   //Get the minimum lamport balance to create a new account and avoid rent payments
@@ -227,14 +224,14 @@ const createNewMintTransaction = async (
       newAccountPubkey: mintKeypair.publicKey,
       space: MINT_SIZE,
       lamports: requiredBalance,
-      programId: tokenProgramId,
+      programId: TOKEN_PROGRAM_ID,
     }),
     createInitializeMintInstruction(
       mintKeypair.publicKey, //Mint Address
       0, //Number of Decimals of New mint
       mintAuthority, //Mint Authority
       freezeAuthority, //Freeze Authority
-      tokenProgramId,
+      TOKEN_PROGRAM_ID,
     ),
     createCreateMetadataAccountV3Instruction(
       {
