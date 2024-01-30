@@ -11,14 +11,14 @@ use crate::{
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
 use m2_interface::{
-    withdraw_by_mmm_invoke_signed_with_program_id, WithdrawByMMMArgs, WithdrawByMmmAccounts,
-    WithdrawByMmmIxArgs,
+    withdraw_by_mmm_ix_with_program_id, WithdrawByMMMArgs, WithdrawByMmmIxArgs, WithdrawByMmmKeys,
 };
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
     types::TokenStandard,
 };
 use open_creator_protocol::state::Policy;
+use solana_program::program::invoke_signed;
 use std::convert::TryFrom;
 
 // copied from mpl-token-metadata
@@ -602,6 +602,7 @@ pub fn withdraw_m2<'info>(
     to: &AccountInfo<'info>,
     m2_buyer_escrow: &AccountInfo<'info>,
     system_program: &AccountInfo<'info>,
+    m2_program: &AccountInfo<'info>,
     wallet: Pubkey,
     amount: u64,
 ) -> Result<()> {
@@ -612,13 +613,13 @@ pub fn withdraw_m2<'info>(
         &[pool_bump],
     ]];
 
-    match withdraw_by_mmm_invoke_signed_with_program_id(
-        ID,
-        WithdrawByMmmAccounts {
-            mmm_pool: &pool.to_account_info(),
-            to,
-            escrow_payment_account: m2_buyer_escrow,
-            system_program,
+    let ix = withdraw_by_mmm_ix_with_program_id(
+        M2_PROGRAM,
+        WithdrawByMmmKeys {
+            mmm_pool: pool.key(),
+            to: to.key(),
+            escrow_payment_account: m2_buyer_escrow.key(),
+            system_program: system_program.key(),
         },
         WithdrawByMmmIxArgs {
             args: WithdrawByMMMArgs {
@@ -628,9 +629,19 @@ pub fn withdraw_m2<'info>(
                 mmm_pool_uuid: pool.uuid,
             },
         },
+    )?;
+
+    invoke_signed(
+        &ix,
+        &[
+            pool.to_account_info(),
+            to.to_account_info(),
+            m2_buyer_escrow.to_account_info(),
+            system_program.to_account_info(),
+            m2_program.to_account_info(),
+        ],
         pool_seeds,
-    ) {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e.into()),
-    }
+    )?;
+
+    Ok(())
 }

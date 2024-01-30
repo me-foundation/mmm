@@ -51,6 +51,7 @@ import { PROGRAM_ID as AUTHORIZATION_RULES_PROGRAM_ID } from '@metaplex-foundati
 import {
   AllowlistKind,
   CurveKind,
+  getM2BuyerSharedEscrow,
   getMMMBuysideSolEscrowPDA,
   getMMMPoolPDA,
   getMMMSellStatePDA,
@@ -58,6 +59,7 @@ import {
   Mmm,
 } from '../../sdk/src';
 import {
+  airdrop,
   fillAllowlists,
   getEmptyAllowLists,
   getKeypair,
@@ -164,6 +166,7 @@ export const createPoolWithExampleDeposits = async (
   side: 'buy' | 'sell' | 'both',
   tokenProgramId: PublicKey,
   nftRecipient?: PublicKey,
+  sharedEscrow?: boolean,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   const creator = Keypair.generate();
@@ -362,7 +365,7 @@ export const createPoolWithExampleDeposits = async (
     tokenProgramId,
   );
 
-  if (side === 'both' || side === 'sell') {
+  if (!sharedEscrow && (side === 'both' || side === 'sell')) {
     const { key: sellState1 } = getMMMSellStatePDA(
       program.programId,
       poolKey,
@@ -432,7 +435,7 @@ export const createPoolWithExampleDeposits = async (
     program.programId,
     poolKey,
   );
-  if (side === 'both' || side === 'buy') {
+  if (!sharedEscrow && (side === 'both' || side === 'buy')) {
     await program.methods
       .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
       .accountsStrict({
@@ -444,6 +447,19 @@ export const createPoolWithExampleDeposits = async (
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc({ skipPreflight: true });
+  }
+
+  if (sharedEscrow) {
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
+    await program.methods
+      .setSharedEscrow({ sharedEscrowAccount })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc();
   }
 
   return {
@@ -468,6 +484,7 @@ export const createPoolWithExampleOcpDeposits = async (
   side: 'buy' | 'sell' | 'both',
   nftRecipient?: PublicKey,
   policy?: PublicKey,
+  sharedEscrow?: boolean,
 ) => {
   const creator = Keypair.generate();
 
@@ -508,7 +525,7 @@ export const createPoolWithExampleOcpDeposits = async (
     true,
   );
 
-  if (side === 'both' || side === 'sell') {
+  if (!sharedEscrow && (side === 'both' || side === 'sell')) {
     const { key: sellState } = getMMMSellStatePDA(
       program.programId,
       poolKey,
@@ -552,7 +569,7 @@ export const createPoolWithExampleOcpDeposits = async (
     program.programId,
     poolKey,
   );
-  if (side === 'both' || side === 'buy') {
+  if (!sharedEscrow && (side === 'both' || side === 'buy')) {
     await program.methods
       .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
       .accountsStrict({
@@ -887,6 +904,7 @@ export const createPoolWithExampleMip1Deposits = async (
   tokenProgramId: PublicKey,
   nftRecipient?: PublicKey,
   ruleset?: PublicKey,
+  sharedEscrow?: boolean,
 ) => {
   const umi = (await createUmi('http://127.0.0.1:8899')).use(
     mplTokenMetadata(),
@@ -944,7 +962,7 @@ export const createPoolWithExampleMip1Deposits = async (
     tokenProgramId,
   );
 
-  if (side === 'both' || side === 'sell') {
+  if (!sharedEscrow && (side === 'both' || side === 'sell')) {
     const { key: sellState } = getMMMSellStatePDA(
       program.programId,
       poolKey,
@@ -994,7 +1012,7 @@ export const createPoolWithExampleMip1Deposits = async (
     program.programId,
     poolKey,
   );
-  if (side === 'both' || side === 'buy') {
+  if (!sharedEscrow && (side === 'both' || side === 'buy')) {
     await program.methods
       .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
       .accountsStrict({

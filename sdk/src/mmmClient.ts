@@ -194,6 +194,18 @@ export class MMMClient {
     return await builder.instruction();
   }
 
+  async getInsSetSharedEscrow(
+    args: anchor.IdlTypes<Mmm>['SetSharedEscrowArgs'],
+  ): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let builder = this.program.methods.setSharedEscrow(args).accountsStrict({
+      pool: this.poolData.pool,
+      owner: this.poolData.owner,
+      cosigner: this.poolData.cosigner,
+    });
+    return await builder.instruction();
+  }
+
   async getInsSolDepositBuy(
     args: anchor.IdlTypes<Mmm>['SolDepositBuyArgs'],
   ): Promise<TransactionInstruction> {

@@ -242,6 +242,7 @@ pub fn handler<'info>(
             buyside_sol_escrow_account,
             shared_escrow_account,
             system_program,
+            &ctx.remaining_accounts[0],
             pool.owner,
             amount,
         )?;

@@ -92,6 +92,10 @@ pub fn handler(ctx: Context<DepositSell>, args: DepositSellArgs) -> Result<()> {
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
 
+    if pool.using_shared_escrow() {
+        return Err(MMMErrorCode::InvalidAccountState.into());
+    }
+
     check_allowlists_for_mint(
         &pool.allowlists,
         asset_mint,
