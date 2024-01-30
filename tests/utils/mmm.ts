@@ -583,6 +583,19 @@ export const createPoolWithExampleOcpDeposits = async (
       .rpc({ skipPreflight: true });
   }
 
+  if (sharedEscrow) {
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
+    await program.methods
+      .setSharedEscrow({ sharedEscrowAccount })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc();
+  }
+
   return {
     nft: depositNft,
     extraNft,
@@ -1024,6 +1037,19 @@ export const createPoolWithExampleMip1Deposits = async (
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc({ skipPreflight: true });
+  }
+
+  if (sharedEscrow) {
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
+    await program.methods
+      .setSharedEscrow({ sharedEscrowAccount })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc();
   }
 
   return {
