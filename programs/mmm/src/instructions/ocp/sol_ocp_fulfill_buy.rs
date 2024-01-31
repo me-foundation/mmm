@@ -205,7 +205,7 @@ pub fn handler<'info>(
         // TODO
         // Change to the correct amount to be withdrawn from shared escrow
         // into the buyside_sol_escrow_account
-        let amount = 0; // it should be non-zero with the correct amount
+        let amount: u64 = (total_price as i64 + maker_fee) as u64;
         withdraw_m2(
             pool,
             ctx.bumps.pool,

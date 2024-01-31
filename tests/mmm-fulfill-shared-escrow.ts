@@ -1,12 +1,17 @@
+import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
+import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
+  getAccount as getTokenAccount,
 } from '@solana/spl-token';
 import {
+  ComputeBudgetProgram,
   Keypair,
   LAMPORTS_PER_SOL,
+  SYSVAR_INSTRUCTIONS_PUBKEY,
   SYSVAR_RENT_PUBKEY,
   SystemProgram,
 } from '@solana/web3.js';
@@ -20,15 +25,21 @@ import {
   Mmm,
   getM2BuyerSharedEscrow,
   getMMMSellStatePDA,
+  getSolFulfillBuyPrices,
+  getTokenRecordPDA,
 } from '../sdk/src';
 import {
+  MIP1_COMPUTE_UNITS,
   SIGNATURE_FEE_LAMPORTS,
   airdrop,
   assertTx,
+  createDefaultTokenAuthorizationRules,
   createPoolWithExampleDeposits,
+  createPoolWithExampleMip1Deposits,
   getMetaplexInstance,
   getSellStatePDARent,
   getTokenAccountRent,
+  sendAndAssertTx,
 } from './utils';
 
 describe('mmm-fulfill-linear', () => {
@@ -48,7 +59,7 @@ describe('mmm-fulfill-linear', () => {
     await airdrop(connection, wallet.publicKey, 50);
   });
 
-  it('Buyside only for shared-escrow', async () => {
+  it('can fullfill buy with shared-escrow for vanila nfts', async () => {
     const seller = Keypair.generate();
     const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey)[0];
     const metaplexInstance = getMetaplexInstance(connection);
@@ -211,5 +222,211 @@ describe('mmm-fulfill-linear', () => {
     assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
     assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
     assert.equal(poolAccountInfo.buysidePaymentAmount.toNumber(), 0);
+  });
+
+  it.only('can fulfill buy with shared escrow for mip1 nfts', async () => {
+    const DEFAULT_ACCOUNTS = {
+      tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
+      authorizationRulesProgram: AUTH_RULES_PROGRAM_ID,
+      instructions: SYSVAR_INSTRUCTIONS_PUBKEY,
+      systemProgram: SystemProgram.programId,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      rent: SYSVAR_RENT_PUBKEY,
+    };
+    const seller = Keypair.generate();
+    const nftCreator = Keypair.generate();
+    await airdrop(connection, nftCreator.publicKey, 10);
+    const rulesRes = await createDefaultTokenAuthorizationRules(
+      connection,
+      nftCreator,
+      'test',
+    );
+    const defaultRules = rulesRes.ruleSetAddress;
+    const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey)[0];
+
+    const [poolData] = await Promise.all([
+      createPoolWithExampleMip1Deposits(
+        program,
+        connection,
+        {
+          owner: wallet.publicKey,
+          cosigner,
+          spotPrice: new anchor.BN(2.2 * LAMPORTS_PER_SOL),
+          curveDelta: new anchor.BN(1 * LAMPORTS_PER_SOL),
+          curveType: CurveKind.linear,
+          reinvestFulfillBuy: false,
+          reinvestFulfillSell: false,
+        },
+        'buy',
+        nftCreator,
+        seller.publicKey,
+        defaultRules,
+        true, // sharedEscrow
+      ),
+      airdrop(connection, seller.publicKey, 10),
+      airdrop(connection, buyerSharedEscrow, 10),
+    ]);
+
+    const [
+      initSellerBalance,
+      initPaymentEscrowBalance,
+      initCreatorBalance,
+      initReferralBalance,
+      sellStateAccountRent,
+      initBuyerSharedEscrowBalance,
+    ] = await Promise.all([
+      connection.getBalance(seller.publicKey),
+      connection.getBalance(poolData.poolPaymentEscrow),
+      connection.getBalance(poolData.nftCreator.publicKey),
+      connection.getBalance(poolData.referral.publicKey),
+      getSellStatePDARent(connection),
+      connection.getBalance(buyerSharedEscrow),
+    ]);
+
+    const { key: sellState } = getMMMSellStatePDA(
+      program.programId,
+      poolData.poolKey,
+      poolData.extraNft.mintAddress,
+    );
+
+    const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+      poolData.extraNft.mintAddress,
+      wallet.publicKey,
+    );
+
+    // sale price should be 2.2 SOL
+    // with taker fee and royalties should be 2.2 / (1 + 0.015) * (1 - 0.005) ~ 2.157 SOL
+    const expectedBuyPrices = getSolFulfillBuyPrices({
+      totalPriceLamports: 2.2 * LAMPORTS_PER_SOL,
+      takerFeeBp: 50,
+      metadataRoyaltyBp: 150,
+      buysideCreatorRoyaltyBp: 10000,
+      lpFeeBp: 0,
+      makerFeeBp: 350,
+    });
+    const tx = await program.methods
+      .solMip1FulfillBuy({
+        assetAmount: new anchor.BN(1),
+        minPaymentAmount: expectedBuyPrices.sellerReceives,
+        allowlistAux: null,
+        makerFeeBp: 350,
+        takerFeeBp: 50,
+      })
+      .accountsStrict({
+        payer: seller.publicKey,
+        owner: wallet.publicKey,
+        cosigner: cosigner.publicKey,
+        referral: poolData.referral.publicKey,
+        pool: poolData.poolKey,
+        buysideSolEscrowAccount: poolData.poolPaymentEscrow,
+        assetMetadata: poolData.extraNft.metadataAddress,
+        assetMint: poolData.extraNft.mintAddress,
+        assetMasterEdition: poolData.extraNft.masterEditionAddress,
+        payerAssetAccount: poolData.extraNft.tokenAddress,
+        sellsideEscrowTokenAccount: poolData.poolAtaExtraNft,
+        ownerTokenAccount: ownerExtraNftAtaAddress,
+        allowlistAuxAccount: SystemProgram.programId,
+        sellState,
+        tokenOwnerTokenRecord: getTokenRecordPDA(
+          poolData.extraNft.mintAddress,
+          poolData.extraNft.tokenAddress,
+        ).key,
+        poolTokenRecord: getTokenRecordPDA(
+          poolData.extraNft.mintAddress,
+          poolData.poolAtaExtraNft,
+        ).key,
+        poolOwnerTokenRecord: getTokenRecordPDA(
+          poolData.extraNft.mintAddress,
+          ownerExtraNftAtaAddress,
+        ).key,
+        authorizationRules: defaultRules,
+        ...DEFAULT_ACCOUNTS,
+      })
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({ units: MIP1_COMPUTE_UNITS }),
+      ])
+      .remainingAccounts([
+        {
+          pubkey: M2_PROGRAM,
+          isWritable: false,
+          isSigner: false,
+        },
+        {
+          pubkey: buyerSharedEscrow,
+          isWritable: true,
+          isSigner: false,
+        },
+        {
+          pubkey: poolData.nftCreator.publicKey,
+          isSigner: false,
+          isWritable: true,
+        },
+      ])
+      .transaction();
+
+    const blockhashData = await connection.getLatestBlockhash();
+    tx.feePayer = seller.publicKey;
+    tx.recentBlockhash = blockhashData.blockhash;
+    tx.partialSign(cosigner, seller);
+    await sendAndAssertTx(connection, tx, blockhashData, false);
+
+    const expectedReferralFees =
+      expectedBuyPrices.makerFeePaid.toNumber() +
+      expectedBuyPrices.takerFeePaid.toNumber();
+    const [
+      sellerBalance,
+      paymentEscrowBalance,
+      creatorBalance,
+      referralBalance,
+      poolEscrowAta,
+    ] = await Promise.all([
+      connection.getBalance(seller.publicKey),
+      connection.getBalance(poolData.poolPaymentEscrow),
+      connection.getBalance(poolData.nftCreator.publicKey),
+      connection.getBalance(poolData.referral.publicKey),
+      getTokenAccount(connection, poolData.poolAtaExtraNft),
+    ]);
+
+    assert.equal(
+      sellerBalance,
+      initSellerBalance +
+        expectedBuyPrices.sellerReceives.toNumber() -
+        SIGNATURE_FEE_LAMPORTS * 2 -
+        sellStateAccountRent,
+    );
+    assert.equal(
+      paymentEscrowBalance,
+      initPaymentEscrowBalance -
+        2.2 * LAMPORTS_PER_SOL -
+        expectedBuyPrices.makerFeePaid.toNumber(),
+    );
+    assert.equal(
+      creatorBalance,
+      initCreatorBalance + expectedBuyPrices.royaltyPaid.toNumber(),
+    );
+    assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
+    assert.equal(Number(poolEscrowAta.amount), 1);
+    assert.equal(poolEscrowAta.owner.toBase58(), poolData.poolKey.toBase58());
+    assert.equal(
+      poolEscrowAta.mint.toBase58(),
+      poolData.extraNft.mintAddress.toBase58(),
+    );
+
+    const poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+    assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
+    assert.equal(poolAccountInfo.spotPrice.toNumber(), 1.2 * LAMPORTS_PER_SOL);
+    const sellStateAccountInfo = await program.account.sellState.fetch(
+      sellState,
+    );
+    assert.equal(
+      sellStateAccountInfo.pool.toBase58(),
+      poolData.poolKey.toBase58(),
+    );
+    assert.equal(
+      sellStateAccountInfo.assetMint.toBase58(),
+      poolData.extraNft.mintAddress.toBase58(),
+    );
+    assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 1);
   });
 });
