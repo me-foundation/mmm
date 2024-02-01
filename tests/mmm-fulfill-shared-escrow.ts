@@ -224,7 +224,7 @@ describe('mmm-fulfill-linear', () => {
     assert.equal(poolAccountInfo.buysidePaymentAmount.toNumber(), 0);
   });
 
-  it.only('can fulfill buy with shared escrow for mip1 nfts', async () => {
+  it('can fulfill buy with shared escrow for mip1 nfts', async () => {
     const DEFAULT_ACCOUNTS = {
       tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
       authorizationRulesProgram: AUTH_RULES_PROGRAM_ID,
@@ -305,6 +305,7 @@ describe('mmm-fulfill-linear', () => {
       lpFeeBp: 0,
       makerFeeBp: 350,
     });
+
     const tx = await program.methods
       .solMip1FulfillBuy({
         assetAmount: new anchor.BN(1),
@@ -379,54 +380,34 @@ describe('mmm-fulfill-linear', () => {
       paymentEscrowBalance,
       creatorBalance,
       referralBalance,
-      poolEscrowAta,
+      afterBuyerSharedEscrowBalance,
     ] = await Promise.all([
       connection.getBalance(seller.publicKey),
       connection.getBalance(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.nftCreator.publicKey),
       connection.getBalance(poolData.referral.publicKey),
-      getTokenAccount(connection, poolData.poolAtaExtraNft),
+      connection.getBalance(buyerSharedEscrow),
     ]);
 
     assert.equal(
       sellerBalance,
       initSellerBalance +
         expectedBuyPrices.sellerReceives.toNumber() -
-        SIGNATURE_FEE_LAMPORTS * 2 -
-        sellStateAccountRent,
+        SIGNATURE_FEE_LAMPORTS * 2,
     );
     assert.equal(
-      paymentEscrowBalance,
-      initPaymentEscrowBalance -
-        2.2 * LAMPORTS_PER_SOL -
-        expectedBuyPrices.makerFeePaid.toNumber(),
+      initBuyerSharedEscrowBalance - afterBuyerSharedEscrowBalance,
+      2.2 * LAMPORTS_PER_SOL + expectedBuyPrices.makerFeePaid.toNumber(),
     );
+    assert.equal(paymentEscrowBalance, 0);
     assert.equal(
       creatorBalance,
       initCreatorBalance + expectedBuyPrices.royaltyPaid.toNumber(),
     );
     assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
-    assert.equal(Number(poolEscrowAta.amount), 1);
-    assert.equal(poolEscrowAta.owner.toBase58(), poolData.poolKey.toBase58());
-    assert.equal(
-      poolEscrowAta.mint.toBase58(),
-      poolData.extraNft.mintAddress.toBase58(),
-    );
 
     const poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
-    assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
+    assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
     assert.equal(poolAccountInfo.spotPrice.toNumber(), 1.2 * LAMPORTS_PER_SOL);
-    const sellStateAccountInfo = await program.account.sellState.fetch(
-      sellState,
-    );
-    assert.equal(
-      sellStateAccountInfo.pool.toBase58(),
-      poolData.poolKey.toBase58(),
-    );
-    assert.equal(
-      sellStateAccountInfo.assetMint.toBase58(),
-      poolData.extraNft.mintAddress.toBase58(),
-    );
-    assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 1);
   });
 });
