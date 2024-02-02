@@ -1816,10 +1816,6 @@
           {
             "name": "mmmPoolUuid",
             "type": "publicKey"
-          },
-          {
-            "name": "mmmPoolBump",
-            "type": "u8"
           }
         ]
       }
