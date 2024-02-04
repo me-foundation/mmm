@@ -452,11 +452,14 @@ export const createPoolWithExampleDeposits = async (
   if (sharedEscrow) {
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
     await program.methods
-      .setSharedEscrow({ sharedEscrowAccount })
+      .setSharedEscrow({
+        sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
+      })
       .accountsStrict({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
+        sharedEscrowAccount,
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc();
@@ -586,11 +589,14 @@ export const createPoolWithExampleOcpDeposits = async (
   if (sharedEscrow) {
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
     await program.methods
-      .setSharedEscrow({ sharedEscrowAccount })
+      .setSharedEscrow({
+        sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
+      })
       .accountsStrict({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
+        sharedEscrowAccount,
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc();
@@ -1042,11 +1048,14 @@ export const createPoolWithExampleMip1Deposits = async (
   if (sharedEscrow) {
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
     await program.methods
-      .setSharedEscrow({ sharedEscrowAccount })
+      .setSharedEscrow({
+        sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
+      })
       .accountsStrict({
         owner: poolArgs.owner,
         cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
         pool: poolKey,
+        sharedEscrowAccount,
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc();

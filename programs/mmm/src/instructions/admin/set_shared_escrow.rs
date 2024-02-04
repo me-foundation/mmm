@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SetSharedEscrowArgs {
-    pub shared_escrow_account: Pubkey,
+    pub shared_escrow_cap: u64,
 }
 
 #[derive(Accounts)]
@@ -19,6 +19,17 @@ pub struct SetSharedEscrow<'info> {
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
     )]
     pub pool: Box<Account<'info, Pool>>,
+    /// CHECK: it's checked with seeds of M2's PDA seeds, and linked to the owner
+    #[account(
+        seeds = [
+            M2_PREFIX.as_bytes(),
+            M2_AUCTION_HOUSE.as_ref(),
+            owner.key().as_ref(),
+        ],
+        bump,
+        seeds::program = M2_PROGRAM,
+    )]
+    pub shared_escrow_account: UncheckedAccount<'info>,
 }
 
 pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Result<()> {
@@ -40,14 +51,15 @@ pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Resu
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
-    // currently we only support m2 escrow
-    let escrow_account_program =
-        check_buyside_sol_escrow_account(&args.shared_escrow_account, &pool.key(), &pool.owner)?;
-    if escrow_account_program != M2_PROGRAM {
+    pool.shared_escrow_account = Some(ctx.accounts.shared_escrow_account.key());
+
+    if args.shared_escrow_cap < Rent::get()?.minimum_balance(0)
+        || args.shared_escrow_cap > ctx.accounts.shared_escrow_account.lamports()
+    {
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
-    pool.shared_escrow_account = Some(args.shared_escrow_account);
+    pool.shared_escrow_cap = Some(args.shared_escrow_cap);
     log_pool("post_set_shared_escrow", pool)?;
 
     Ok(())

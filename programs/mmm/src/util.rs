@@ -21,6 +21,15 @@ use open_creator_protocol::state::Policy;
 use solana_program::program::invoke_signed;
 use std::convert::TryFrom;
 
+#[macro_export]
+macro_rules! index_ra {
+    ($iter:ident, $i:expr) => {
+        $iter
+            .get($i)
+            .ok_or(MMMErrorCode::InvalidRemainingAccounts)?
+    };
+}
+
 // copied from mpl-token-metadata
 fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
     let version = master_edition_account_info.data.borrow()[0];
@@ -342,7 +351,7 @@ pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'in
         return Ok(());
     }
 
-    if pool.using_shared_escrow() {
+    if pool.using_shared_escrow() && pool.shared_escrow_cap.unwrap_or(0) > pool.spot_price {
         return Ok(());
     }
 
@@ -363,12 +372,6 @@ pub fn try_close_escrow<'info>(
     system_program: &Program<'info, System>,
     escrow_seeds: &[&[&[u8]]],
 ) -> Result<()> {
-    // if the pool is using shared escrow, then we don't need to close the escrow
-    // because the buyside escrow cannot be deposited to
-    if pool.using_shared_escrow() {
-        return Ok(());
-    }
-
     // minimum rent needed to sustain a 0 data account
     let min_rent = Rent::get()?.minimum_balance(0);
     // if the balance is less than a small percentage of the spot price, then close the escrow
@@ -596,6 +599,7 @@ pub fn check_buyside_sol_escrow_account(
     Err(MMMErrorCode::InvalidAccountState.into())
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn withdraw_m2<'info>(
     pool: &Account<'info, Pool>,
     pool_bump: u8,
@@ -643,5 +647,28 @@ pub fn withdraw_m2<'info>(
         pool_seeds,
     )?;
 
+    Ok(())
+}
+
+pub fn check_remaining_accounts_for_m2(
+    remaining_accounts: &[AccountInfo],
+    pool_key: &Pubkey,
+    pool_owner: &Pubkey,
+) -> Result<()> {
+    // check the remaining accounts at position 0 and 1
+    // 0 has to be the m2_program
+    // 1 has to be the shared_escrow_account pda of the m2_program
+    if remaining_accounts.len() < 2 {
+        return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+    }
+    if *remaining_accounts[0].key != M2_PROGRAM {
+        return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+    }
+    let shared_escrow_account = &remaining_accounts[1];
+    let pda_program =
+        check_buyside_sol_escrow_account(&shared_escrow_account.key(), pool_key, pool_owner)?;
+    if pda_program != M2_PROGRAM {
+        return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+    }
     Ok(())
 }

@@ -1586,6 +1586,11 @@ export type Mmm = {
           "name": "pool",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "sharedEscrowAccount",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1696,6 +1701,12 @@ export type Mmm = {
             "name": "sharedEscrowAccount",
             "type": {
               "option": "publicKey"
+            }
+          },
+          {
+            "name": "sharedEscrowCap",
+            "type": {
+              "option": "u64"
             }
           }
         ]
@@ -1814,8 +1825,8 @@ export type Mmm = {
         "kind": "struct",
         "fields": [
           {
-            "name": "sharedEscrowAccount",
-            "type": "publicKey"
+            "name": "sharedEscrowCap",
+            "type": "u64"
           }
         ]
       }
@@ -3835,6 +3846,11 @@ export const IDL: Mmm = {
           "name": "pool",
           "isMut": true,
           "isSigner": false
+        },
+        {
+          "name": "sharedEscrowAccount",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -3945,6 +3961,12 @@ export const IDL: Mmm = {
             "name": "sharedEscrowAccount",
             "type": {
               "option": "publicKey"
+            }
+          },
+          {
+            "name": "sharedEscrowCap",
+            "type": {
+              "option": "u64"
             }
           }
         ]
@@ -4063,8 +4085,8 @@ export const IDL: Mmm = {
         "kind": "struct",
         "fields": [
           {
-            "name": "sharedEscrowAccount",
-            "type": "publicKey"
+            "name": "sharedEscrowCap",
+            "type": "u64"
           }
         ]
       }

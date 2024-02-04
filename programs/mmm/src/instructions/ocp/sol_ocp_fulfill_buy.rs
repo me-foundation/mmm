@@ -11,8 +11,9 @@ use crate::{
     ata::init_if_needed_ocp_ata,
     constants::*,
     errors::MMMErrorCode,
+    index_ra,
     instructions::{
-        check_buyside_sol_escrow_account, sol_fulfill_buy::SolFulfillBuyArgs, withdraw_m2,
+        check_remaining_accounts_for_m2, sol_fulfill_buy::SolFulfillBuyArgs, withdraw_m2,
     },
     state::{Pool, SellState},
     util::{
@@ -155,6 +156,7 @@ pub fn handler<'info>(
         pool_key.as_ref(),
         &[ctx.bumps.buyside_sol_escrow_account],
     ]];
+    let remaining_accounts = ctx.remaining_accounts;
 
     let parsed_metadata = check_allowlists_for_mint(
         &pool.allowlists,
@@ -186,40 +188,24 @@ pub fn handler<'info>(
 
     // check creator_accounts and verify the remaining accounts
     let creator_accounts = if pool.using_shared_escrow() {
-        // check the remaining accounts at position 0 and 1
-        // 0 has to be the m2_program
-        // 1 has to be the shared_escrow_account pda of the m2_program
-        if ctx.remaining_accounts.len() < 2 {
-            return Err(MMMErrorCode::InvalidRemainingAccounts.into());
-        }
-        if *ctx.remaining_accounts[0].key != M2_PROGRAM {
-            return Err(MMMErrorCode::InvalidRemainingAccounts.into());
-        }
-        let shared_escrow_account = &ctx.remaining_accounts[1];
-        let pda_program =
-            check_buyside_sol_escrow_account(&shared_escrow_account.key(), &pool_key, &pool.owner)?;
-        if pda_program != M2_PROGRAM {
-            return Err(MMMErrorCode::InvalidRemainingAccounts.into());
-        }
+        check_remaining_accounts_for_m2(remaining_accounts, &pool_key, &pool.owner.key())?;
 
-        // TODO
-        // Change to the correct amount to be withdrawn from shared escrow
-        // into the buyside_sol_escrow_account
         let amount: u64 = (total_price as i64 + maker_fee) as u64;
         withdraw_m2(
             pool,
             ctx.bumps.pool,
             buyside_sol_escrow_account,
-            shared_escrow_account,
+            index_ra!(remaining_accounts, 1),
             system_program,
-            &ctx.remaining_accounts[0],
+            index_ra!(remaining_accounts, 0),
             pool.owner,
             amount,
         )?;
+        pool.shared_escrow_cap = Some(pool.shared_escrow_cap.unwrap().checked_sub(amount).unwrap());
 
-        &ctx.remaining_accounts[2..]
+        &remaining_accounts[2..]
     } else {
-        ctx.remaining_accounts
+        remaining_accounts
     };
 
     let (target_token_account, target_authority) = if pool.reinvest_fulfill_buy {
@@ -396,8 +382,10 @@ pub fn handler<'info>(
     // return the remaining per pool escrow balance to the shared escrow account
     if pool.using_shared_escrow() {
         let min_rent = Rent::get()?.minimum_balance(0);
-        let shared_escrow_account = ctx.remaining_accounts[1].to_account_info();
-        if shared_escrow_account.lamports() + buyside_sol_escrow_account.lamports() > min_rent {
+        let shared_escrow_account = index_ra!(remaining_accounts, 1).to_account_info();
+        if shared_escrow_account.lamports() + buyside_sol_escrow_account.lamports() > min_rent
+            && buyside_sol_escrow_account.lamports() > 0
+        {
             anchor_lang::solana_program::program::invoke_signed(
                 &anchor_lang::solana_program::system_instruction::transfer(
                     buyside_sol_escrow_account.key,
@@ -409,6 +397,13 @@ pub fn handler<'info>(
                     shared_escrow_account,
                     system_program.to_account_info(),
                 ],
+                buyside_sol_escrow_account_seeds,
+            )?;
+        } else {
+            try_close_escrow(
+                buyside_sol_escrow_account,
+                pool,
+                system_program,
                 buyside_sol_escrow_account_seeds,
             )?;
         }
