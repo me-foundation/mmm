@@ -1,4 +1,5 @@
 #![allow(clippy::result_large_err)]
+#![allow(ambiguous_glob_reexports)]
 
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
