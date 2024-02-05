@@ -377,12 +377,14 @@ describe('mmm-fulfill-linear', () => {
       expectedBuyPrices.takerFeePaid.toNumber();
     const [
       sellerBalance,
+      paymentEscrowAccount,
       paymentEscrowBalance,
       creatorBalance,
       referralBalance,
       afterBuyerSharedEscrowBalance,
     ] = await Promise.all([
       connection.getBalance(seller.publicKey),
+      connection.getAccountInfo(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.nftCreator.publicKey),
       connection.getBalance(poolData.referral.publicKey),
@@ -400,6 +402,7 @@ describe('mmm-fulfill-linear', () => {
       2.2 * LAMPORTS_PER_SOL + expectedBuyPrices.makerFeePaid.toNumber(),
     );
     assert.equal(paymentEscrowBalance, 0);
+    assert.isNull(paymentEscrowAccount);
     assert.equal(
       creatorBalance,
       initCreatorBalance + expectedBuyPrices.royaltyPaid.toNumber(),
