@@ -94,6 +94,7 @@ pub struct SolMip1FulfillSell<'info> {
         init_if_needed,
         associated_token::mint = asset_mint,
         associated_token::authority = payer,
+        associated_token::token_program = token_program,
         payer = payer
     )]
     pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,

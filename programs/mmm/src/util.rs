@@ -213,8 +213,6 @@ pub fn get_sol_total_price_and_next_price(
     // the price needs to go down
     let p = pool.spot_price;
     let delta = pool.curve_delta;
-    msg!("spot price: {}, delta: {}, asset amount: {}", p, delta, n);
-    msg!("curve type: {}", pool.curve_type);
     let ret = match fulfill_buy {
         true => {
             match pool.curve_type {
@@ -245,7 +243,6 @@ pub fn get_sol_total_price_and_next_price(
                     // for loop to prevent overflow
                     let mut total_price: u64 = 0;
                     let mut curr_price: u128 = p as u128;
-                    msg!("current price: {}", curr_price);
                     for _ in 0..n {
                         total_price = total_price
                             .checked_add(curr_price as u64)

@@ -67,6 +67,7 @@ pub struct SolOcpFulfillBuy<'info> {
     pub asset_metadata: UncheckedAccount<'info>,
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidOcpAssetParams,
+        mint::token_program = token_program,
     )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
