@@ -27,20 +27,6 @@ address = "ocp4vWUzA2z2XMYJ3QhM9vWdyoyoQwAFJhRdVTbvo9E" # ocp: open_creator_prot
 [[test.validator.clone]]
 address = "6Huqrb4xxmmNA4NufYdgpmspoLmjXFd3qEfteCddLgSz" # ocp: policy (allow all)
 
-[[test.validator.clone]]
-address = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb" # Token 2022
-
-[[test.validator.clone]]
-address = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" # Associated Token Program
-
-[[test.genesis]]
-address = "migrxZFChTqicHpNa1CAjPcF29Mui2JU2q4Ym7qQUTi"
-program = "tests/deps/mpl_migration_validator.so"       # custom migration validator with only waiting period updated
-
-[[test.genesis]]
-address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
-program = "tests/deps/mpl_token_metadata.so"            # custom migration validator with only waiting period updated
-
 [programs.localnet]
 mmm = "mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc"
 
