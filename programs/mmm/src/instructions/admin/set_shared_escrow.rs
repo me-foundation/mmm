@@ -51,7 +51,7 @@ pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Resu
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
-    pool.shared_escrow_account = Some(ctx.accounts.shared_escrow_account.key());
+    pool.shared_escrow_account = ctx.accounts.shared_escrow_account.key();
 
     if args.shared_escrow_cap < Rent::get()?.minimum_balance(0)
         || args.shared_escrow_cap > ctx.accounts.shared_escrow_account.lamports()
@@ -59,7 +59,7 @@ pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Resu
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
-    pool.shared_escrow_cap = Some(args.shared_escrow_cap);
+    pool.shared_escrow_cap = args.shared_escrow_cap;
     log_pool("post_set_shared_escrow", pool)?;
 
     Ok(())

@@ -1699,15 +1699,11 @@ export type Mmm = {
           },
           {
             "name": "sharedEscrowAccount",
-            "type": {
-              "option": "publicKey"
-            }
+            "type": "publicKey"
           },
           {
             "name": "sharedEscrowCap",
-            "type": {
-              "option": "u64"
-            }
+            "type": "u64"
           }
         ]
       }
@@ -3959,15 +3955,11 @@ export const IDL: Mmm = {
           },
           {
             "name": "sharedEscrowAccount",
-            "type": {
-              "option": "publicKey"
-            }
+            "type": "publicKey"
           },
           {
             "name": "sharedEscrowCap",
-            "type": {
-              "option": "u64"
-            }
+            "type": "u64"
           }
         ]
       }

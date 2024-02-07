@@ -201,7 +201,7 @@ pub fn handler<'info>(
             pool.owner,
             amount,
         )?;
-        pool.shared_escrow_cap = Some(pool.shared_escrow_cap.unwrap().checked_sub(amount).unwrap());
+        pool.shared_escrow_cap = pool.shared_escrow_cap.checked_sub(amount).unwrap();
 
         &remaining_accounts[2..]
     } else {
