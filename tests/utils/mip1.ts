@@ -24,7 +24,7 @@ import {
 } from '@metaplex-foundation/umi';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddress,
+  getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import {
   findMasterEditionV2Pda,
@@ -40,20 +40,15 @@ import {
   MintInstructionAccounts,
   MintInstructionArgs,
   PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID,
-  TokenStandard,
-  TokenDelegateRole,
   TokenRecord,
+  TokenStandard,
+} from 'old-mpl-token-metadata';
+import {
+  TokenDelegateRole,
   TokenState,
-  SetTokenStandardInstructionAccounts,
-  createSetTokenStandardInstruction,
   findMetadataPda as findMetadataPda2,
   findMasterEditionPda as findMasterEditionV2Pda2,
-  findTokenRecordPda as getTokenRecordPda2,
-  createV1,
-  createNft,
   createProgrammableNft,
-  verifyCreatorV1,
-  mintV1,
 } from '@metaplex-foundation/mpl-token-metadata';
 import { getMetaplexInstance, sendAndAssertTx } from '.';
 import {
@@ -178,58 +173,6 @@ export const createDefaultTokenAuthorizationRules = async (
   return { ruleSetAddress, txId: sig };
 };
 
-// const createNewMip1MintTransactionUmi = (
-//   umi: Umi,
-//   payer: UmiSigner,
-//   mintKeypair: UmiSigner,
-//   tokenProgramId: PublicKey,
-//   ruleSet?: PublicKey,
-// ) => {
-//   const metadataPda = findMetadataPda2(umi, {
-//     mint: mintKeypair.publicKey,
-//   })[0];
-//   const masterEditionPDA = findMasterEditionV2Pda2(umi, {
-//     mint: mintKeypair.publicKey,
-//   })[0];
-//   const ata = getAssociatedTokenAddress(
-//     toWeb3JsPublicKey(mintKeypair.publicKey),
-//     toWeb3JsPublicKey(payer.publicKey),
-//     true,
-//     tokenProgramId,
-//   );
-
-//   const data: AssetData = {
-//     name: 'ProgrammableNonFungible',
-//     symbol: 'PNF',
-//     uri: 'uri',
-//     sellerFeeBasisPoints: 150,
-//     creators: [
-//       {
-//         address: payer.publicKey,
-//         share: 100,
-//         verified: true,
-//       },
-//     ],
-//     primarySaleHappened: false,
-//     isMutable: true,
-//     tokenStandard: TokenStandard.ProgrammableNonFungible,
-//     collection: null,
-//     uses: null,
-//     collectionDetails: null,
-//     ruleSet: ruleSet ?? null,
-//   };
-
-//   const create = createNft(umi, {
-//     mint: mintKeypair,
-//     name: 'ProgrammableNonFungible',
-//     symbol: 'PNF',
-//     uri: 'uri',
-//     sellerFeeBasisPoints: percentAmount(5.5),
-//     token:
-//     tokenStandard: TokenStandard.ProgrammableNonFungible,
-//   }).sendAndConfirm(umi);
-// };
-
 const createNewMip1MintTransaction = (
   payer: Keypair,
   mintKeypair: Keypair,
@@ -303,7 +246,7 @@ export const createProgrammableNftUmi = async (
 ) => {
   const mintKeypair = generateSigner(umi);
 
-  const targetTokenAccount = await getAssociatedTokenAddress(
+  const targetTokenAccount = getAssociatedTokenAddressSync(
     toWeb3JsPublicKey(mintKeypair.publicKey),
     recipient,
     true,
@@ -347,7 +290,7 @@ export const createProgrammableNftMip1 = async (
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   const mintKeypair = Keypair.generate();
-  const targetTokenAccount = await getAssociatedTokenAddress(
+  const targetTokenAccount = getAssociatedTokenAddressSync(
     mintKeypair.publicKey,
     recipient,
   );
