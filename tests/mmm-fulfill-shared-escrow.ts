@@ -61,7 +61,7 @@ describe('mmm-fulfill-linear', () => {
 
   it('can fullfill buy with shared-escrow for vanila nfts', async () => {
     const seller = Keypair.generate();
-    const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey)[0];
+    const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey).key;
     const metaplexInstance = getMetaplexInstance(connection);
     const [poolData] = await Promise.all([
       createPoolWithExampleDeposits(
@@ -243,7 +243,7 @@ describe('mmm-fulfill-linear', () => {
       'test',
     );
     const defaultRules = rulesRes.ruleSetAddress;
-    const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey)[0];
+    const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey).key;
 
     const [poolData] = await Promise.all([
       createPoolWithExampleMip1Deposits(

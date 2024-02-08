@@ -62,8 +62,9 @@ export const M2_AUCTION_HOUSE = new PublicKey(
 );
 
 export function getM2BuyerSharedEscrow(wallet: PublicKey) {
-  return PublicKey.findProgramAddressSync(
+  const [key, bump] = PublicKey.findProgramAddressSync(
     [Buffer.from(M2_PREFIX), M2_AUCTION_HOUSE.toBuffer(), wallet.toBuffer()],
     M2_PROGRAM,
   );
+  return { key, bump };
 }

@@ -93,9 +93,9 @@ impl Pool {
         2 + // bool
         32 + // [u8; 32]
         4 + (1 + 32) * ALLOWLIST_MAX_LEN + // Allowlist
-        (1 + 32) + // Pubkey
-        (1 + 8) + // u64
-        350; // padding
+        32 + // Pubkey
+        8 + // u64
+        352; // padding
 
     pub fn using_shared_escrow(&self) -> bool {
         self.shared_escrow_account != Pubkey::default()

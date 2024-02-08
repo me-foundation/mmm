@@ -450,7 +450,7 @@ export const createPoolWithExampleDeposits = async (
   }
 
   if (sharedEscrow) {
-    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
         sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
@@ -587,7 +587,7 @@ export const createPoolWithExampleOcpDeposits = async (
   }
 
   if (sharedEscrow) {
-    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
         sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
@@ -1046,7 +1046,7 @@ export const createPoolWithExampleMip1Deposits = async (
   }
 
   if (sharedEscrow) {
-    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner)[0];
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
         sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
