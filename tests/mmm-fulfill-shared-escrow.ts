@@ -1,5 +1,5 @@
 import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
-import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
+import { MPL_TOKEN_METADATA_PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -42,7 +42,7 @@ import {
   sendAndAssertTx,
 } from './utils';
 
-describe('mmm-fulfill-linear', () => {
+describe.only('shared-escrow mmm-fulfill-linear', () => {
   const { connection } = anchor.AnchorProvider.env();
   const wallet = new anchor.Wallet(Keypair.generate());
   const provider = new anchor.AnchorProvider(connection, wallet, {
@@ -79,6 +79,7 @@ describe('mmm-fulfill-linear', () => {
           reinvestFulfillSell: false,
         },
         'buy',
+        TOKEN_PROGRAM_ID,
         seller.publicKey,
         true, // sharedEscrow
       ),
@@ -248,7 +249,6 @@ describe('mmm-fulfill-linear', () => {
     const [poolData] = await Promise.all([
       createPoolWithExampleMip1Deposits(
         program,
-        connection,
         {
           owner: wallet.publicKey,
           cosigner,
@@ -260,6 +260,7 @@ describe('mmm-fulfill-linear', () => {
         },
         'buy',
         nftCreator,
+        TOKEN_PROGRAM_ID,
         seller.publicKey,
         defaultRules,
         true, // sharedEscrow
