@@ -7,7 +7,7 @@ use crate::{
     state::*,
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
-use anchor_spl::token::Mint;
+use anchor_spl::token_interface::Mint;
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
     types::TokenStandard,
@@ -34,7 +34,7 @@ pub fn check_allowlists(allowlists: &[Allowlist]) -> Result<()> {
 
 pub fn check_allowlists_for_mint(
     allowlists: &[Allowlist],
-    mint: &Account<Mint>,
+    mint: &InterfaceAccount<Mint>,
     metadata: &AccountInfo,
     master_edition: Option<&AccountInfo>,
     allowlist_aux: Option<String>,

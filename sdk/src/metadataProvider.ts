@@ -3,11 +3,7 @@ import {
   MintState,
 } from '@magiceden-oss/open_creator_protocol';
 import { Metaplex } from '@metaplex-foundation/js';
-import {
-  Creator,
-  Metadata,
-  TokenStandard,
-} from '@metaplex-foundation/mpl-token-metadata';
+import { Creator, Metadata, TokenStandard } from 'old-mpl-token-metadata';
 import { Connection, PublicKey } from '@solana/web3.js';
 
 export class MetadataProviderError extends Error {

@@ -2,7 +2,7 @@ import {
   DataV2,
   createCreateMetadataAccountV3Instruction,
   createSignMetadataInstruction,
-} from '@metaplex-foundation/mpl-token-metadata';
+} from 'old-mpl-token-metadata';
 import {
   getAssociatedTokenAddress,
   getMinimumBalanceForRentExemptMint,

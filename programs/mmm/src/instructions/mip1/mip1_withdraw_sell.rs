@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use mpl_token_metadata::{
     accounts::Metadata,
@@ -36,7 +36,7 @@ pub struct Mip1WithdrawSell<'info> {
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     /// CHECK: will be checked in cpi
     asset_master_edition: UncheckedAccount<'info>,
     /// CHECK: will be checked in cpi
@@ -54,17 +54,19 @@ pub struct Mip1WithdrawSell<'info> {
         init_if_needed,
         associated_token::mint = asset_mint,
         associated_token::authority = owner,
+        associated_token::token_program = token_program,
         payer = owner
     )]
-    pub asset_token_account: Box<Account<'info, TokenAccount>>,
+    pub asset_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
+        associated_token::token_program = token_program,
         constraint = sellside_escrow_token_account.amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
         mut,
@@ -103,7 +105,7 @@ pub struct Mip1WithdrawSell<'info> {
     #[account(address = sysvar::instructions::id())]
     pub instructions: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -174,9 +176,9 @@ pub fn handler(ctx: Context<Mip1WithdrawSell>, args: WithdrawSellArgs) -> Result
         .invoke_signed(pool_seeds)?;
 
     if sellside_escrow_token_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new_with_signer(
+        anchor_spl::token_2022::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: sellside_escrow_token_account.to_account_info(),
                 destination: owner.to_account_info(),
                 authority: pool.to_account_info(),

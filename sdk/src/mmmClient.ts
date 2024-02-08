@@ -7,13 +7,12 @@ import { Metaplex } from '@metaplex-foundation/js';
 import {
   PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID,
   TokenStandard,
-} from '@metaplex-foundation/mpl-token-metadata';
+} from 'old-mpl-token-metadata';
 import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
 import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
   Connection,
@@ -236,6 +235,7 @@ export class MMMClient {
     payer: PublicKey,
     assetMint: PublicKey,
     assetTokenAccount: PublicKey,
+    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
@@ -284,7 +284,7 @@ export class MMMClient {
         sellsideEscrowTokenAccount,
         allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
         systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: tokenProgramId,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
 
@@ -328,7 +328,7 @@ export class MMMClient {
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           rent: SYSVAR_RENT_PUBKEY,
           tokenOwnerTokenRecord,
           poolOwnerTokenRecord,
@@ -352,7 +352,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });
@@ -382,6 +382,7 @@ export class MMMClient {
     args: anchor.IdlTypes<Mmm>['SolFulfillSellArgs'],
     payer: PublicKey,
     assetMint: PublicKey,
+    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
@@ -434,7 +435,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
 
@@ -470,7 +471,7 @@ export class MMMClient {
             sellsideEscrowTokenAccount,
             allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
             systemProgram: SystemProgram.programId,
-            tokenProgram: TOKEN_PROGRAM_ID,
+            tokenProgram: tokenProgramId,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             rent: SYSVAR_RENT_PUBKEY,
 
@@ -497,7 +498,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });
@@ -526,6 +527,7 @@ export class MMMClient {
   async getInsDepositSell(
     args: anchor.IdlTypes<Mmm>['DepositSellArgs'],
     assetMint: PublicKey,
+    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
@@ -566,7 +568,7 @@ export class MMMClient {
         sellsideEscrowTokenAccount,
         allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
         systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: tokenProgramId,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
 
@@ -592,7 +594,7 @@ export class MMMClient {
           sellState,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
 
@@ -616,7 +618,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });
@@ -628,6 +630,7 @@ export class MMMClient {
   async getInsWithdrawSell(
     args: anchor.IdlTypes<Mmm>['WithdrawSellArgs'],
     assetMint: PublicKey,
+    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
@@ -674,7 +677,7 @@ export class MMMClient {
         buysideSolEscrowAccount,
         allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
         systemProgram: SystemProgram.programId,
-        tokenProgram: TOKEN_PROGRAM_ID,
+        tokenProgram: tokenProgramId,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
 
@@ -701,7 +704,7 @@ export class MMMClient {
           buysideSolEscrowAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
 
@@ -724,7 +727,7 @@ export class MMMClient {
           buysideSolEscrowAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          tokenProgram: tokenProgramId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });

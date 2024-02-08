@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use std::convert::TryFrom;
 
@@ -75,20 +75,22 @@ pub struct SolFulfillSell<'info> {
     /// CHECK: we will check the master_edtion in check_allowlists_for_mint()
     pub asset_master_edition: UncheckedAccount<'info>,
     /// CHECK: check_allowlists_for_mint
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
+        associated_token::token_program = token_program,
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         payer = payer,
         associated_token::mint = asset_mint,
         associated_token::authority = payer,
+        associated_token::token_program = token_program,
     )]
-    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
+    pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
     #[account(
@@ -102,7 +104,7 @@ pub struct SolFulfillSell<'info> {
     )]
     pub sell_state: Account<'info, SellState>,
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -181,10 +183,10 @@ pub fn handler<'info>(
         ],
     )?;
 
-    anchor_spl::token::transfer(
+    anchor_spl::token_2022::transfer(
         CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::Transfer {
+            anchor_spl::token_2022::Transfer {
                 from: sellside_escrow_token_account.to_account_info(),
                 to: payer_asset_account.to_account_info(),
                 authority: pool.to_account_info(),
@@ -195,9 +197,9 @@ pub fn handler<'info>(
     )?;
     // we can close the sellside_escrow_token_account if no amount left
     if sellside_escrow_token_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new_with_signer(
+        anchor_spl::token_2022::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: sellside_escrow_token_account.to_account_info(),
                 destination: owner.to_account_info(),
                 authority: pool.to_account_info(),

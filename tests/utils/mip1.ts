@@ -15,9 +15,16 @@ import {
   TransactionInstruction,
 } from '@solana/web3.js';
 import {
+  Umi,
+  generateSigner,
+  KeypairSigner as UmiSigner,
+  percentAmount,
+  OptionOrNullable,
+  PublicKey as UmiPublicKey,
+} from '@metaplex-foundation/umi';
+import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddress,
-  TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import {
   findMasterEditionV2Pda,
@@ -33,12 +40,15 @@ import {
   MintInstructionAccounts,
   MintInstructionArgs,
   PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID,
-  TokenStandard,
-  TokenDelegateRole,
   TokenRecord,
+  TokenStandard,
+} from 'old-mpl-token-metadata';
+import {
+  TokenDelegateRole,
   TokenState,
-  SetTokenStandardInstructionAccounts,
-  createSetTokenStandardInstruction,
+  findMetadataPda as findMetadataPda2,
+  findMasterEditionPda as findMasterEditionV2Pda2,
+  createProgrammableNft,
 } from '@metaplex-foundation/mpl-token-metadata';
 import { getMetaplexInstance, sendAndAssertTx } from '.';
 import {
@@ -62,6 +72,11 @@ import {
   findMigrationState,
   findMigrationProgramAsSigner,
 } from './migrationPdas';
+import {
+  fromWeb3JsPublicKey,
+  toWeb3JsKeypair,
+  toWeb3JsPublicKey,
+} from '@metaplex-foundation/umi-web3js-adapters';
 
 const getAmountRuleIxData = (name: string, owner: PublicKey): Uint8Array => {
   return encode([
@@ -161,6 +176,7 @@ export const createDefaultTokenAuthorizationRules = async (
 const createNewMip1MintTransaction = (
   payer: Keypair,
   mintKeypair: Keypair,
+  tokenProgramId: PublicKey,
   ruleSet?: PublicKey,
 ) => {
   //metadata account associated with mint
@@ -202,7 +218,7 @@ const createNewMip1MintTransaction = (
     mint: mintKeypair.publicKey,
     authority: payer.publicKey,
     payer: payer.publicKey,
-    splTokenProgram: TOKEN_PROGRAM_ID,
+    splTokenProgram: tokenProgramId,
     sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
     updateAuthority: payer.publicKey,
   };
@@ -221,15 +237,60 @@ const createNewMip1MintTransaction = (
   return createNewTokenTransaction;
 };
 
-export const createProgrammableNft = async (
+export const createProgrammableNftUmi = async (
+  umi: Umi,
+  authorityAndPayer: UmiSigner,
+  recipient: PublicKey,
+  tokenProgramId: PublicKey,
+  ruleSet: OptionOrNullable<UmiPublicKey> | undefined,
+) => {
+  const mintKeypair = generateSigner(umi);
+
+  const targetTokenAccount = getAssociatedTokenAddressSync(
+    toWeb3JsPublicKey(mintKeypair.publicKey),
+    recipient,
+    true,
+    tokenProgramId,
+  );
+  const metadataPda = findMetadataPda2(umi, { mint: mintKeypair.publicKey })[0];
+  const masterEditionPDA = findMasterEditionV2Pda2(umi, {
+    mint: mintKeypair.publicKey,
+  })[0];
+
+  await createProgrammableNft(umi, {
+    mint: mintKeypair,
+    authority: authorityAndPayer,
+    name: 'ProgrammableNonFungible',
+    symbol: 'PNF',
+    uri: 'uri',
+    sellerFeeBasisPoints: percentAmount(1.5),
+    creators: [
+      { address: authorityAndPayer.publicKey, share: 100, verified: true },
+    ],
+    token: fromWeb3JsPublicKey(targetTokenAccount),
+    tokenOwner: fromWeb3JsPublicKey(recipient),
+    ruleSet,
+    splTokenProgram: fromWeb3JsPublicKey(tokenProgramId),
+  }).sendAndConfirm(umi, { send: { skipPreflight: true } });
+
+  return {
+    mintAddress: toWeb3JsPublicKey(mintKeypair.publicKey),
+    metadataAddress: toWeb3JsPublicKey(metadataPda),
+    masterEditionAddress: toWeb3JsPublicKey(masterEditionPDA),
+    tokenAddress: targetTokenAccount,
+  };
+};
+
+export const createProgrammableNftMip1 = async (
   connection: Connection,
   authorityAndPayer: Keypair,
   recipient: PublicKey,
+  tokenProgramId: PublicKey,
   ruleSet?: PublicKey,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   const mintKeypair = Keypair.generate();
-  const targetTokenAccount = await getAssociatedTokenAddress(
+  const targetTokenAccount = getAssociatedTokenAddressSync(
     mintKeypair.publicKey,
     recipient,
   );
@@ -245,6 +306,7 @@ export const createProgrammableNft = async (
   const tx = createNewMip1MintTransaction(
     authorityAndPayer,
     mintKeypair,
+    tokenProgramId,
     ruleSet,
   );
   const mintIxAccounts: MintInstructionAccounts = {
@@ -256,7 +318,7 @@ export const createProgrammableNft = async (
     payer: authorityAndPayer.publicKey,
     authority: authorityAndPayer.publicKey,
     sysvarInstructions: SYSVAR_INSTRUCTIONS_PUBKEY,
-    splTokenProgram: TOKEN_PROGRAM_ID,
+    splTokenProgram: tokenProgramId,
     splAtaProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
     authorizationRulesProgram: AUTHORIZATION_RULES_PROGRAM_ID,
     authorizationRules: ruleSet,
@@ -286,6 +348,7 @@ export const getInitMigrationIx = (
   authority: PublicKey,
   collectionMint: PublicKey,
   ruleset: PublicKey,
+  tokenProgramId: PublicKey,
 ) => {
   const initArgs: InitializeInstructionArgs = {
     initializeArgs: {
@@ -351,6 +414,7 @@ export const getUpdateMigrationIx = (
 export const getStartMigrationIx = (
   authority: PublicKey,
   collectionMint: PublicKey,
+  tokenProgramId: PublicKey,
 ) => {
   const pas = findMigrationProgramAsSigner();
   const startAccounts: StartInstructionAccounts = {
@@ -360,7 +424,7 @@ export const getStartMigrationIx = (
     collectionMetadata: findMetadataPda(collectionMint),
     delegateRecord: findDelegateRecordPda(pas, collectionMint),
     migrationState: findMigrationState(collectionMint),
-    splTokenProgram: TOKEN_PROGRAM_ID,
+    splTokenProgram: tokenProgramId,
     systemProgram: SystemProgram.programId,
     tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
     programSigner: pas,
@@ -377,6 +441,7 @@ export const getMigrateValidatorMigrateIx = (
   tokenAccount: PublicKey,
   collectionMint: PublicKey,
   ruleset: PublicKey,
+  tokenProgramId: PublicKey,
 ): TransactionInstruction => {
   const pas = findMigrationProgramAsSigner();
   const accounts: AccountMeta[] = [
@@ -423,7 +488,7 @@ export const getMigrateValidatorMigrateIx = (
       isWritable: false,
     },
     {
-      pubkey: TOKEN_PROGRAM_ID,
+      pubkey: tokenProgramId,
       isSigner: false,
       isWritable: false,
     },

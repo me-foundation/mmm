@@ -1,6 +1,7 @@
-import { PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
+import { MPL_TOKEN_METADATA_PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 import { PublicKey } from '@solana/web3.js';
 import { PREFIXES } from './constants';
+import { toWeb3JsPublicKey } from '@metaplex-foundation/umi-web3js-adapters';
 
 export const getMMMPoolPDA = (
   programId: PublicKey,
@@ -41,12 +42,12 @@ export const getTokenRecordPDA = (mint: PublicKey, tokenAccount: PublicKey) => {
   const [key, bump] = PublicKey.findProgramAddressSync(
     [
       Buffer.from('metadata'),
-      TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+      toWeb3JsPublicKey(TOKEN_METADATA_PROGRAM_ID).toBuffer(),
       mint.toBuffer(),
       Buffer.from('token_record'),
       tokenAccount.toBuffer(),
     ],
-    TOKEN_METADATA_PROGRAM_ID,
+    toWeb3JsPublicKey(TOKEN_METADATA_PROGRAM_ID),
   );
 
   return { key, bump };

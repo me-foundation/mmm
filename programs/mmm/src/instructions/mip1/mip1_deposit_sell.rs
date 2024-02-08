@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use mpl_token_metadata::{
     instructions::TransferCpiBuilder,
@@ -46,7 +46,7 @@ pub struct Mip1DepositSell<'info> {
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     /// CHECK: will be checked in cpi
     pub asset_master_edition: UncheckedAccount<'info>,
     #[account(
@@ -56,15 +56,16 @@ pub struct Mip1DepositSell<'info> {
         constraint = asset_token_account.amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub asset_token_account: Box<Account<'info, TokenAccount>>,
+    pub asset_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: will be checked in cpi
     #[account(
         init_if_needed,
         payer = owner,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
+        associated_token::token_program = token_program,
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         payer = owner,
@@ -98,7 +99,7 @@ pub struct Mip1DepositSell<'info> {
     #[account(address = sysvar::instructions::id())]
     pub instructions: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -172,9 +173,9 @@ pub fn handler(ctx: Context<Mip1DepositSell>, args: DepositSellArgs) -> Result<(
         .invoke()?;
 
     if asset_token_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
+        anchor_spl::token_2022::close_account(CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: asset_token_account.to_account_info(),
                 destination: owner.to_account_info(),
                 authority: owner.to_account_info(),

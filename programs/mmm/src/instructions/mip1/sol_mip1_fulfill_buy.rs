@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use mpl_token_metadata::{
     instructions::TransferCpiBuilder,
@@ -71,7 +71,7 @@ pub struct SolMip1FulfillBuy<'info> {
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub asset_mint: Box<Account<'info, Mint>>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     /// CHECK: will be checked in cpi
     pub asset_master_edition: UncheckedAccount<'info>,
     #[account(
@@ -81,14 +81,14 @@ pub struct SolMip1FulfillBuy<'info> {
         constraint = payer_asset_account.amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidMip1AssetParams,
     )]
-    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
+    pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
         init_if_needed,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
         payer = payer,
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: check in init_if_needed_ata
     #[account(mut)]
     pub owner_token_account: UncheckedAccount<'info>,
@@ -131,7 +131,7 @@ pub struct SolMip1FulfillBuy<'info> {
     #[account(address = sysvar::instructions::id())]
     pub instructions: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -306,9 +306,9 @@ pub fn handler<'info>(
             .transfer_args(transfer_args)
             .invoke_signed(pool_seeds)?;
 
-        anchor_spl::token::close_account(CpiContext::new_with_signer(
+        anchor_spl::token_2022::close_account(CpiContext::new_with_signer(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: sellside_escrow_token_account.to_account_info(),
                 destination: payer.to_account_info(),
                 authority: pool.to_account_info(),
@@ -319,9 +319,9 @@ pub fn handler<'info>(
 
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
+        anchor_spl::token_2022::close_account(CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: payer_asset_account.to_account_info(),
                 destination: payer.to_account_info(),
                 authority: payer.to_account_info(),

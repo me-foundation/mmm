@@ -1,7 +1,7 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token_interface::{Mint, TokenAccount, TokenInterface},
 };
 use std::convert::TryFrom;
 
@@ -75,13 +75,14 @@ pub struct SolFulfillBuy<'info> {
     /// CHECK: we will check the master_edtion in check_allowlists_for_mint()
     pub asset_master_edition: UncheckedAccount<'info>,
     /// CHECK: check_allowlists_for_mint
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         token::mint = asset_mint,
         token::authority = payer,
+        token::token_program = token_program,
     )]
-    pub payer_asset_account: Box<Account<'info, TokenAccount>>,
+    pub payer_asset_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: check in init_if_needed_ata
     #[account(mut)]
     pub sellside_escrow_token_account: UncheckedAccount<'info>,
@@ -103,7 +104,7 @@ pub struct SolFulfillBuy<'info> {
     )]
     pub sell_state: Account<'info, SellState>,
     pub system_program: Program<'info, System>,
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
 }
@@ -178,10 +179,12 @@ pub fn handler<'info>(
             system_program.to_account_info(),
             rent.to_account_info(),
         )?;
-        anchor_spl::token::transfer(
+        let sellside_escrow_token_account =
+            ctx.accounts.sellside_escrow_token_account.to_account_info();
+        anchor_spl::token_2022::transfer(
             CpiContext::new(
                 token_program.to_account_info(),
-                anchor_spl::token::Transfer {
+                anchor_spl::token_2022::Transfer {
                     from: payer_asset_account.to_account_info(),
                     to: sellside_escrow_token_account.to_account_info(),
                     authority: payer.to_account_info(),
@@ -213,10 +216,10 @@ pub fn handler<'info>(
             system_program.to_account_info(),
             rent.to_account_info(),
         )?;
-        anchor_spl::token::transfer(
+        anchor_spl::token_2022::transfer(
             CpiContext::new(
                 token_program.to_account_info(),
-                anchor_spl::token::Transfer {
+                anchor_spl::token_2022::Transfer {
                     from: payer_asset_account.to_account_info(),
                     to: owner_token_account.to_account_info(),
                     authority: payer.to_account_info(),
@@ -228,9 +231,9 @@ pub fn handler<'info>(
 
     // we can close the payer_asset_account if no amount left
     if payer_asset_account.amount == args.asset_amount {
-        anchor_spl::token::close_account(CpiContext::new(
+        anchor_spl::token_2022::close_account(CpiContext::new(
             token_program.to_account_info(),
-            anchor_spl::token::CloseAccount {
+            anchor_spl::token_2022::CloseAccount {
                 account: payer_asset_account.to_account_info(),
                 destination: payer.to_account_info(),
                 authority: payer.to_account_info(),

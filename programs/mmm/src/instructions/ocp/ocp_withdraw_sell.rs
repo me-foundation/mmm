@@ -1,7 +1,8 @@
 use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token::Token,
+    token_interface::{Mint, TokenAccount},
 };
 
 use crate::{
@@ -30,7 +31,7 @@ pub struct OcpWithdrawSell<'info> {
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     /// CHECK: will be checked in cpi
     #[account(
     seeds = [
@@ -49,10 +50,11 @@ pub struct OcpWithdrawSell<'info> {
         mut,
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
+        associated_token::token_program = token_program,
         constraint = sellside_escrow_token_account.amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
-    pub sellside_escrow_token_account: Box<Account<'info, TokenAccount>>,
+    pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
         mut,
@@ -136,6 +138,7 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
             associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             payer: owner.to_account_info(),
         },
+        &token_program.key(),
     )?;
 
     open_creator_protocol::cpi::transfer(CpiContext::new_with_signer(

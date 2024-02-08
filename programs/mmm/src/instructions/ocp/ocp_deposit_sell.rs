@@ -1,7 +1,8 @@
 use anchor_lang::{prelude::*, solana_program::sysvar, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
-    token::{Mint, Token, TokenAccount},
+    token::Token,
+    token_interface::{Mint, TokenAccount},
 };
 
 use crate::{
@@ -41,7 +42,7 @@ pub struct OcpDepositSell<'info> {
     #[account(
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
-    pub asset_mint: Account<'info, Mint>,
+    pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
         token::mint = asset_mint,
@@ -49,7 +50,7 @@ pub struct OcpDepositSell<'info> {
         constraint = asset_token_account.amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
         constraint = args.asset_amount == 1 @ MMMErrorCode::InvalidOcpAssetParams,
     )]
-    pub asset_token_account: Box<Account<'info, TokenAccount>>,
+    pub asset_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: checked in CPI
     #[account(mut)]
     pub sellside_escrow_token_account: UncheckedAccount<'info>,
@@ -126,6 +127,7 @@ pub fn handler(ctx: Context<OcpDepositSell>, args: DepositSellArgs) -> Result<()
             associated_token_program: ctx.accounts.associated_token_program.to_account_info(),
             payer: owner.to_account_info(),
         },
+        &token_program.key(),
     )?;
 
     open_creator_protocol::cpi::transfer(CpiContext::new(
