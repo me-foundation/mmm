@@ -567,38 +567,6 @@ pub fn assert_valid_fees_bp(maker_fee_bp: i16, taker_fee_bp: i16) -> Result<()> 
     Ok(())
 }
 
-pub fn check_buyside_sol_escrow_account(
-    pda: &Pubkey,
-    pool_key: &Pubkey,
-    buyer: &Pubkey,
-) -> Result<Pubkey> {
-    let (single_pool_pda, _) = Pubkey::find_program_address(
-        &[
-            BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
-            pool_key.as_ref(),
-        ],
-        &ID,
-    );
-
-    if single_pool_pda == *pda {
-        return Ok(ID);
-    }
-
-    let (m2_shared_escrow_pda, _) = Pubkey::find_program_address(
-        &[
-            M2_PREFIX.as_bytes(),
-            M2_AUCTION_HOUSE.as_ref(),
-            buyer.as_ref(),
-        ],
-        &M2_PROGRAM,
-    );
-    if m2_shared_escrow_pda == *pda {
-        return Ok(M2_PROGRAM);
-    }
-
-    Err(MMMErrorCode::InvalidAccountState.into())
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn withdraw_m2<'info>(
     pool: &Account<'info, Pool>,
@@ -652,7 +620,6 @@ pub fn withdraw_m2<'info>(
 
 pub fn check_remaining_accounts_for_m2(
     remaining_accounts: &[AccountInfo],
-    pool_key: &Pubkey,
     pool_owner: &Pubkey,
 ) -> Result<()> {
     // check the remaining accounts at position 0 and 1
@@ -661,14 +628,24 @@ pub fn check_remaining_accounts_for_m2(
     if remaining_accounts.len() < 2 {
         return Err(MMMErrorCode::InvalidRemainingAccounts.into());
     }
+
     if *remaining_accounts[0].key != M2_PROGRAM {
         return Err(MMMErrorCode::InvalidRemainingAccounts.into());
     }
+
     let shared_escrow_account = &remaining_accounts[1];
-    let pda_program =
-        check_buyside_sol_escrow_account(&shared_escrow_account.key(), pool_key, pool_owner)?;
-    if pda_program != M2_PROGRAM {
+
+    let (m2_shared_escrow_pda, _) = Pubkey::find_program_address(
+        &[
+            M2_PREFIX.as_bytes(),
+            M2_AUCTION_HOUSE.as_ref(),
+            pool_owner.as_ref(),
+        ],
+        &M2_PROGRAM,
+    );
+    if m2_shared_escrow_pda != shared_escrow_account.key() {
         return Err(MMMErrorCode::InvalidRemainingAccounts.into());
     }
+
     Ok(())
 }

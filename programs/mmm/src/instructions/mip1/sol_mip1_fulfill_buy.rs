@@ -220,7 +220,7 @@ pub fn handler<'info>(
 
     // check creator_accounts and verify the remaining accounts
     let creator_accounts = if pool.using_shared_escrow() {
-        check_remaining_accounts_for_m2(remaining_accounts, &pool_key, &pool.owner.key())?;
+        check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
 
         let amount: u64 = (total_price as i64 + maker_fee) as u64;
         withdraw_m2(
