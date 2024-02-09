@@ -245,6 +245,7 @@ describe.only('shared-escrow mmm-fulfill-linear', () => {
     );
     const defaultRules = rulesRes.ruleSetAddress;
     const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey).key;
+    await airdrop(connection, buyerSharedEscrow, 10);
 
     const [poolData] = await Promise.all([
       createPoolWithExampleMip1Deposits(
@@ -266,7 +267,6 @@ describe.only('shared-escrow mmm-fulfill-linear', () => {
         true, // sharedEscrow
       ),
       airdrop(connection, seller.publicKey, 10),
-      airdrop(connection, buyerSharedEscrow, 10),
     ]);
 
     const [
