@@ -924,6 +924,7 @@ export const createPoolWithExampleMip1Deposits = async (
   nftRecipient?: PublicKey,
   ruleset?: PublicKey,
   sharedEscrow?: boolean,
+  sharedEscrowCapInSol?: number,
 ) => {
   const umi = (await createUmi('http://127.0.0.1:8899')).use(
     mplTokenMetadata(),
@@ -1049,7 +1050,9 @@ export const createPoolWithExampleMip1Deposits = async (
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
-        sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
+        sharedEscrowCap: new anchor.BN(
+          (sharedEscrowCapInSol || 5) * LAMPORTS_PER_SOL,
+        ),
       })
       .accountsStrict({
         owner: poolArgs.owner,
