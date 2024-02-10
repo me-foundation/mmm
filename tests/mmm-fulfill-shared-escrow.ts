@@ -455,7 +455,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         seller.publicKey,
         defaultRules,
         true, // sharedEscrow
-        2.3, // just enough sol to cover the first fulfilment
+        1, // just enough sol to cover the first fulfilment
       ),
       airdrop(connection, seller.publicKey, 10),
     ]);
@@ -601,7 +601,9 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     );
     assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
 
-    const poolAccountInfo = await program.account.pool.fetchNullable(poolData.poolKey);
+    const poolAccountInfo = await program.account.pool.fetchNullable(
+      poolData.poolKey,
+    );
     assert.isNull(poolAccountInfo);
   });
 });

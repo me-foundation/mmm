@@ -351,7 +351,7 @@ pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'in
         return Ok(());
     }
 
-    if pool.using_shared_escrow() && pool.shared_escrow_cap > pool.spot_price {
+    if pool.using_shared_escrow() && pool.shared_escrow_count != 0 {
         return Ok(());
     }
 

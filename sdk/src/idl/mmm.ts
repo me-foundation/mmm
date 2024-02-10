@@ -1702,7 +1702,7 @@ export type Mmm = {
             "type": "publicKey"
           },
           {
-            "name": "sharedEscrowCap",
+            "name": "sharedEscrowCount",
             "type": "u64"
           }
         ]
@@ -1821,7 +1821,7 @@ export type Mmm = {
         "kind": "struct",
         "fields": [
           {
-            "name": "sharedEscrowCap",
+            "name": "sharedEscrowCount",
             "type": "u64"
           }
         ]
@@ -3958,7 +3958,7 @@ export const IDL: Mmm = {
             "type": "publicKey"
           },
           {
-            "name": "sharedEscrowCap",
+            "name": "sharedEscrowCount",
             "type": "u64"
           }
         ]
@@ -4077,7 +4077,7 @@ export const IDL: Mmm = {
         "kind": "struct",
         "fields": [
           {
-            "name": "sharedEscrowCap",
+            "name": "sharedEscrowCount",
             "type": "u64"
           }
         ]

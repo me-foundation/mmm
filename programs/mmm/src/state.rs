@@ -80,7 +80,7 @@ pub struct Pool {
     pub buyside_payment_amount: u64,
 
     pub shared_escrow_account: Pubkey,
-    pub shared_escrow_cap: u64,
+    pub shared_escrow_count: u64,
 }
 
 impl Pool {

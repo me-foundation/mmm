@@ -453,7 +453,7 @@ export const createPoolWithExampleDeposits = async (
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
-        sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
+        sharedEscrowCount: new anchor.BN(2),
       })
       .accountsStrict({
         owner: poolArgs.owner,
@@ -590,7 +590,7 @@ export const createPoolWithExampleOcpDeposits = async (
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
-        sharedEscrowCap: new anchor.BN(10 * LAMPORTS_PER_SOL),
+        sharedEscrowCount: new anchor.BN(2),
       })
       .accountsStrict({
         owner: poolArgs.owner,
@@ -924,7 +924,7 @@ export const createPoolWithExampleMip1Deposits = async (
   nftRecipient?: PublicKey,
   ruleset?: PublicKey,
   sharedEscrow?: boolean,
-  sharedEscrowCapInSol?: number,
+  sharedEscrowCount?: number,
 ) => {
   const umi = (await createUmi('http://127.0.0.1:8899')).use(
     mplTokenMetadata(),
@@ -1050,9 +1050,7 @@ export const createPoolWithExampleMip1Deposits = async (
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
-        sharedEscrowCap: new anchor.BN(
-          (sharedEscrowCapInSol || 5) * LAMPORTS_PER_SOL,
-        ),
+        sharedEscrowCount: new anchor.BN(sharedEscrowCount || 2),
       })
       .accountsStrict({
         owner: poolArgs.owner,

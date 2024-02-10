@@ -233,7 +233,10 @@ pub fn handler<'info>(
             pool.owner,
             amount,
         )?;
-        pool.shared_escrow_cap = pool.shared_escrow_cap.checked_sub(amount).unwrap();
+        pool.shared_escrow_count = pool
+            .shared_escrow_count
+            .checked_sub(args.asset_amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?;
 
         &remaining_accounts[2..]
     } else {

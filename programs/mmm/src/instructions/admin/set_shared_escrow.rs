@@ -2,7 +2,7 @@ use super::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SetSharedEscrowArgs {
-    pub shared_escrow_cap: u64,
+    pub shared_escrow_count: u64,
 }
 
 #[derive(Accounts)]
@@ -52,14 +52,7 @@ pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Resu
     }
 
     pool.shared_escrow_account = ctx.accounts.shared_escrow_account.key();
-
-    if args.shared_escrow_cap < Rent::get()?.minimum_balance(0)
-        || args.shared_escrow_cap > ctx.accounts.shared_escrow_account.lamports()
-    {
-        return Err(MMMErrorCode::InvalidAccountState.into());
-    }
-
-    pool.shared_escrow_cap = args.shared_escrow_cap;
+    pool.shared_escrow_count = args.shared_escrow_count;
     log_pool("post_set_shared_escrow", pool)?;
 
     Ok(())
