@@ -27,6 +27,7 @@ import {
 import { AllowlistKind } from './constants';
 import { IDL, Mmm } from './idl/mmm';
 import {
+  getM2BuyerSharedEscrow,
   getMMMBuysideSolEscrowPDA,
   getMMMPoolPDA,
   getMMMSellStatePDA,
@@ -202,6 +203,7 @@ export class MMMClient {
       pool: this.poolData.pool,
       owner: this.poolData.owner,
       cosigner: this.poolData.cosigner,
+      sharedEscrowAccount: getM2BuyerSharedEscrow(this.poolData.owner).key,
     });
     return await builder.instruction();
   }
