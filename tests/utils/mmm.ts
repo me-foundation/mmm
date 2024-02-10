@@ -167,6 +167,7 @@ export const createPoolWithExampleDeposits = async (
   tokenProgramId: PublicKey,
   nftRecipient?: PublicKey,
   sharedEscrow?: boolean,
+  sharedEscrowCount?: number,
 ) => {
   const metaplexInstance = getMetaplexInstance(connection);
   const creator = Keypair.generate();
@@ -453,7 +454,7 @@ export const createPoolWithExampleDeposits = async (
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
-        sharedEscrowCount: new anchor.BN(2),
+        sharedEscrowCount: new anchor.BN(sharedEscrowCount || 2),
       })
       .accountsStrict({
         owner: poolArgs.owner,
@@ -488,6 +489,7 @@ export const createPoolWithExampleOcpDeposits = async (
   nftRecipient?: PublicKey,
   policy?: PublicKey,
   sharedEscrow?: boolean,
+  sharedEscrowCount?: number,
 ) => {
   const creator = Keypair.generate();
 
@@ -590,7 +592,7 @@ export const createPoolWithExampleOcpDeposits = async (
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
     await program.methods
       .setSharedEscrow({
-        sharedEscrowCount: new anchor.BN(2),
+        sharedEscrowCount: new anchor.BN(sharedEscrowCount || 2),
       })
       .accountsStrict({
         owner: poolArgs.owner,

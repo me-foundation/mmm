@@ -82,6 +82,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         TOKEN_PROGRAM_ID,
         seller.publicKey,
         true, // sharedEscrow
+        4, // can be fulfilled 4 times, one more than the sft amount to be tested
       ),
       airdrop(connection, seller.publicKey, 10),
       airdrop(connection, buyerSharedEscrow, 10),
