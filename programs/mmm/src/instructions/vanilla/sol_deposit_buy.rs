@@ -39,6 +39,10 @@ pub fn handler(ctx: Context<SolDepositBuy>, args: SolDepositBuyArgs) -> Result<(
     let system_program = &ctx.accounts.system_program;
     let pool = &mut ctx.accounts.pool;
 
+    if pool.using_shared_escrow() {
+        return Err(MMMErrorCode::InvalidAccountState.into());
+    }
+
     anchor_lang::solana_program::program::invoke(
         &anchor_lang::solana_program::system_instruction::transfer(
             owner.key,

@@ -1237,6 +1237,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
+name = "m2_interface"
+version = "0.1.0"
+dependencies = [
+ "borsh 0.10.3",
+ "num-derive 0.3.3",
+ "num-traits",
+ "serde",
+ "solana-program",
+ "thiserror",
+]
+
+[[package]]
 name = "memchr"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1279,6 +1291,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "community-managed-token",
+ "m2_interface",
  "mpl-token-metadata 4.0.0",
  "open_creator_protocol",
  "solana-program",

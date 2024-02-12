@@ -78,6 +78,9 @@ pub struct Pool {
     pub payment_mint: Pubkey,
     pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
     pub buyside_payment_amount: u64,
+
+    pub shared_escrow_account: Pubkey, // this points to the shared escrow account PDA (usually M2)
+    pub shared_escrow_count: u64, // this means that how many times (count) the shared escrow account can be fulfilled, and it can be mutable
 }
 
 impl Pool {
@@ -90,7 +93,13 @@ impl Pool {
         2 + // bool
         32 + // [u8; 32]
         4 + (1 + 32) * ALLOWLIST_MAX_LEN + // Allowlist
-        392; // padding
+        32 + // Pubkey
+        8 + // u64
+        352; // padding
+
+    pub fn using_shared_escrow(&self) -> bool {
+        self.shared_escrow_account != Pubkey::default()
+    }
 }
 
 // seeds = [

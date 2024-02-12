@@ -13,7 +13,10 @@ use crate::{
     ata::init_if_needed_ata,
     constants::*,
     errors::MMMErrorCode,
-    instructions::sol_fulfill_buy::SolFulfillBuyArgs,
+    index_ra,
+    instructions::{
+        check_remaining_accounts_for_m2, sol_fulfill_buy::SolFulfillBuyArgs, withdraw_m2,
+    },
     state::{Pool, SellState},
     util::{
         assert_is_programmable, assert_valid_fees_bp, check_allowlists_for_mint,
@@ -134,6 +137,13 @@ pub struct SolMip1FulfillBuy<'info> {
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
+    // Remaining accounts
+    // Branch: using shared escrow accounts
+    //   0: m2_program
+    //   1: shared_escrow_account
+    //   2+: creator accounts
+    // Branch: not using shared escrow accounts
+    //   0+: creator accounts
 }
 
 pub fn handler<'info>(
@@ -145,6 +155,7 @@ pub fn handler<'info>(
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
     let owner = &ctx.accounts.owner;
+    let owner_key = &ctx.accounts.owner.key();
     let referral = &ctx.accounts.referral;
     let payer = &ctx.accounts.payer;
     let payer_asset_account = &ctx.accounts.payer_asset_account;
@@ -162,9 +173,11 @@ pub fn handler<'info>(
     let authorization_rules = &ctx.accounts.authorization_rules;
     let authorization_rules_program = &ctx.accounts.authorization_rules_program;
     let token_metadata_program_ai = &ctx.accounts.token_metadata_program.to_account_info();
+    let remaining_accounts = ctx.remaining_accounts;
 
     let rent = &ctx.accounts.rent;
     let pool_key = pool.key();
+    let pool_uuid = pool.uuid;
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
         pool_key.as_ref(),
@@ -172,8 +185,8 @@ pub fn handler<'info>(
     ]];
     let pool_seeds: &[&[&[u8]]] = &[&[
         POOL_PREFIX.as_bytes(),
-        pool.owner.as_ref(),
-        pool.uuid.as_ref(),
+        owner_key.as_ref(),
+        pool_uuid.as_ref(),
         &[ctx.bumps.pool],
     ]];
 
@@ -204,6 +217,31 @@ pub fn handler<'info>(
             .ok_or(MMMErrorCode::NumericOverflow)?,
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
+
+    // check creator_accounts and verify the remaining accounts
+    let creator_accounts = if pool.using_shared_escrow() {
+        check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
+
+        let amount: u64 = (total_price as i64 + maker_fee) as u64;
+        withdraw_m2(
+            pool,
+            ctx.bumps.pool,
+            buyside_sol_escrow_account,
+            index_ra!(remaining_accounts, 1),
+            system_program,
+            index_ra!(remaining_accounts, 0),
+            pool.owner,
+            amount,
+        )?;
+        pool.shared_escrow_count = pool
+            .shared_escrow_count
+            .checked_sub(args.asset_amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?;
+
+        &remaining_accounts[2..]
+    } else {
+        remaining_accounts
+    };
 
     // transfer to token account owned by pool
     let payload = Payload {
@@ -244,6 +282,9 @@ pub fn handler<'info>(
         .invoke()?;
 
     if pool.reinvest_fulfill_buy {
+        if pool.using_shared_escrow() {
+            return Err(MMMErrorCode::InvalidAccountState.into());
+        }
         pool.sellside_asset_amount = pool
             .sellside_asset_amount
             .checked_add(args.asset_amount)
@@ -334,7 +375,7 @@ pub fn handler<'info>(
         10000,
         seller_receives,
         &parsed_metadata,
-        ctx.remaining_accounts,
+        creator_accounts,
         buyside_sol_escrow_account.to_account_info(),
         metadata_royalty_bp,
         buyside_sol_escrow_account_seeds,
@@ -415,7 +456,37 @@ pub fn handler<'info>(
     )?;
     try_close_sell_state(sell_state, payer.to_account_info())?;
 
+    // return the remaining per pool escrow balance to the shared escrow account
+    if pool.using_shared_escrow() {
+        let min_rent = Rent::get()?.minimum_balance(0);
+        let shared_escrow_account = index_ra!(remaining_accounts, 1).to_account_info();
+        if shared_escrow_account.lamports() + buyside_sol_escrow_account.lamports() > min_rent
+            && buyside_sol_escrow_account.lamports() > 0
+        {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    buyside_sol_escrow_account.key,
+                    shared_escrow_account.key,
+                    buyside_sol_escrow_account.lamports(),
+                ),
+                &[
+                    buyside_sol_escrow_account.to_account_info(),
+                    shared_escrow_account,
+                    system_program.to_account_info(),
+                ],
+                buyside_sol_escrow_account_seeds,
+            )?;
+        } else {
+            try_close_escrow(
+                buyside_sol_escrow_account,
+                pool,
+                system_program,
+                buyside_sol_escrow_account_seeds,
+            )?;
+        }
+    }
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+
     log_pool("post_sol_mip1_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 

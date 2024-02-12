@@ -1,19 +1,34 @@
 use crate::{
     constants::{
+        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX, M2_AUCTION_HOUSE, M2_PREFIX, M2_PROGRAM,
         MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
-        MIN_SOL_ESCROW_BALANCE_BP,
+        MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
     },
     errors::MMMErrorCode,
     state::*,
+    ID,
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
+use m2_interface::{
+    withdraw_by_mmm_ix_with_program_id, WithdrawByMMMArgs, WithdrawByMmmIxArgs, WithdrawByMmmKeys,
+};
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
     types::TokenStandard,
 };
 use open_creator_protocol::state::Policy;
+use solana_program::program::invoke_signed;
 use std::convert::TryFrom;
+
+#[macro_export]
+macro_rules! index_ra {
+    ($iter:ident, $i:expr) => {
+        $iter
+            .get($i)
+            .ok_or(MMMErrorCode::InvalidRemainingAccounts)?
+    };
+}
 
 // copied from mpl-token-metadata
 fn check_master_edition(master_edition_account_info: &AccountInfo) -> bool {
@@ -336,6 +351,10 @@ pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'in
         return Ok(());
     }
 
+    if pool.using_shared_escrow() && pool.shared_escrow_count != 0 {
+        return Ok(());
+    }
+
     pool.to_account_info()
         .data
         .borrow_mut()
@@ -543,6 +562,89 @@ pub fn assert_valid_fees_bp(maker_fee_bp: i16, taker_fee_bp: i16) -> Result<()> 
     let sum = maker_fee_bp + taker_fee_bp;
     if !(0..=bound).contains(&sum) {
         return Err(MMMErrorCode::InvalidMakerOrTakerFeeBP.into());
+    }
+
+    Ok(())
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn withdraw_m2<'info>(
+    pool: &Account<'info, Pool>,
+    pool_bump: u8,
+    to: &AccountInfo<'info>,
+    m2_buyer_escrow: &AccountInfo<'info>,
+    system_program: &AccountInfo<'info>,
+    m2_program: &AccountInfo<'info>,
+    wallet: Pubkey,
+    amount: u64,
+) -> Result<()> {
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        pool.owner.as_ref(),
+        pool.uuid.as_ref(),
+        &[pool_bump],
+    ]];
+
+    let ix = withdraw_by_mmm_ix_with_program_id(
+        M2_PROGRAM,
+        WithdrawByMmmKeys {
+            mmm_pool: pool.key(),
+            to: to.key(),
+            escrow_payment_account: m2_buyer_escrow.key(),
+            system_program: system_program.key(),
+        },
+        WithdrawByMmmIxArgs {
+            args: WithdrawByMMMArgs {
+                wallet,
+                auction_house: M2_AUCTION_HOUSE,
+                amount,
+                mmm_pool_uuid: pool.uuid,
+            },
+        },
+    )?;
+
+    invoke_signed(
+        &ix,
+        &[
+            pool.to_account_info(),
+            to.to_account_info(),
+            m2_buyer_escrow.to_account_info(),
+            system_program.to_account_info(),
+            m2_program.to_account_info(),
+        ],
+        pool_seeds,
+    )?;
+
+    Ok(())
+}
+
+pub fn check_remaining_accounts_for_m2(
+    remaining_accounts: &[AccountInfo],
+    pool_owner: &Pubkey,
+) -> Result<()> {
+    // check the remaining accounts at position 0 and 1
+    // 0 has to be the m2_program
+    // 1 has to be the shared_escrow_account pda of the m2_program
+    if remaining_accounts.len() < 2 {
+        return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+    }
+
+    if *remaining_accounts[0].key != M2_PROGRAM {
+        return Err(MMMErrorCode::InvalidRemainingAccounts.into());
+    }
+
+    let shared_escrow_account = &remaining_accounts[1];
+
+    let (m2_shared_escrow_pda, _) = Pubkey::find_program_address(
+        &[
+            M2_PREFIX.as_bytes(),
+            M2_AUCTION_HOUSE.as_ref(),
+            pool_owner.as_ref(),
+        ],
+        &M2_PROGRAM,
+    );
+    if m2_shared_escrow_pda != shared_escrow_account.key() {
+        return Err(MMMErrorCode::InvalidRemainingAccounts.into());
     }
 
     Ok(())

@@ -43,13 +43,18 @@ pub fn handler(ctx: Context<UpdatePool>, args: UpdatePoolArgs) -> Result<()> {
     pool.spot_price = args.spot_price;
     pool.curve_type = args.curve_type;
     pool.curve_delta = args.curve_delta;
-    pool.reinvest_fulfill_buy = args.reinvest_fulfill_buy;
-    pool.reinvest_fulfill_sell = args.reinvest_fulfill_sell;
     pool.expiry = args.expiry;
     pool.lp_fee_bp = args.lp_fee_bp;
     pool.referral = args.referral;
     pool.cosigner_annotation = args.cosigner_annotation;
     pool.buyside_creator_royalty_bp = args.buyside_creator_royalty_bp;
+
+    // if we are using shared escrow, we can't change the reinvest setting
+    if !pool.using_shared_escrow() {
+        pool.reinvest_fulfill_buy = args.reinvest_fulfill_buy;
+        pool.reinvest_fulfill_sell = args.reinvest_fulfill_sell;
+    }
+
     log_pool("post_update_pool", pool)?;
 
     Ok(())

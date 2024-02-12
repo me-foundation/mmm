@@ -123,6 +123,10 @@ pub fn handler(ctx: Context<Mip1DepositSell>, args: DepositSellArgs) -> Result<(
     let authorization_rules_program = &ctx.accounts.authorization_rules_program;
     let token_metadata_program_ai = &ctx.accounts.token_metadata_program.to_account_info();
 
+    if pool.using_shared_escrow() {
+        return Err(MMMErrorCode::InvalidAccountState.into());
+    }
+
     let parsed_metadata = check_allowlists_for_mint(
         &pool.allowlists,
         asset_mint,

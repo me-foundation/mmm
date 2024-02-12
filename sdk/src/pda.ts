@@ -52,3 +52,19 @@ export const getTokenRecordPDA = (mint: PublicKey, tokenAccount: PublicKey) => {
 
   return { key, bump };
 };
+
+export const M2_PREFIX = 'm2';
+export const M2_PROGRAM = new PublicKey(
+  'M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K',
+);
+export const M2_AUCTION_HOUSE = new PublicKey(
+  'E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe',
+);
+
+export function getM2BuyerSharedEscrow(wallet: PublicKey) {
+  const [key, bump] = PublicKey.findProgramAddressSync(
+    [Buffer.from(M2_PREFIX), M2_AUCTION_HOUSE.toBuffer(), wallet.toBuffer()],
+    M2_PROGRAM,
+  );
+  return { key, bump };
+}

@@ -1,4 +1,5 @@
 #![allow(clippy::result_large_err)]
+#![allow(ambiguous_glob_reexports)]
 
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
@@ -115,5 +116,12 @@ pub mod mmm {
 
     pub fn close_if_balance_invalid(ctx: Context<CloseIfBalanceInvalid>) -> Result<()> {
         instructions::close_if_balance_invalid::handler(ctx)
+    }
+
+    pub fn set_shared_escrow(
+        ctx: Context<SetSharedEscrow>,
+        args: SetSharedEscrowArgs,
+    ) -> Result<()> {
+        instructions::set_shared_escrow::handler(ctx, args)
     }
 }

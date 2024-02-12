@@ -9,6 +9,8 @@ use crate::{
     ata::init_if_needed_ata,
     constants::*,
     errors::MMMErrorCode,
+    index_ra,
+    instructions::{check_remaining_accounts_for_m2, withdraw_m2},
     state::{Pool, SellState},
     util::{
         assert_valid_fees_bp, check_allowlists_for_mint, get_buyside_seller_receives,
@@ -107,6 +109,13 @@ pub struct SolFulfillBuy<'info> {
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
     pub rent: Sysvar<'info, Rent>,
+    // Remaining accounts
+    // Branch: using shared escrow accounts
+    //   0: m2_program
+    //   1: shared_escrow_account
+    //   2+: creator accounts
+    // Branch: not using shared escrow accounts
+    //   0+: creator accounts
 }
 
 pub fn handler<'info>(
@@ -133,6 +142,7 @@ pub fn handler<'info>(
         pool_key.as_ref(),
         &[ctx.bumps.buyside_sol_escrow_account],
     ]];
+    let remaining_accounts = ctx.remaining_accounts;
 
     let parsed_metadata = check_allowlists_for_mint(
         &pool.allowlists,
@@ -166,7 +176,35 @@ pub fn handler<'info>(
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
+    // check creator_accounts and verify the remaining accounts
+    let creator_accounts = if pool.using_shared_escrow() {
+        check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
+
+        let amount: u64 = (total_price as i64 + maker_fee) as u64;
+        withdraw_m2(
+            pool,
+            ctx.bumps.pool,
+            buyside_sol_escrow_account,
+            index_ra!(remaining_accounts, 1),
+            system_program,
+            index_ra!(remaining_accounts, 0),
+            pool.owner,
+            amount,
+        )?;
+        pool.shared_escrow_count = pool
+            .shared_escrow_count
+            .checked_sub(args.asset_amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?;
+
+        &remaining_accounts[2..]
+    } else {
+        remaining_accounts
+    };
+
     if pool.reinvest_fulfill_buy {
+        if pool.using_shared_escrow() {
+            return Err(MMMErrorCode::InvalidAccountState.into());
+        }
         let sellside_escrow_token_account =
             ctx.accounts.sellside_escrow_token_account.to_account_info();
         init_if_needed_ata(
@@ -246,7 +284,7 @@ pub fn handler<'info>(
         pool.buyside_creator_royalty_bp,
         seller_receives,
         &parsed_metadata,
-        ctx.remaining_accounts,
+        creator_accounts,
         buyside_sol_escrow_account.to_account_info(),
         metadata_royalty_bp,
         buyside_sol_escrow_account_seeds,
@@ -326,7 +364,37 @@ pub fn handler<'info>(
     )?;
     try_close_sell_state(sell_state, payer.to_account_info())?;
 
+    // return the remaining per pool escrow balance to the shared escrow account
+    if pool.using_shared_escrow() {
+        let min_rent = Rent::get()?.minimum_balance(0);
+        let shared_escrow_account = index_ra!(remaining_accounts, 1).to_account_info();
+        if shared_escrow_account.lamports() + buyside_sol_escrow_account.lamports() > min_rent
+            && buyside_sol_escrow_account.lamports() > 0
+        {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    buyside_sol_escrow_account.key,
+                    shared_escrow_account.key,
+                    buyside_sol_escrow_account.lamports(),
+                ),
+                &[
+                    buyside_sol_escrow_account.to_account_info(),
+                    shared_escrow_account,
+                    system_program.to_account_info(),
+                ],
+                buyside_sol_escrow_account_seeds,
+            )?;
+        } else {
+            try_close_escrow(
+                buyside_sol_escrow_account,
+                pool,
+                system_program,
+                buyside_sol_escrow_account_seeds,
+            )?;
+        }
+    }
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+
     log_pool("post_sol_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 

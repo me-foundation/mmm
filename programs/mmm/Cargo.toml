@@ -2,8 +2,7 @@
 name = "mmm"
 version = "0.2.0"
 description = "MMM is an open source and secure AMM protocol on Solana"
-edition = "2018"
-license = "AGPL-3.0"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
@@ -28,3 +27,4 @@ spl-associated-token-account = { version = "2.2.0", features = [
     "no-entrypoint",
 ] }
 spl-token-2022 = "0.9.0"
+m2_interface = { path = "../m2_interface" }

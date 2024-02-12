@@ -27,6 +27,7 @@ import {
 import { AllowlistKind } from './constants';
 import { IDL, Mmm } from './idl/mmm';
 import {
+  getM2BuyerSharedEscrow,
   getMMMBuysideSolEscrowPDA,
   getMMMPoolPDA,
   getMMMSellStatePDA,
@@ -190,6 +191,19 @@ export class MMMClient {
       pool: this.poolData.pool,
       owner: this.poolData.owner,
       cosigner: this.poolData.cosigner,
+    });
+    return await builder.instruction();
+  }
+
+  async getInsSetSharedEscrow(
+    args: anchor.IdlTypes<Mmm>['SetSharedEscrowArgs'],
+  ): Promise<TransactionInstruction> {
+    if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let builder = this.program.methods.setSharedEscrow(args).accountsStrict({
+      pool: this.poolData.pool,
+      owner: this.poolData.owner,
+      cosigner: this.poolData.cosigner,
+      sharedEscrowAccount: getM2BuyerSharedEscrow(this.poolData.owner).key,
     });
     return await builder.instruction();
   }
