@@ -1,6 +1,6 @@
 import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
 import { MPL_TOKEN_METADATA_PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
-import * as anchor from '@project-serum/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -119,7 +119,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
           takerFeeBp: 400,
           makerFeeBp: -100,
         })
-        .accountsStrict({
+        .accounts({
           payer: seller.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -316,7 +316,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         makerFeeBp: 350,
         takerFeeBp: 50,
       })
-      .accountsStrict({
+      .accounts({
         payer: seller.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
@@ -507,7 +507,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         makerFeeBp: 350,
         takerFeeBp: 50,
       })
-      .accountsStrict({
+      .accounts({
         payer: seller.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,

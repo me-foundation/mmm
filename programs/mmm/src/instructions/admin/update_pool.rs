@@ -1,3 +1,5 @@
+use crate::pool_event::PoolEvent;
+
 use super::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -15,6 +17,7 @@ pub struct UpdatePoolArgs {
     pub buyside_creator_royalty_bp: u16,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:UpdatePoolArgs)]
 pub struct UpdatePool<'info> {
@@ -55,7 +58,10 @@ pub fn handler(ctx: Context<UpdatePool>, args: UpdatePoolArgs) -> Result<()> {
         pool.reinvest_fulfill_sell = args.reinvest_fulfill_sell;
     }
 
-    log_pool("post_update_pool", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_update_pool".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
 
     Ok(())
 }

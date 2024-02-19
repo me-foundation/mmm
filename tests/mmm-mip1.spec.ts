@@ -1,4 +1,4 @@
-import * as anchor from '@project-serum/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import {
   getAssociatedTokenAddress,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -163,7 +163,7 @@ describe('mmm-mip1', () => {
             assetAmount: new anchor.BN(1),
             allowlistAux: null,
           })
-          .accountsStrict({
+          .accounts({
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolData.poolKey,
@@ -225,7 +225,7 @@ describe('mmm-mip1', () => {
             assetAmount: new anchor.BN(1),
             allowlistAux: null,
           })
-          .accountsStrict({
+          .accounts({
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
             pool: poolData.poolKey,
@@ -345,7 +345,7 @@ describe('mmm-mip1', () => {
             makerFeeBp: 150,
             takerFeeBp: 200,
           })
-          .accountsStrict({
+          .accounts({
             payer: buyer.publicKey,
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
@@ -511,7 +511,7 @@ describe('mmm-mip1', () => {
             makerFeeBp: 350,
             takerFeeBp: 50,
           })
-          .accountsStrict({
+          .accounts({
             payer: seller.publicKey,
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
@@ -719,7 +719,7 @@ describe('mmm-mip1', () => {
               makerFeeBp: 250,
               takerFeeBp: 30,
             })
-            .accountsStrict({
+            .accounts({
               payer: seller.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -868,7 +868,7 @@ describe('mmm-mip1', () => {
               makerFeeBp: 100,
               takerFeeBp: 350,
             })
-            .accountsStrict({
+            .accounts({
               payer: buyer.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -1064,7 +1064,7 @@ describe('mmm-mip1', () => {
               makerFeeBp: -30,
               takerFeeBp: 50,
             })
-            .accountsStrict({
+            .accounts({
               payer: seller.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -1213,7 +1213,7 @@ describe('mmm-mip1', () => {
               makerFeeBp: -350,
               takerFeeBp: 350,
             })
-            .accountsStrict({
+            .accounts({
               payer: buyer.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,

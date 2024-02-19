@@ -68,7 +68,6 @@ pub fn init_if_needed_ata<'a>(
     associated_token: AccountInfo<'a>,
     token_program: AccountInfo<'a>,
     system_program: AccountInfo<'a>,
-    rent: AccountInfo<'a>,
 ) -> Result<spl_token_2022::state::Account> {
     let token_program_id = token_program.key();
 
@@ -87,7 +86,6 @@ pub fn init_if_needed_ata<'a>(
                 mint.to_account_info(),
                 associated_token,
                 system_program,
-                rent,
                 token_program,
             ],
         )?;

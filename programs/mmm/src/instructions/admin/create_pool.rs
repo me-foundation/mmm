@@ -1,3 +1,5 @@
+use crate::pool_event::PoolEvent;
+
 use super::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -20,6 +22,7 @@ pub struct CreatePoolArgs {
     pub allowlists: [Allowlist; ALLOWLIST_MAX_LEN],
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:CreatePoolArgs)]
 pub struct CreatePool<'info> {
@@ -75,7 +78,10 @@ pub fn handler(ctx: Context<CreatePool>, args: CreatePoolArgs) -> Result<()> {
     pool.payment_mint = args.payment_mint;
     pool.allowlists = args.allowlists;
 
-    log_pool("post_create_pool", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_create_pool".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
 
     Ok(())
 }

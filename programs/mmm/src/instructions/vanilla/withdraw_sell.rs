@@ -7,8 +7,9 @@ use anchor_spl::{
 use crate::{
     constants::*,
     errors::MMMErrorCode,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
-    util::{log_pool, try_close_pool, try_close_sell_state},
+    util::{try_close_pool, try_close_sell_state},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -17,6 +18,7 @@ pub struct WithdrawSellArgs {
     pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:WithdrawSellArgs)]
 pub struct WithdrawSell<'info> {
@@ -86,6 +88,7 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     // and we'd still like to enable the withdraw of those items for the pool owner.
     // check_allowlists_for_mint(&pool.allowlists, asset_mint, asset_metadata)?;
 
+    #[allow(deprecated)]
     anchor_spl::token_2022::transfer(
         CpiContext::new_with_signer(
             token_program.to_account_info(),
@@ -134,7 +137,10 @@ pub fn handler(ctx: Context<WithdrawSell>, args: WithdrawSellArgs) -> Result<()>
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_withdraw_sell", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_withdraw_sell".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
     try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())

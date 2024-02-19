@@ -1,3 +1,5 @@
+use crate::pool_event::PoolEvent;
+
 use super::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -5,6 +7,7 @@ pub struct SetSharedEscrowArgs {
     pub shared_escrow_count: u64,
 }
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:SetSharedEscrowArgs)]
 pub struct SetSharedEscrow<'info> {
@@ -53,7 +56,11 @@ pub fn handler(ctx: Context<SetSharedEscrow>, args: SetSharedEscrowArgs) -> Resu
 
     pool.shared_escrow_account = ctx.accounts.shared_escrow_account.key();
     pool.shared_escrow_count = args.shared_escrow_count;
-    log_pool("post_set_shared_escrow", pool)?;
+
+    emit_cpi!(PoolEvent {
+        prefix: "post_set_shared_escrow".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
 
     Ok(())
 }

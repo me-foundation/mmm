@@ -1,4 +1,4 @@
-import * as anchor from '@project-serum/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import {
   getAssociatedTokenAddress,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -115,7 +115,7 @@ describe('mmm-fulfill-linear', () => {
               takerFeeBp: 100,
               makerFeeBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               payer: buyer.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -248,7 +248,7 @@ describe('mmm-fulfill-linear', () => {
                 .map((_, index) => index),
               buysideCreatorRoyaltyBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
               pool: poolData.poolKey,
@@ -274,7 +274,7 @@ describe('mmm-fulfill-linear', () => {
               takerFeeBp: 150,
               makerFeeBp: 200,
             })
-            .accountsStrict({
+            .accounts({
               payer: buyer.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -401,7 +401,7 @@ describe('mmm-fulfill-linear', () => {
               makerFeeBp: 400,
               takerFeeBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               payer: buyer.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -550,7 +550,7 @@ describe('mmm-fulfill-linear', () => {
               takerFeeBp: 400,
               makerFeeBp: -100,
             })
-            .accountsStrict({
+            .accounts({
               payer: seller.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -685,7 +685,7 @@ describe('mmm-fulfill-linear', () => {
                 .map((_, index) => index),
               buysideCreatorRoyaltyBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
               pool: poolData.poolKey,
@@ -707,7 +707,7 @@ describe('mmm-fulfill-linear', () => {
               makerFeeBp: 150,
               takerFeeBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               payer: seller.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -896,7 +896,7 @@ describe('mmm-fulfill-linear', () => {
               takerFeeBp: 100,
               makerFeeBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               payer: seller.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -1003,7 +1003,7 @@ describe('mmm-fulfill-linear', () => {
               takerFeeBp: 100,
               makerFeeBp: 100,
             })
-            .accountsStrict({
+            .accounts({
               payer: buyer.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -1136,7 +1136,7 @@ describe('mmm-fulfill-linear', () => {
                 takerFeeBp: 400,
                 makerFeeBp: 100,
               })
-              .accountsStrict({
+              .accounts({
                 payer: seller.publicKey,
                 owner: wallet.publicKey,
                 cosigner: cosigner.publicKey,

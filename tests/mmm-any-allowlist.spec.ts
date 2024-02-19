@@ -1,4 +1,4 @@
-import * as anchor from '@project-serum/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import {
   getAssociatedTokenAddress,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -102,7 +102,7 @@ describe('mmm-any-allowlist', () => {
             takerFeeBp: 100,
             makerFeeBp: 0,
           })
-          .accountsStrict({
+          .accounts({
             payer: seller.publicKey,
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
@@ -177,7 +177,7 @@ describe('mmm-any-allowlist', () => {
             makerFeeBp: 100,
             takerFeeBp: 100,
           })
-          .accountsStrict({
+          .accounts({
             payer: buyer.publicKey,
             owner: wallet.publicKey,
             cosigner: cosigner.publicKey,
