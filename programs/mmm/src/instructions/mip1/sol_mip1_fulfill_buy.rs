@@ -127,18 +127,17 @@ pub struct SolMip1FulfillBuy<'info> {
     /// CHECK: checked by address and in CPI
     #[account(address = mpl_token_metadata::ID)]
     pub token_metadata_program: UncheckedAccount<'info>,
-    /// CHECK: checked by address and in cpi
-    #[account(address = MPL_TOKEN_AUTH_RULES)]
+    /// CHECK: checked by address in handler and in cpi
+    /// Address constraint not used here because of stack issues.
     pub authorization_rules_program: UncheckedAccount<'info>,
     /// CHECK: will be checked in cpi
     pub authorization_rules: UncheckedAccount<'info>,
-    /// CHECK: will be checked in cpi
-    #[account(address = sysvar::instructions::id())]
+    /// CHECK: checked by address in handler and in cpi
+    /// Address constraint not used here because of stack issues.
     pub instructions: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-    pub rent: Sysvar<'info, Rent>,
     // Remaining accounts
     // Branch: using shared escrow accounts
     //   0: m2_program
@@ -171,13 +170,24 @@ pub fn handler<'info>(
     let pool_token_record = &ctx.accounts.pool_token_record;
     let pool_owner_token_record = &ctx.accounts.pool_owner_token_record;
     let instructions = &ctx.accounts.instructions;
+
+    // Check moved here to avoid stack frame limit issues.
+    if *instructions.key != sysvar::instructions::id() {
+        return Err(ProgramError::IncorrectProgramId.into());
+    }
+
     let associated_token_program = &ctx.accounts.associated_token_program;
     let authorization_rules = &ctx.accounts.authorization_rules;
     let authorization_rules_program = &ctx.accounts.authorization_rules_program;
+
+    // Check moved here to avoid stack frame limit issues.
+    if *authorization_rules_program.key != MPL_TOKEN_AUTH_RULES {
+        return Err(ProgramError::IncorrectProgramId.into());
+    }
+
     let token_metadata_program_ai = &ctx.accounts.token_metadata_program.to_account_info();
     let remaining_accounts = ctx.remaining_accounts;
 
-    let rent = &ctx.accounts.rent;
     let pool_key = pool.key();
     let pool_uuid = pool.uuid;
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
@@ -309,7 +319,6 @@ pub fn handler<'info>(
             associated_token_program.to_account_info(),
             token_program.to_account_info(),
             system_program.to_account_info(),
-            rent.to_account_info(),
         )?;
 
         let payload = Payload {

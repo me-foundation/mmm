@@ -1646,7 +1646,10 @@ export type Mmm = {
         {
           "name": "authorizationRulesProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Address constraint not used here because of stack issues."
+          ]
         },
         {
           "name": "authorizationRules",
@@ -1656,7 +1659,10 @@ export type Mmm = {
         {
           "name": "instructions",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Address constraint not used here because of stack issues."
+          ]
         },
         {
           "name": "systemProgram",
@@ -1670,11 +1676,6 @@ export type Mmm = {
         },
         {
           "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
           "isMut": false,
           "isSigner": false
         },
@@ -4089,7 +4090,10 @@ export const IDL: Mmm = {
         {
           "name": "authorizationRulesProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Address constraint not used here because of stack issues."
+          ]
         },
         {
           "name": "authorizationRules",
@@ -4099,7 +4103,10 @@ export const IDL: Mmm = {
         {
           "name": "instructions",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
+          "docs": [
+            "Address constraint not used here because of stack issues."
+          ]
         },
         {
           "name": "systemProgram",
@@ -4113,11 +4120,6 @@ export const IDL: Mmm = {
         },
         {
           "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
           "isMut": false,
           "isSigner": false
         },

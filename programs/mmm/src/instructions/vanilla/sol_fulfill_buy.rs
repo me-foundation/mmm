@@ -127,7 +127,6 @@ pub fn handler<'info>(
     let token_program = &ctx.accounts.token_program;
     let system_program = &ctx.accounts.system_program;
     let associated_token_program = &ctx.accounts.associated_token_program;
-    let rent = &ctx.accounts.rent;
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
     let owner = &ctx.accounts.owner;
@@ -217,7 +216,6 @@ pub fn handler<'info>(
             associated_token_program.to_account_info(),
             token_program.to_account_info(),
             system_program.to_account_info(),
-            rent.to_account_info(),
         )?;
         let sellside_escrow_token_account =
             ctx.accounts.sellside_escrow_token_account.to_account_info();
@@ -256,7 +254,6 @@ pub fn handler<'info>(
             associated_token_program.to_account_info(),
             token_program.to_account_info(),
             system_program.to_account_info(),
-            rent.to_account_info(),
         )?;
 
         #[allow(deprecated)]

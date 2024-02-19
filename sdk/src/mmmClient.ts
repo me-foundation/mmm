@@ -343,7 +343,6 @@ export class MMMClient {
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
           tokenProgram: tokenProgramId,
-          rent: SYSVAR_RENT_PUBKEY,
           tokenOwnerTokenRecord,
           poolOwnerTokenRecord,
           poolTokenRecord,
