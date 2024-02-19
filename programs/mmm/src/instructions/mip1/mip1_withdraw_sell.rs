@@ -15,10 +15,12 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::vanilla::WithdrawSellArgs,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
-    util::{assert_is_programmable, log_pool, try_close_pool, try_close_sell_state},
+    util::{assert_is_programmable, try_close_pool, try_close_sell_state},
 };
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:WithdrawSellArgs)]
 pub struct Mip1WithdrawSell<'info> {
@@ -198,7 +200,12 @@ pub fn handler(ctx: Context<Mip1WithdrawSell>, args: WithdrawSellArgs) -> Result
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_mip1_withdraw_sell", pool)?;
+
+    emit_cpi!(PoolEvent {
+        prefix: "post_mip1_withdraw_sell".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
+
     try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())

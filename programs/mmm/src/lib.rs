@@ -8,6 +8,8 @@ declare_id!("mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc");
 mod ata;
 mod constants;
 mod errors;
+mod pool_event;
+
 pub mod instructions;
 pub mod state;
 pub mod util;

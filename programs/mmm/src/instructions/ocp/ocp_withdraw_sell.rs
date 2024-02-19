@@ -10,10 +10,12 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::vanilla::WithdrawSellArgs,
+    pool_event::PoolEvent,
     state::{Pool, SellState},
-    util::{log_pool, try_close_pool, try_close_sell_state},
+    util::{try_close_pool, try_close_sell_state},
 };
 
+#[event_cpi]
 #[derive(Accounts)]
 #[instruction(args:WithdrawSellArgs)]
 pub struct OcpWithdrawSell<'info> {
@@ -192,7 +194,10 @@ pub fn handler(ctx: Context<OcpWithdrawSell>, args: WithdrawSellArgs) -> Result<
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("post_ocp_withdraw_sell", pool)?;
+    emit_cpi!(PoolEvent {
+        prefix: "post_ocp_withdraw_sell".to_string(),
+        pool_state: pool.to_account_info().try_borrow_data()?.to_vec(),
+    });
     try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())
