@@ -24,6 +24,16 @@ export type Mmm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -51,6 +61,16 @@ export type Mmm = {
         {
           "name": "pool",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
           "isSigner": false
         }
       ],
@@ -149,6 +169,16 @@ export type Mmm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -185,6 +215,16 @@ export type Mmm = {
         },
         {
           "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -290,6 +330,16 @@ export type Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -388,6 +438,16 @@ export type Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -464,6 +524,16 @@ export type Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -547,6 +617,16 @@ export type Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -655,6 +735,16 @@ export type Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -785,6 +875,16 @@ export type Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -908,6 +1008,16 @@ export type Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1021,6 +1131,16 @@ export type Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1132,6 +1252,16 @@ export type Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -1250,6 +1380,16 @@ export type Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -1378,6 +1518,16 @@ export type Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -1527,6 +1677,16 @@ export type Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -1589,6 +1749,16 @@ export type Mmm = {
         },
         {
           "name": "sharedEscrowAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -2098,6 +2268,23 @@ export type Mmm = {
           }
         ]
       }
+    }
+  ],
+  "events": [
+    {
+      "name": "PoolEvent",
+      "fields": [
+        {
+          "name": "prefix",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "poolState",
+          "type": "bytes",
+          "index": false
+        }
+      ]
     }
   ],
   "errors": [
@@ -2280,6 +2467,16 @@ export const IDL: Mmm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -2307,6 +2504,16 @@ export const IDL: Mmm = {
         {
           "name": "pool",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
           "isSigner": false
         }
       ],
@@ -2405,6 +2612,16 @@ export const IDL: Mmm = {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -2441,6 +2658,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -2546,6 +2773,16 @@ export const IDL: Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -2644,6 +2881,16 @@ export const IDL: Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -2720,6 +2967,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -2803,6 +3060,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -2911,6 +3178,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -3041,6 +3318,16 @@ export const IDL: Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -3164,6 +3451,16 @@ export const IDL: Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -3277,6 +3574,16 @@ export const IDL: Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -3388,6 +3695,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -3506,6 +3823,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -3634,6 +3961,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -3783,6 +4120,16 @@ export const IDL: Mmm = {
           "name": "rent",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
+          "isMut": false,
+          "isSigner": false
         }
       ],
       "args": [
@@ -3845,6 +4192,16 @@ export const IDL: Mmm = {
         },
         {
           "name": "sharedEscrowAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "eventAuthority",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "program",
           "isMut": false,
           "isSigner": false
         }
@@ -4354,6 +4711,23 @@ export const IDL: Mmm = {
           }
         ]
       }
+    }
+  ],
+  "events": [
+    {
+      "name": "PoolEvent",
+      "fields": [
+        {
+          "name": "prefix",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "poolState",
+          "type": "bytes",
+          "index": false
+        }
+      ]
     }
   ],
   "errors": [

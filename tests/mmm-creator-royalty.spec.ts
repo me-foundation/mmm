@@ -135,7 +135,7 @@ describe('mmm-creator-royalty', () => {
               takerFeeBp: 100,
               makerFeeBp: 0,
             })
-            .accountsStrict({
+            .accounts({
               payer: seller.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,
@@ -262,7 +262,7 @@ describe('mmm-creator-royalty', () => {
               takerFeeBp: 100,
               makerFeeBp: 100,
             })
-            .accountsStrict({
+            .accounts({
               payer: buyer.publicKey,
               owner: wallet.publicKey,
               cosigner: cosigner.publicKey,

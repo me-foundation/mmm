@@ -173,6 +173,53 @@ packages:
       - encoding
       - utf-8-validate
 
+  /@coral-xyz/anchor@0.11.1:
+    resolution: {integrity: sha512-oIdm4vTJkUy6GmE6JgqDAuQPKI7XM4TPJkjtoIzp69RZe0iAD9JP2XHx7lV1jLdYXeYHqDXfBt3zcq7W91K6PA==}
+    engines: {node: '>=11'}
+    dependencies:
+      '@project-serum/borsh': 0.2.5(@solana/web3.js@1.89.1)
+      '@solana/web3.js': 1.89.1
+      base64-js: 1.5.1
+      bn.js: 5.2.1
+      bs58: 4.0.1
+      buffer-layout: 1.2.2
+      camelcase: 5.3.1
+      crypto-hash: 1.3.0
+      eventemitter3: 4.0.7
+      find: 0.3.0
+      js-sha256: 0.9.0
+      pako: 2.1.0
+      snake-case: 3.0.4
+      toml: 3.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
+
+  /@coral-xyz/anchor@0.25.0:
+    resolution: {integrity: sha512-E6A5Y/ijqpfMJ5psJvbw0kVTzLZFUcOFgs6eSM2M2iWE1lVRF18T6hWZVNl6zqZsoz98jgnNHtVGJMs+ds9A7A==}
+    engines: {node: '>=11'}
+    dependencies:
+      '@project-serum/borsh': 0.2.5(@solana/web3.js@1.89.1)
+      '@solana/web3.js': 1.89.1
+      base64-js: 1.5.1
+      bn.js: 5.2.1
+      bs58: 4.0.1
+      buffer-layout: 1.2.2
+      camelcase: 5.3.1
+      cross-fetch: 3.1.8
+      crypto-hash: 1.3.0
+      eventemitter3: 4.0.7
+      js-sha256: 0.9.0
+      pako: 2.1.0
+      snake-case: 3.0.4
+      superstruct: 0.15.5
+      toml: 3.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - encoding
+      - utf-8-validate
+
   /@coral-xyz/anchor@0.29.0:
     resolution: {integrity: sha512-eny6QNG0WOwqV0zQ7cs/b1tIuzZGmP7U7EcH+ogt4Gdbl8HDmIYVMh/9aTmYZPaFWjtUaI8qSn73uYEXWfATdA==}
     engines: {node: '>=11'}
@@ -195,18 +242,6 @@ packages:
       - bufferutil
       - encoding
       - utf-8-validate
-    dev: false
-
-  /@coral-xyz/borsh@0.26.0(@solana/web3.js@1.89.1):
-    resolution: {integrity: sha512-uCZ0xus0CszQPHYfWAqKS5swS1UxvePu83oOF+TWpUkedsNlg6p2p4azxZNSSqwXb9uXMFgxhuMBX9r3Xoi0vQ==}
-    engines: {node: '>=10'}
-    peerDependencies:
-      '@solana/web3.js': ^1.68.0
-    dependencies:
-      '@solana/web3.js': 1.89.1
-      bn.js: 5.2.1
-      buffer-layout: 1.2.2
-    dev: true
 
   /@coral-xyz/borsh@0.29.0(@solana/web3.js@1.89.1):
     resolution: {integrity: sha512-s7VFVa3a0oqpkuRloWVPdCK7hMbAMY270geZOGfCnaqexrP5dTIpbEHL33req6IYPPJ0hYa71cdvJ1h6V55/oQ==}
@@ -217,7 +252,6 @@ packages:
       '@solana/web3.js': 1.89.1
       bn.js: 5.2.1
       buffer-layout: 1.2.2
-    dev: false
 
   /@eslint/eslintrc@0.4.3:
     resolution: {integrity: sha512-J6KFFz5QCYUJq3pf0mjEcCJVERbzv71PUIDczuh9JkwGEzced6CO5ADLHB1rbf/+oPBtoPfMYNOpGDzCANlbXw==}
@@ -560,13 +594,14 @@ packages:
   /@magiceden-oss/open_creator_protocol@0.3.5(fastestsmallesttextencoderdecoder@1.0.22):
     resolution: {integrity: sha512-dv9SCNuH7JRJwmIIJd+8bDPecwstKn6KN2yi9P+V6ITdlZTIEnrqFvYtHUZWJlS/evTogvRHM0GvUcht1s4eyw==}
     dependencies:
+      '@coral-xyz/anchor': 0.25.0
       '@metaplex-foundation/beet': 0.7.2
       '@metaplex-foundation/beet-solana': 0.3.1
       '@metaplex-foundation/js': 0.16.1(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/mpl-token-metadata': 2.13.0(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/rustbin': 0.3.5
       '@metaplex-foundation/solita': 0.12.2
-      '@coral-xyz/anchor': 0.25.0
+      '@project-serum/anchor': 0.25.0
       '@project-serum/serum': 0.13.65
       '@solana/spl-token': 0.3.11(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/web3.js': 1.89.1
@@ -1174,7 +1209,7 @@ packages:
       fastq: 1.16.0
     dev: true
 
-  /@coral-xyz/anchor@0.11.1:
+  /@project-serum/anchor@0.11.1:
     resolution: {integrity: sha512-oIdm4vTJkUy6GmE6JgqDAuQPKI7XM4TPJkjtoIzp69RZe0iAD9JP2XHx7lV1jLdYXeYHqDXfBt3zcq7W91K6PA==}
     engines: {node: '>=11'}
     dependencies:
@@ -1197,7 +1232,7 @@ packages:
       - encoding
       - utf-8-validate
 
-  /@coral-xyz/anchor@0.25.0:
+  /@project-serum/anchor@0.25.0:
     resolution: {integrity: sha512-E6A5Y/ijqpfMJ5psJvbw0kVTzLZFUcOFgs6eSM2M2iWE1lVRF18T6hWZVNl6zqZsoz98jgnNHtVGJMs+ds9A7A==}
     engines: {node: '>=11'}
     dependencies:
@@ -1221,31 +1256,6 @@ packages:
       - encoding
       - utf-8-validate
 
-  /@coral-xyz/anchor@0.26.0:
-    resolution: {integrity: sha512-Nq+COIjE1135T7qfnOHEn7E0q39bQTgXLFk837/rgFe6Hkew9WML7eHsS+lSYD2p3OJaTiUOHTAq1lHy36oIqQ==}
-    engines: {node: '>=11'}
-    dependencies:
-      '@coral-xyz/borsh': 0.26.0(@solana/web3.js@1.89.1)
-      '@solana/web3.js': 1.89.1
-      base64-js: 1.5.1
-      bn.js: 5.2.1
-      bs58: 4.0.1
-      buffer-layout: 1.2.2
-      camelcase: 6.3.0
-      cross-fetch: 3.1.8
-      crypto-hash: 1.3.0
-      eventemitter3: 4.0.7
-      js-sha256: 0.9.0
-      pako: 2.1.0
-      snake-case: 3.0.4
-      superstruct: 0.15.5
-      toml: 3.0.0
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - utf-8-validate
-    dev: true
-
   /@project-serum/borsh@0.2.5(@solana/web3.js@1.89.1):
     resolution: {integrity: sha512-UmeUkUoKdQ7rhx6Leve1SssMR/Ghv8qrEiyywyxSWg7ooV7StdpPBhciiy5eB3T0qU1BXvdRNC8TdrkxK7WC5Q==}
     engines: {node: '>=10'}
@@ -1261,6 +1271,7 @@ packages:
     engines: {node: '>=10'}
     dependencies:
       '@coral-xyz/anchor': 0.11.1
+      '@project-serum/anchor': 0.11.1
       '@solana/spl-token': 0.1.8
       '@solana/web3.js': 1.89.1
       bn.js: 5.2.1
@@ -4957,11 +4968,11 @@ packages:
     id: file:sdk
     name: '@coralcube-oss/mmm'
     dependencies:
+      '@coral-xyz/anchor': 0.29.0
       '@magiceden-oss/open_creator_protocol': 0.3.5(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/js': 0.18.3(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/mpl-token-auth-rules': 1.2.0(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/mpl-token-metadata': 3.1.2(@metaplex-foundation/umi@0.8.10)
-      '@coral-xyz/anchor': 0.26.0
       '@solana/spl-token': 0.3.11(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/web3.js': 1.89.1
       old-mpl-token-metadata: /@metaplex-foundation/mpl-token-metadata@2.12.0(fastestsmallesttextencoderdecoder@1.0.22)

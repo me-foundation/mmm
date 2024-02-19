@@ -119,7 +119,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
           takerFeeBp: 400,
           makerFeeBp: -100,
         })
-        .accountsStrict({
+        .accounts({
           payer: seller.publicKey,
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -316,7 +316,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         makerFeeBp: 350,
         takerFeeBp: 50,
       })
-      .accountsStrict({
+      .accounts({
         payer: seller.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
@@ -507,7 +507,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         makerFeeBp: 350,
         takerFeeBp: 50,
       })
-      .accountsStrict({
+      .accounts({
         payer: seller.publicKey,
         owner: wallet.publicKey,
         cosigner: cosigner.publicKey,
