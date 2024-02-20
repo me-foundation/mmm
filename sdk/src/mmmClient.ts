@@ -12,7 +12,7 @@ import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-to
 import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddress,
+  getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import {
   Connection,
@@ -37,7 +37,6 @@ import {
   MetadataProvider,
   MintStateWithAddress,
   RpcMetadataProvider,
-  rpcMetadataProviderGenerator,
 } from './metadataProvider';
 
 export const getEmptyAllowLists = (num: number) => {
@@ -65,15 +64,19 @@ export class MMMClient {
   private readonly mpl: Metaplex;
   private readonly cosigner: Keypair | undefined = undefined;
   private readonly metadataProviderGenerator: (
+    mint: PublicKey,
     conn: Connection,
-  ) => MetadataProvider;
+  ) => Promise<MetadataProvider>;
 
   poolData: (anchor.IdlAccounts<Mmm>['pool'] & { pool: PublicKey }) | undefined;
 
   constructor(
     conn: Connection,
     cosigner?: Keypair,
-    metadataProviderGenerator?: (conn: Connection) => MetadataProvider,
+    metadataProviderGenerator?: (
+      mint: PublicKey,
+      conn: Connection,
+    ) => Promise<MetadataProvider>,
   ) {
     this.conn = conn;
     this.provider = new anchor.AnchorProvider(this.conn, dummyKeypair, {
@@ -84,7 +87,7 @@ export class MMMClient {
     if (cosigner) this.cosigner = cosigner;
     this.mpl = new Metaplex(conn);
     this.metadataProviderGenerator =
-      metadataProviderGenerator ?? rpcMetadataProviderGenerator;
+      metadataProviderGenerator ?? RpcMetadataProvider.loadFromRpc;
   }
 
   signTx(insArr: TransactionInstruction[]): Transaction {
@@ -249,34 +252,38 @@ export class MMMClient {
     payer: PublicKey,
     assetMint: PublicKey,
     assetTokenAccount: PublicKey,
-    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
+    metadataProvider?: MetadataProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
       MMMProgramID,
       this.poolData.pool,
     );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const ownerTokenAccount = await getAssociatedTokenAddress(
+    const ownerTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.owner,
+      true,
+      mintContext.tokenProgram,
     );
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
       this.poolData.pool,
       assetMint,
     );
-    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+    const sellsideEscrowTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.pool,
       true,
+      mintContext.tokenProgram,
     );
 
-    const metadataProvider = this.metadataProviderGenerator(this.conn);
-    await metadataProvider.load(assetMint);
-    const ocpMintState = metadataProvider.getMintState(assetMint);
-    const tokenStandard = metadataProvider.getTokenStandard(assetMint);
+    const ocpMintState = mintContext.mintState;
+    const tokenStandard = mintContext.tokenStandard;
     let builder:
       | ReturnType<MmmMethodsNamespace['solOcpFulfillBuy']>
       | ReturnType<MmmMethodsNamespace['solFulfillBuy']>
@@ -298,7 +305,7 @@ export class MMMClient {
         sellsideEscrowTokenAccount,
         allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
         systemProgram: SystemProgram.programId,
-        tokenProgram: tokenProgramId,
+        tokenProgram: mintContext.tokenProgram,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
 
@@ -310,7 +317,7 @@ export class MMMClient {
         .pdas()
         .masterEdition({ mint: assetMint });
       if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
-        const ruleset = metadataProvider.getRuleset(assetMint);
+        const ruleset = mintContext.ruleset;
         const {
           ownerTokenRecord: tokenOwnerTokenRecord,
           destinationTokenRecord: poolOwnerTokenRecord,
@@ -342,7 +349,7 @@ export class MMMClient {
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           rent: SYSVAR_RENT_PUBKEY,
           tokenOwnerTokenRecord,
           poolOwnerTokenRecord,
@@ -366,7 +373,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });
@@ -378,7 +385,7 @@ export class MMMClient {
       ocpMintState ||
       tokenStandard === TokenStandard.ProgrammableNonFungible
     ) {
-      const creators = metadataProvider.getCreators(assetMint);
+      const creators = mintContext.creators;
       if (creators.length > 0) {
         builder = builder.remainingAccounts(
           creators.map((v) => ({
@@ -396,8 +403,8 @@ export class MMMClient {
     args: anchor.IdlTypes<Mmm>['SolFulfillSellArgs'],
     payer: PublicKey,
     assetMint: PublicKey,
-    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
+    metadataProvider?: MetadataProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
@@ -405,22 +412,29 @@ export class MMMClient {
       this.poolData.pool,
     );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
       this.poolData.pool,
       assetMint,
     );
-    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+    const sellsideEscrowTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.pool,
       true,
+      mintContext.tokenProgram,
     );
-    const payerAssetAccount = await getAssociatedTokenAddress(assetMint, payer);
-    const metadataProvider = this.metadataProviderGenerator(this.conn);
-    await metadataProvider.load(assetMint);
-    const ocpMintState = metadataProvider.getMintState(assetMint);
-    const tokenStandard = metadataProvider.getTokenStandard(assetMint);
+    const payerAssetAccount = getAssociatedTokenAddressSync(
+      assetMint,
+      payer,
+      true,
+      mintContext.tokenProgram,
+    );
+    const ocpMintState = mintContext.mintState;
+    const tokenStandard = mintContext.tokenStandard;
     let builder:
       | ReturnType<MmmMethodsNamespace['solOcpFulfillSell']>
       | ReturnType<MmmMethodsNamespace['solFulfillSell']>
@@ -449,7 +463,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
 
@@ -461,7 +475,7 @@ export class MMMClient {
         .pdas()
         .masterEdition({ mint: assetMint });
       if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
-        const ruleset = metadataProvider.getRuleset(assetMint);
+        const ruleset = mintContext.ruleset;
         builder = this.program.methods
           .solMip1FulfillSell({
             assetAmount: args.assetAmount,
@@ -485,7 +499,7 @@ export class MMMClient {
             sellsideEscrowTokenAccount,
             allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
             systemProgram: SystemProgram.programId,
-            tokenProgram: tokenProgramId,
+            tokenProgram: mintContext.tokenProgram,
             associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
             rent: SYSVAR_RENT_PUBKEY,
 
@@ -512,7 +526,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });
@@ -524,7 +538,7 @@ export class MMMClient {
       ocpMintState ||
       tokenStandard === TokenStandard.ProgrammableNonFungible
     ) {
-      const creators = metadataProvider.getCreators(assetMint);
+      const creators = mintContext.creators;
       if (creators.length > 0) {
         builder = builder.remainingAccounts(
           creators.map((v) => ({
@@ -541,30 +555,34 @@ export class MMMClient {
   async getInsDepositSell(
     args: anchor.IdlTypes<Mmm>['DepositSellArgs'],
     assetMint: PublicKey,
-    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
+    metadataProvider?: MetadataProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
       this.poolData.pool,
       assetMint,
     );
-    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+    const sellsideEscrowTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.pool,
       true,
+      mintContext.tokenProgram,
     );
-    const assetTokenAccount = await getAssociatedTokenAddress(
+    const assetTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.owner,
+      true,
+      mintContext.tokenProgram,
     );
 
-    const metadataProvider = this.metadataProviderGenerator(this.conn);
-    await metadataProvider.load(assetMint);
-    const ocpMintState = metadataProvider.getMintState(assetMint);
+    const ocpMintState = mintContext.mintState;
     let builder:
       | ReturnType<MmmMethodsNamespace['ocpDepositSell']>
       | ReturnType<MmmMethodsNamespace['depositSell']>
@@ -582,7 +600,7 @@ export class MMMClient {
         sellsideEscrowTokenAccount,
         allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
         systemProgram: SystemProgram.programId,
-        tokenProgram: tokenProgramId,
+        tokenProgram: mintContext.tokenProgram,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
 
@@ -593,9 +611,9 @@ export class MMMClient {
         .nfts()
         .pdas()
         .masterEdition({ mint: assetMint });
-      const tokenStandard = metadataProvider.getTokenStandard(assetMint);
+      const tokenStandard = mintContext.tokenStandard;
       if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
-        const ruleset = metadataProvider.getRuleset(assetMint);
+        const ruleset = mintContext.ruleset;
         builder = this.program.methods.mip1DepositSell(args).accountsStrict({
           owner: this.poolData.owner,
           cosigner: this.poolData.cosigner,
@@ -608,7 +626,7 @@ export class MMMClient {
           sellState,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
 
@@ -632,7 +650,7 @@ export class MMMClient {
           sellsideEscrowTokenAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });
@@ -644,24 +662,30 @@ export class MMMClient {
   async getInsWithdrawSell(
     args: anchor.IdlTypes<Mmm>['WithdrawSellArgs'],
     assetMint: PublicKey,
-    tokenProgramId: PublicKey,
     allowlistAuxAccount?: PublicKey,
+    metadataProvider?: MetadataProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
       this.poolData.pool,
       assetMint,
     );
-    const sellsideEscrowTokenAccount = await getAssociatedTokenAddress(
+    const sellsideEscrowTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.pool,
       true,
+      mintContext.tokenProgram,
     );
-    const assetTokenAccount = await getAssociatedTokenAddress(
+    const assetTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.owner,
+      true,
+      mintContext.tokenProgram,
     );
 
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
@@ -670,9 +694,7 @@ export class MMMClient {
     );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
 
-    const metadataProvider = this.metadataProviderGenerator(this.conn);
-    await metadataProvider.load(assetMint);
-    const ocpMintState = metadataProvider.getMintState(assetMint);
+    const ocpMintState = mintContext.mintState;
     let builder:
       | ReturnType<MmmMethodsNamespace['ocpWithdrawSell']>
       | ReturnType<MmmMethodsNamespace['withdrawSell']>
@@ -691,20 +713,20 @@ export class MMMClient {
         buysideSolEscrowAccount,
         allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
         systemProgram: SystemProgram.programId,
-        tokenProgram: tokenProgramId,
+        tokenProgram: mintContext.tokenProgram,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
 
         ...this.getOcpAccounts(ocpMintState),
       });
     } else {
-      const tokenStandard = metadataProvider.getTokenStandard(assetMint);
+      const tokenStandard = mintContext.tokenStandard;
       if (tokenStandard === TokenStandard.ProgrammableNonFungible) {
         const assetMasterEdition = this.mpl
           .nfts()
           .pdas()
           .masterEdition({ mint: assetMint });
-        const ruleset = metadataProvider.getRuleset(assetMint);
+        const ruleset = mintContext.ruleset;
         builder = this.program.methods.mip1WithdrawSell(args).accountsStrict({
           owner: this.poolData.owner,
           pool: this.poolData.pool,
@@ -718,7 +740,7 @@ export class MMMClient {
           buysideSolEscrowAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
 
@@ -741,7 +763,7 @@ export class MMMClient {
           buysideSolEscrowAccount,
           allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
           systemProgram: SystemProgram.programId,
-          tokenProgram: tokenProgramId,
+          tokenProgram: mintContext.tokenProgram,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         });
