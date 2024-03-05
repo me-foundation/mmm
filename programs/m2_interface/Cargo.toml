@@ -17,7 +17,7 @@ optional = true
 version = "^1.0"
 
 [dependencies.solana-program]
-version = "^1.16"
+version = "1.17.6"
 
 [dependencies.thiserror]
 version = "^1.0"
