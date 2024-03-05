@@ -11,6 +11,7 @@ mod errors;
 pub mod instructions;
 pub mod state;
 pub mod util;
+mod ext_util;
 
 use instructions::*;
 

@@ -4,11 +4,13 @@ pub mod admin;
 pub mod mip1;
 pub mod ocp;
 pub mod vanilla;
+pub mod ext_vanilla;
 
 pub use admin::*;
 pub use mip1::*;
 pub use ocp::*;
 pub use vanilla::*;
+pub use ext_vanilla::*;
 
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
