@@ -3,6 +3,9 @@ name = "m2_interface"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+solana-program = "1.17.6"
+
 [dependencies.borsh]
 version = "^0.10"
 
@@ -15,9 +18,6 @@ version = "^0.2"
 [dependencies.serde]
 optional = true
 version = "^1.0"
-
-[dependencies.solana-program]
-version = "1.17.6"
 
 [dependencies.thiserror]
 version = "^1.0"
