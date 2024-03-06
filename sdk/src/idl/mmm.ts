@@ -1900,6 +1900,18 @@ export type Mmm = {
       }
     },
     {
+      "name": "ExtDepositeSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "assetAmount",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "SolMip1FulfillSellArgs",
       "type": {
         "kind": "struct",
@@ -4151,6 +4163,18 @@ export const IDL: Mmm = {
           {
             "name": "buysideCreatorRoyaltyBp",
             "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ExtDepositeSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "assetAmount",
+            "type": "u64"
           }
         ]
       }

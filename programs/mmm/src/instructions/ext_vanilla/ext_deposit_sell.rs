@@ -3,12 +3,15 @@ use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
 };
+use solana_program::program::invoke;
+use spl_token_2022::onchain::invoke_transfer_checked;
 
 use crate::{
     constants::*,
     errors::MMMErrorCode,
+    ext_util::check_group_ext_for_mint,
     state::{Pool, SellState},
-    util::{check_allowlists_for_mint, log_pool},
+    util::log_pool,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -44,7 +47,6 @@ pub struct ExtDepositeSell<'info> {
         associated_token::mint = asset_mint,
         associated_token::authority = pool,
         associated_token::token_program = token_program,
-
     )]
     pub sellside_escrow_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(
@@ -65,7 +67,10 @@ pub struct ExtDepositeSell<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<ExtDepositeSell>, args: ExtDepositeSellArgs) -> Result<()> {
+pub fn handler<'info>(
+    ctx: Context<'_, '_, '_, 'info, ExtDepositeSell<'info>>,
+    args: ExtDepositeSellArgs,
+) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let asset_token_account = &ctx.accounts.asset_token_account;
     let asset_mint = &ctx.accounts.asset_mint;
@@ -75,11 +80,52 @@ pub fn handler(ctx: Context<ExtDepositeSell>, args: ExtDepositeSellArgs) -> Resu
     let sell_state = &mut ctx.accounts.sell_state;
 
     if pool.using_shared_escrow() {
-        return Err(MMMErrorCode::InvalidPool.into());
+        return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
-    // check group/membership to determine
-    // the added token belongs to the pool group
+    check_group_ext_for_mint(&asset_mint.to_account_info(), &pool.allowlists)?;
+    invoke_transfer_checked(
+        token_program.key,
+        asset_token_account.to_account_info(),
+        asset_mint.to_account_info(),
+        sellside_escrow_token_account.to_account_info(),
+        owner.to_account_info(),
+        ctx.remaining_accounts,
+        args.asset_amount,
+        0,
+        &[],
+    )?;
+
+    if asset_token_account.amount == args.asset_amount {
+        invoke(
+            &spl_token_2022::instruction::close_account(
+                token_program.key,
+                &asset_token_account.key(),
+                &owner.key(),
+                &owner.key(),
+                &[],
+            )?,
+            &[
+                asset_token_account.to_account_info(),
+                owner.to_account_info(),
+            ],
+        )?;
+    }
+
+    pool.sellside_asset_amount = pool
+        .sellside_asset_amount
+        .checked_add(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+
+    sell_state.pool = pool.key();
+    sell_state.pool_owner = owner.key();
+    sell_state.asset_mint = asset_mint.key();
+    sell_state.cosigner_annotation = pool.cosigner_annotation;
+    sell_state.asset_amount = sell_state
+        .asset_amount
+        .checked_add(args.asset_amount)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    log_pool("post_deposit_sell", pool)?;
 
     Ok(())
 }
