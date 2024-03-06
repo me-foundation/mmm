@@ -16,7 +16,7 @@ jobs:
       - uses: metadaoproject/anchor-test@v2
         with:
           anchor-version: '0.29.0'
-          solana-cli-version: '1.16.24'
+          solana-cli-version: '1.17.6'
           node-version: '16.15.1'
           features: 'anchor-test'
       - run: cargo fmt -- --check && cargo clippy
