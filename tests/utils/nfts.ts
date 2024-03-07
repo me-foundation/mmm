@@ -5,8 +5,26 @@ import {
   PublicKey,
   token as getSplTokenAmount,
 } from '@metaplex-foundation/js';
-import { Connection } from '@solana/web3.js';
-import { getKeypair } from './generic';
+import {
+  Connection,
+  Keypair,
+  SystemProgram,
+  Transaction,
+} from '@solana/web3.js';
+import { getKeypair, sendAndAssertTx } from './generic';
+import {
+  ExtensionType,
+  TOKEN_2022_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
+  createInitializeInstruction,
+  createInitializeGroupMemberPointerInstruction,
+  createInitializeMetadataPointerInstruction,
+  createInitializeMint2Instruction,
+  createMintToInstruction,
+  getAssociatedTokenAddressSync,
+  getMintLen,
+} from '@solana/spl-token';
+import { createInitializeMemberInstruction } from '@solana/spl-token-group';
 
 export const getMetaplexInstance = (conn: Connection) => {
   return Metaplex.make(conn).use(keypairIdentity(getKeypair()));
@@ -109,3 +127,112 @@ export const mintCollection = async (
 
   return { collection: collectionNft, members: collectionMembers };
 };
+
+export async function createTestMintAndTokenT22Vanilla(
+  connection: Connection,
+  payer: Keypair,
+  recipient?: PublicKey,
+  groupAddress?: PublicKey,
+) {
+  const mintKeypair = Keypair.generate();
+  const memberAddress = PublicKey.unique();
+  const effectiveGroupAddress = groupAddress ?? PublicKey.unique();
+  const tokenProgramId = TOKEN_2022_PROGRAM_ID;
+  const effectiveRecipient = recipient ?? payer.publicKey;
+  const targetTokenAccount = getAssociatedTokenAddressSync(
+    mintKeypair.publicKey,
+    effectiveRecipient,
+    true,
+    tokenProgramId,
+  );
+
+  const mintSpace = getMintLen([ExtensionType.MetadataPointer]);
+  const mintLamports = await connection.getMinimumBalanceForRentExemption(
+    mintSpace * 2,
+  );
+
+  const createMintAccountIx = SystemProgram.createAccount({
+    fromPubkey: payer.publicKey,
+    newAccountPubkey: mintKeypair.publicKey,
+    space: mintSpace,
+    lamports: mintLamports,
+    programId: tokenProgramId,
+  });
+  const createPointerIx = createInitializeMetadataPointerInstruction(
+    mintKeypair.publicKey,
+    payer.publicKey,
+    mintKeypair.publicKey,
+    tokenProgramId,
+  );
+  const createGroupMemberIx = createInitializeMemberInstruction({
+    programId: tokenProgramId,
+    member: memberAddress,
+    memberMint: mintKeypair.publicKey,
+    memberMintAuthority: payer.publicKey,
+    group: effectiveGroupAddress,
+    groupUpdateAuthority: payer.publicKey,
+  });
+  const createGroupMemberPointerIx =
+    createInitializeGroupMemberPointerInstruction(
+      mintKeypair.publicKey,
+      payer.publicKey,
+      memberAddress,
+      tokenProgramId,
+    );
+  const createInitMintIx = createInitializeMint2Instruction(
+    mintKeypair.publicKey,
+    0,
+    payer.publicKey,
+    payer.publicKey,
+    tokenProgramId,
+  );
+
+  const createMetadataIx = createInitializeInstruction({
+    metadata: mintKeypair.publicKey,
+    updateAuthority: payer.publicKey,
+    mint: mintKeypair.publicKey,
+    mintAuthority: payer.publicKey,
+    name: 'xyzname',
+    symbol: 'xyz',
+    uri: 'example.com',
+    programId: tokenProgramId,
+  });
+
+  const createAtaIx = createAssociatedTokenAccountInstruction(
+    payer.publicKey,
+    targetTokenAccount,
+    effectiveRecipient,
+    mintKeypair.publicKey,
+    tokenProgramId,
+  );
+
+  const mintToIx = createMintToInstruction(
+    mintKeypair.publicKey,
+    targetTokenAccount,
+    payer.publicKey,
+    1, // amount
+    [],
+    tokenProgramId,
+  );
+
+  const blockhashData = await connection.getLatestBlockhash();
+  const tx = new Transaction().add(
+    createMintAccountIx,
+    createPointerIx,
+    createGroupMemberIx,
+    createGroupMemberPointerIx,
+    createInitMintIx,
+    createMetadataIx,
+    createAtaIx,
+    mintToIx,
+  );
+  tx.recentBlockhash = blockhashData.blockhash;
+  tx.feePayer = payer.publicKey;
+  tx.partialSign(payer, mintKeypair);
+  await sendAndAssertTx(connection, tx, blockhashData, false);
+
+  return {
+    mint: mintKeypair.publicKey,
+    recipientTokenAccount: targetTokenAccount,
+  };
+}

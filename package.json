@@ -13,7 +13,8 @@
     "@metaplex-foundation/umi-bundle-tests": "^0.8.2",
     "@metaplex-foundation/umi-web3js-adapters": "^0.8.2",
     "@project-serum/anchor": "^0.26.0",
-    "@solana/spl-token": "^0.3.5",
+    "@solana/spl-token": "^0.4.1",
+    "@solana/spl-token-group": "^0.0.1",
     "@solana/web3.js": "^1.65.0",
     "borsh": "^0.7.0",
     "old-mpl-token-metadata": "npm:@metaplex-foundation/mpl-token-metadata@2.12.0"

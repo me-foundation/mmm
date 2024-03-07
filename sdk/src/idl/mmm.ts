@@ -1654,18 +1654,13 @@ export type Mmm = {
           "name": "associatedTokenProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
         {
           "name": "args",
           "type": {
-            "defined": "ExtDepositeSellArgs"
+            "defined": "DepositSellArgs"
           }
         }
       ]
@@ -1963,24 +1958,6 @@ export type Mmm = {
           {
             "name": "buysideCreatorRoyaltyBp",
             "type": "u16"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ExtDepositeSellArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "assetAmount",
-            "type": "u64"
-          },
-          {
-            "name": "allowlistAux",
-            "type": {
-              "option": "string"
-            }
           }
         ]
       }
@@ -4001,18 +3978,13 @@ export const IDL: Mmm = {
           "name": "associatedTokenProgram",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
         {
           "name": "args",
           "type": {
-            "defined": "ExtDepositeSellArgs"
+            "defined": "DepositSellArgs"
           }
         }
       ]
@@ -4310,24 +4282,6 @@ export const IDL: Mmm = {
           {
             "name": "buysideCreatorRoyaltyBp",
             "type": "u16"
-          }
-        ]
-      }
-    },
-    {
-      "name": "ExtDepositeSellArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "assetAmount",
-            "type": "u64"
-          },
-          {
-            "name": "allowlistAux",
-            "type": {
-              "option": "string"
-            }
           }
         ]
       }
