@@ -9,7 +9,8 @@ use spl_token_2022::onchain::invoke_transfer_checked;
 use crate::{
     constants::*,
     errors::MMMErrorCode,
-    ext_util::check_group_ext_for_mint,
+    ext_util::{check_allowlists_for_mint_ext, check_group_ext_for_mint},
+    instructions::check_allowlists_for_mint,
     state::{Pool, SellState},
     util::log_pool,
 };
@@ -17,6 +18,7 @@ use crate::{
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct ExtDepositeSellArgs {
     pub asset_amount: u64,
+    pub allowlist_aux: Option<String>,
 }
 
 #[derive(Accounts)]
@@ -33,6 +35,10 @@ pub struct ExtDepositeSell<'info> {
       bump
     )]
     pub pool: Box<Account<'info, Pool>>,
+    #[account(
+        mint::token_program = token_program,
+        constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidTokenMint,
+    )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
         mut,
@@ -83,7 +89,13 @@ pub fn handler<'info>(
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
+    check_allowlists_for_mint_ext(
+        &pool.allowlists,
+        &asset_mint.to_account_info(),
+        args.allowlist_aux,
+    )?;
     check_group_ext_for_mint(&asset_mint.to_account_info(), &pool.allowlists)?;
+
     invoke_transfer_checked(
         token_program.key,
         asset_token_account.to_account_info(),
