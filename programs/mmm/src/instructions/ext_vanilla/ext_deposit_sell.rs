@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
+use anchor_lang::{prelude::*, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_interface::{Mint, TokenAccount, TokenInterface},
@@ -9,19 +9,14 @@ use spl_token_2022::onchain::invoke_transfer_checked;
 use crate::{
     constants::*,
     errors::MMMErrorCode,
-    ext_util::{check_allowlists_for_mint_ext, check_group_ext_for_mint},
+    ext_util::check_allowlists_for_mint_ext,
     state::{Pool, SellState},
     util::log_pool,
+    DepositSellArgs,
 };
 
-#[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct ExtDepositeSellArgs {
-    pub asset_amount: u64,
-    pub allowlist_aux: Option<String>,
-}
-
 #[derive(Accounts)]
-#[instruction(args: ExtDepositeSellArgs)]
+#[instruction(args: DepositSellArgs)]
 pub struct ExtDepositeSell<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -68,12 +63,11 @@ pub struct ExtDepositeSell<'info> {
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     pub associated_token_program: Program<'info, AssociatedToken>,
-    pub rent: Sysvar<'info, Rent>,
 }
 
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, ExtDepositeSell<'info>>,
-    args: ExtDepositeSellArgs,
+    args: DepositSellArgs,
 ) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let asset_token_account = &ctx.accounts.asset_token_account;
@@ -92,7 +86,6 @@ pub fn handler<'info>(
         &asset_mint.to_account_info(),
         args.allowlist_aux,
     )?;
-    check_group_ext_for_mint(&asset_mint.to_account_info(), &pool.allowlists)?;
 
     invoke_transfer_checked(
         token_program.key,
@@ -135,7 +128,7 @@ pub fn handler<'info>(
         .asset_amount
         .checked_add(args.asset_amount)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    log_pool("post_deposit_sell", pool)?;
+    log_pool("post_ext_deposit_sell", pool)?;
 
     Ok(())
 }
