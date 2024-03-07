@@ -10,7 +10,6 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     ext_util::{check_allowlists_for_mint_ext, check_group_ext_for_mint},
-    instructions::check_allowlists_for_mint,
     state::{Pool, SellState},
     util::log_pool,
 };
@@ -41,7 +40,6 @@ pub struct ExtDepositeSell<'info> {
     )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
-        mut,
         associated_token::mint = asset_mint,
         associated_token::authority = owner,
         associated_token::token_program = token_program,
