@@ -1601,6 +1601,74 @@ export type Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "extDepositSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetTokenAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "ExtDepositeSellArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1907,6 +1975,12 @@ export type Mmm = {
           {
             "name": "assetAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -2262,6 +2336,11 @@ export type Mmm = {
       "code": 6029,
       "name": "InvalidRemainingAccounts",
       "msg": "Invalid remaining accounts"
+    },
+    {
+      "code": 6030,
+      "name": "InValidTokenExtension",
+      "msg": "Invalid token extensions"
     }
   ]
 };
@@ -3869,6 +3948,74 @@ export const IDL: Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "extDepositSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetTokenAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "ExtDepositeSellArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -4175,6 +4322,12 @@ export const IDL: Mmm = {
           {
             "name": "assetAmount",
             "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -4530,6 +4683,11 @@ export const IDL: Mmm = {
       "code": 6029,
       "name": "InvalidRemainingAccounts",
       "msg": "Invalid remaining accounts"
+    },
+    {
+      "code": 6030,
+      "name": "InValidTokenExtension",
+      "msg": "Invalid token extensions"
     }
   ]
 };

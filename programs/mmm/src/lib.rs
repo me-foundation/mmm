@@ -125,4 +125,11 @@ pub mod mmm {
     ) -> Result<()> {
         instructions::set_shared_escrow::handler(ctx, args)
     }
+
+    pub fn ext_deposit_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, ExtDepositeSell<'info>>,
+        args: ExtDepositeSellArgs,
+    ) -> Result<()> {
+        instructions::ext_deposit_sell::handler(ctx, args)
+    }
 }
