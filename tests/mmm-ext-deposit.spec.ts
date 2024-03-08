@@ -4,7 +4,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
+import { Keypair, SYSVAR_RENT_PUBKEY, SystemProgram } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
   Mmm,
@@ -16,7 +16,7 @@ import {
 import {
   airdrop,
   createPool,
-  createTestMintAndTokenT22Vanilla,
+  createTestMintAndTokenT22VanillaExt,
   getEmptyAllowLists,
   getTokenAccount2022,
 } from './utils';
@@ -40,30 +40,26 @@ describe('mmm-ext-deposit', () => {
 
   describe('ext_deposit_sell', () => {
     it('correctly verifies ANY allowlist when depositing nfts', async () => {
-      const allowlists = [
-        {
-          kind: AllowlistKind.metadata,
-          allowlist: PublicKey.default,
-        },
-        {
-          kind: AllowlistKind.group,
-          allowlist: PublicKey.default,
-        },
-        ...getEmptyAllowLists(1),
-      ];
-
       const { mint, recipientTokenAccount } =
-        await createTestMintAndTokenT22Vanilla(connection, wallet.payer);
+        await createTestMintAndTokenT22VanillaExt(connection, wallet.payer);
+
       const poolData = await createPool(program, {
         owner: wallet.publicKey,
         cosigner,
-        allowlists,
+        allowlists: [
+          {
+            kind: AllowlistKind.metadata,
+            value: mint,
+          },
+          ...getEmptyAllowLists(5),
+        ],
       });
 
       const poolAta = await getAssociatedTokenAddress(
         mint,
         poolData.poolKey,
         true,
+        TOKEN_2022_PROGRAM_ID,
       );
 
       const { key: sellState } = getMMMSellStatePDA(
@@ -77,10 +73,11 @@ describe('mmm-ext-deposit', () => {
       let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
+      console.log('start depositting', mint.toBase58());
       await program.methods
         .extDepositSell({
           assetAmount: new anchor.BN(1),
-          allowlistAux: null,
+          allowlistAux: '',
         })
         .accountsStrict({
           owner: wallet.publicKey,

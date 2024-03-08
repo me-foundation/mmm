@@ -128,15 +128,14 @@ export const mintCollection = async (
   return { collection: collectionNft, members: collectionMembers };
 };
 
-export async function createTestMintAndTokenT22Vanilla(
+export async function createTestMintAndTokenT22VanillaExt(
   connection: Connection,
   payer: Keypair,
   recipient?: PublicKey,
-  groupAddress?: PublicKey,
 ) {
   const mintKeypair = Keypair.generate();
-  const memberAddress = PublicKey.unique();
-  const effectiveGroupAddress = groupAddress ?? PublicKey.unique();
+  const memberAddress = Keypair.generate().publicKey;
+  const effectiveGroupKeyPair = Keypair.generate();
   const tokenProgramId = TOKEN_2022_PROGRAM_ID;
   const effectiveRecipient = recipient ?? payer.publicKey;
   const targetTokenAccount = getAssociatedTokenAddressSync(
@@ -146,7 +145,10 @@ export async function createTestMintAndTokenT22Vanilla(
     tokenProgramId,
   );
 
-  const mintSpace = getMintLen([ExtensionType.MetadataPointer]);
+  const mintSpace = getMintLen([
+    ExtensionType.MetadataPointer,
+    ExtensionType.GroupMemberPointer,
+  ]);
   const mintLamports = await connection.getMinimumBalanceForRentExemption(
     mintSpace * 2,
   );
@@ -158,20 +160,12 @@ export async function createTestMintAndTokenT22Vanilla(
     lamports: mintLamports,
     programId: tokenProgramId,
   });
-  const createPointerIx = createInitializeMetadataPointerInstruction(
+  const createMetadataPointerIx = createInitializeMetadataPointerInstruction(
     mintKeypair.publicKey,
     payer.publicKey,
     mintKeypair.publicKey,
     tokenProgramId,
   );
-  const createGroupMemberIx = createInitializeMemberInstruction({
-    programId: tokenProgramId,
-    member: memberAddress,
-    memberMint: mintKeypair.publicKey,
-    memberMintAuthority: payer.publicKey,
-    group: effectiveGroupAddress,
-    groupUpdateAuthority: payer.publicKey,
-  });
   const createGroupMemberPointerIx =
     createInitializeGroupMemberPointerInstruction(
       mintKeypair.publicKey,
@@ -198,6 +192,15 @@ export async function createTestMintAndTokenT22Vanilla(
     programId: tokenProgramId,
   });
 
+  const createGroupMemberIx = createInitializeMemberInstruction({
+    programId: tokenProgramId,
+    member: memberAddress,
+    memberMint: mintKeypair.publicKey,
+    memberMintAuthority: payer.publicKey,
+    group: effectiveGroupKeyPair.publicKey,
+    groupUpdateAuthority: payer.publicKey,
+  });
+
   const createAtaIx = createAssociatedTokenAccountInstruction(
     payer.publicKey,
     targetTokenAccount,
@@ -218,11 +221,11 @@ export async function createTestMintAndTokenT22Vanilla(
   const blockhashData = await connection.getLatestBlockhash();
   const tx = new Transaction().add(
     createMintAccountIx,
-    createPointerIx,
-    createGroupMemberIx,
+    createMetadataPointerIx,
     createGroupMemberPointerIx,
     createInitMintIx,
     createMetadataIx,
+    // createGroupMemberIx,
     createAtaIx,
     mintToIx,
   );
