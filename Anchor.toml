@@ -30,14 +30,15 @@ address = "ocp4vWUzA2z2XMYJ3QhM9vWdyoyoQwAFJhRdVTbvo9E" # ocp: open_creator_prot
 [[test.validator.clone]]
 address = "6Huqrb4xxmmNA4NufYdgpmspoLmjXFd3qEfteCddLgSz" # ocp: policy (allow all)
 
-[[test.validator.clone]]
-address = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb" # token22
+[[test.genesis]]
+address = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+program = "./tests/deps/spl_token_2022.so"
 
 [programs.localnet]
 mmm = "mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc"
 
 [scripts]
-test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/mmm-ext-deposit.spec.ts"
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
 
 [toolchain]
 anchor_version = "0.29.0"

@@ -23,8 +23,12 @@ import {
   createMintToInstruction,
   getAssociatedTokenAddressSync,
   getMintLen,
+  createInitializeGroupPointerInstruction,
 } from '@solana/spl-token';
-import { createInitializeMemberInstruction } from '@solana/spl-token-group';
+import {
+  createInitializeGroupInstruction,
+  createInitializeMemberInstruction,
+} from '@solana/spl-token-group';
 
 export const getMetaplexInstance = (conn: Connection) => {
   return Metaplex.make(conn).use(keypairIdentity(getKeypair()));
@@ -132,10 +136,11 @@ export async function createTestMintAndTokenT22VanillaExt(
   connection: Connection,
   payer: Keypair,
   recipient?: PublicKey,
+  groupKeyPair?: Keypair,
+  groupMemberKeyPair?: Keypair,
 ) {
   const mintKeypair = Keypair.generate();
-  const memberAddress = Keypair.generate().publicKey;
-  const effectiveGroupKeyPair = Keypair.generate();
+  const effectiveGroupKeyPair = groupKeyPair ?? Keypair.generate();
   const tokenProgramId = TOKEN_2022_PROGRAM_ID;
   const effectiveRecipient = recipient ?? payer.publicKey;
   const targetTokenAccount = getAssociatedTokenAddressSync(
@@ -166,6 +171,8 @@ export async function createTestMintAndTokenT22VanillaExt(
     mintKeypair.publicKey,
     tokenProgramId,
   );
+
+  const memberAddress = groupMemberKeyPair?.publicKey ?? mintKeypair.publicKey;
   const createGroupMemberPointerIx =
     createInitializeGroupMemberPointerInstruction(
       mintKeypair.publicKey,
@@ -194,7 +201,7 @@ export async function createTestMintAndTokenT22VanillaExt(
 
   const createGroupMemberIx = createInitializeMemberInstruction({
     programId: tokenProgramId,
-    member: memberAddress,
+    member: mintKeypair.publicKey,
     memberMint: mintKeypair.publicKey,
     memberMintAuthority: payer.publicKey,
     group: effectiveGroupKeyPair.publicKey,
@@ -221,11 +228,11 @@ export async function createTestMintAndTokenT22VanillaExt(
   const blockhashData = await connection.getLatestBlockhash();
   const tx = new Transaction().add(
     createMintAccountIx,
-    createMetadataPointerIx,
     createGroupMemberPointerIx,
+    createMetadataPointerIx,
     createInitMintIx,
     createMetadataIx,
-    // createGroupMemberIx,
+    createGroupMemberIx,
     createAtaIx,
     mintToIx,
   );
@@ -237,5 +244,125 @@ export async function createTestMintAndTokenT22VanillaExt(
   return {
     mint: mintKeypair.publicKey,
     recipientTokenAccount: targetTokenAccount,
+  };
+}
+
+export async function createTestGroupMintExt(
+  connection: Connection,
+  payer: Keypair,
+) {
+  const tokenProgramId = TOKEN_2022_PROGRAM_ID;
+  const groupKeyPair = Keypair.generate();
+  const mintSpace = getMintLen([ExtensionType.GroupPointer]);
+  const mintLamports = await connection.getMinimumBalanceForRentExemption(
+    mintSpace * 2,
+  );
+
+  const createMintAccountIx = SystemProgram.createAccount({
+    fromPubkey: payer.publicKey,
+    newAccountPubkey: groupKeyPair.publicKey,
+    space: mintSpace,
+    lamports: mintLamports,
+    programId: tokenProgramId,
+  });
+  const createGroupPointerIx = createInitializeGroupPointerInstruction(
+    groupKeyPair.publicKey,
+    payer.publicKey,
+    groupKeyPair.publicKey,
+    tokenProgramId,
+  );
+
+  const createInitMintIx = createInitializeMint2Instruction(
+    groupKeyPair.publicKey,
+    0,
+    payer.publicKey,
+    payer.publicKey,
+    tokenProgramId,
+  );
+
+  const createGroupIx = createInitializeGroupInstruction({
+    programId: tokenProgramId,
+    group: groupKeyPair.publicKey,
+    mint: groupKeyPair.publicKey,
+    mintAuthority: payer.publicKey,
+    updateAuthority: payer.publicKey,
+    maxSize: 10,
+  });
+
+  const blockhashData = await connection.getLatestBlockhash();
+  const tx = new Transaction().add(
+    createMintAccountIx,
+    createGroupPointerIx,
+    createInitMintIx,
+    createGroupIx,
+  );
+  tx.recentBlockhash = blockhashData.blockhash;
+  tx.feePayer = payer.publicKey;
+  tx.partialSign(payer, groupKeyPair);
+  await sendAndAssertTx(connection, tx, blockhashData, false);
+
+  return {
+    groupKeyPair,
+  };
+}
+
+export async function createTestGroupMemberMint(
+  connection: Connection,
+  payer: Keypair,
+  groupAddress: Keypair,
+) {
+  const tokenProgramId = TOKEN_2022_PROGRAM_ID;
+  const groupMemberKeyPair = Keypair.generate();
+  const mintSpace = getMintLen([ExtensionType.GroupPointer]);
+  const mintLamports = await connection.getMinimumBalanceForRentExemption(
+    mintSpace * 2,
+  );
+
+  const createMintAccountIx = SystemProgram.createAccount({
+    fromPubkey: payer.publicKey,
+    newAccountPubkey: groupMemberKeyPair.publicKey,
+    space: mintSpace,
+    lamports: mintLamports,
+    programId: tokenProgramId,
+  });
+  const createGroupMemberPointerIx =
+    createInitializeGroupMemberPointerInstruction(
+      groupMemberKeyPair.publicKey,
+      payer.publicKey,
+      groupMemberKeyPair.publicKey,
+      tokenProgramId,
+    );
+
+  const createInitMintIx = createInitializeMint2Instruction(
+    groupMemberKeyPair.publicKey,
+    0,
+    payer.publicKey,
+    payer.publicKey,
+    tokenProgramId,
+  );
+
+  const createGroupMemberIx = createInitializeMemberInstruction({
+    programId: tokenProgramId,
+    member: groupMemberKeyPair.publicKey,
+    memberMint: groupMemberKeyPair.publicKey,
+    memberMintAuthority: payer.publicKey,
+    group: groupAddress.publicKey,
+    groupUpdateAuthority: payer.publicKey,
+  });
+
+  const blockhashData = await connection.getLatestBlockhash();
+  const tx = new Transaction().add(
+    createMintAccountIx,
+    createGroupMemberPointerIx,
+    createInitMintIx,
+    createGroupMemberIx,
+  );
+  tx.recentBlockhash = blockhashData.blockhash;
+  tx.feePayer = payer.publicKey;
+  tx.partialSign(payer, groupMemberKeyPair);
+  await sendAndAssertTx(connection, tx, blockhashData, false);
+
+  return {
+    groupMemberKeyPair,
   };
 }

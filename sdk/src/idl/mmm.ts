@@ -1627,7 +1627,7 @@ export type Mmm = {
         },
         {
           "name": "assetTokenAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -2316,8 +2316,13 @@ export type Mmm = {
     },
     {
       "code": 6030,
-      "name": "InValidTokenExtension",
-      "msg": "Invalid token extensions"
+      "name": "InValidTokenMetadataExtension",
+      "msg": "Invalid token metadata extensions"
+    },
+    {
+      "code": 6031,
+      "name": "InValidTokenMemberExtension",
+      "msg": "Invalid token member extensions"
     }
   ]
 };
@@ -3951,7 +3956,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "assetTokenAccount",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -4640,8 +4645,13 @@ export const IDL: Mmm = {
     },
     {
       "code": 6030,
-      "name": "InValidTokenExtension",
-      "msg": "Invalid token extensions"
+      "name": "InValidTokenMetadataExtension",
+      "msg": "Invalid token metadata extensions"
+    },
+    {
+      "code": 6031,
+      "name": "InValidTokenMemberExtension",
+      "msg": "Invalid token member extensions"
     }
   ]
 };

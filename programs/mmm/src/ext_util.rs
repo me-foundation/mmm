@@ -29,7 +29,7 @@ pub fn check_allowlists_for_mint_ext(
     // verify metadata extension
     if let Ok(metadata_ptr) = mint_deserialized.get_extension::<MetadataPointer>() {
         if Option::<Pubkey>::from(metadata_ptr.metadata_address) != Some(*token_mint.key) {
-            return Err(MMMErrorCode::InValidTokenExtension.into());
+            return Err(MMMErrorCode::InValidTokenMetadataExtension.into());
         }
     }
     let parsed_metadata = mint_deserialized
@@ -57,23 +57,9 @@ pub fn check_allowlists_for_mint_ext(
     // verify group member extension
     if let Ok(group_member_ptr) = mint_deserialized.get_extension::<GroupMemberPointer>() {
         if Some(*token_mint.key) != Option::<Pubkey>::from(group_member_ptr.member_address) {
-            return Err(MMMErrorCode::InValidTokenExtension.into());
+            msg!("group member pointer does not point to itself");
+            return Err(MMMErrorCode::InValidTokenMemberExtension.into());
         }
-    }
-    if let Ok(group_member) = mint_deserialized.get_extension::<TokenGroupMember>() {
-        let group_allowlist = allowlists
-            .iter()
-            .find(|allowlist| allowlist.kind == ALLOWLIST_KIND_GROUP);
-        if Some(group_member.group) != group_allowlist.map(|allowlist| allowlist.value) {
-            return Err(MMMErrorCode::InValidTokenExtension.into());
-        }
-        // counter spoof check
-        if Some(group_member.mint) != Some(*token_mint.key) {
-            return Err(MMMErrorCode::InValidTokenExtension.into());
-        }
-
-    } else {
-        return Err(MMMErrorCode::InValidTokenExtension.into());
     }
 
     for allowlist_val in allowlists.iter() {
@@ -94,7 +80,15 @@ pub fn check_allowlists_for_mint_ext(
             ALLOWLIST_KIND_MCC => {
                 return Err(MMMErrorCode::InvalidAllowLists.into());
             }
-            ALLOWLIST_KIND_METADATA | ALLOWLIST_KIND_GROUP => {
+            ALLOWLIST_KIND_GROUP => {
+                let group_address = assert_valid_group(&mint_deserialized, token_mint)?;
+                if group_address != Some(allowlist_val.value) {
+                    msg!("group address |{}| is not allowed", group_address.unwrap());
+                    return Err(MMMErrorCode::InvalidAllowLists.into());
+                }
+                return Ok(parsed_metadata);
+            }
+            ALLOWLIST_KIND_METADATA => {
                 // Do not validate URI here, as we already did it above.
                 // Group is validated in a separate function.
                 // These checks are separate since allowlist values are unioned together.
@@ -108,4 +102,19 @@ pub fn check_allowlists_for_mint_ext(
 
     // at the end, we didn't find a match, thus return err
     Err(MMMErrorCode::InvalidAllowLists.into())
+}
+
+pub fn assert_valid_group(
+    mint_deserialized: &StateWithExtensions<'_, Token22Mint>,
+    token_mint: &AccountInfo,
+) -> Result<Option<Pubkey>> {
+    if let Ok(group_member) = mint_deserialized.get_extension::<TokenGroupMember>() {
+        // counter spoof check
+        if Some(group_member.mint) != Some(*token_mint.key) {
+            msg!("group member mint does not match the token mint");
+            return Err(MMMErrorCode::InValidTokenMemberExtension.into());
+        }
+        return Ok(Some(group_member.group));
+    }
+    Err(MMMErrorCode::InValidTokenMemberExtension.into())
 }

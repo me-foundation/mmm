@@ -35,6 +35,7 @@ pub struct ExtDepositeSell<'info> {
     )]
     pub asset_mint: InterfaceAccount<'info, Mint>,
     #[account(
+        mut,
         associated_token::mint = asset_mint,
         associated_token::authority = owner,
         associated_token::token_program = token_program,
