@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 use crate::{
     constants::*,
     errors::MMMErrorCode,
-    instructions::{get_pool_price_info, PoolPriceInfo},
+    instructions::{get_sell_fulfill_pool_price_info, PoolPriceInfo},
     state::{Pool, SellState},
     util::{
         check_allowlists_for_mint, get_metadata_royalty_bp, log_pool, pay_creator_fees_in_sol,
@@ -151,7 +151,7 @@ pub fn handler<'info>(
         taker_fee,
         referral_fee,
         transfer_sol_to,
-    } = get_pool_price_info(
+    } = get_sell_fulfill_pool_price_info(
         pool,
         owner,
         buyside_sol_escrow_account,

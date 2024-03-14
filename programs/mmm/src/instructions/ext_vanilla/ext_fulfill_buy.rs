@@ -302,8 +302,8 @@ pub fn handler<'info>(
         if shared_escrow_account.lamports() + buyside_sol_escrow_account.lamports() > min_rent
             && buyside_sol_escrow_account.lamports() > 0
         {
-            anchor_lang::solana_program::program::invoke_signed(
-                &anchor_lang::solana_program::system_instruction::transfer(
+            invoke_signed(
+                &system_instruction::transfer(
                     buyside_sol_escrow_account.key,
                     shared_escrow_account.key,
                     buyside_sol_escrow_account.lamports(),

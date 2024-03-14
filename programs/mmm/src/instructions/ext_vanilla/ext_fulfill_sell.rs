@@ -12,7 +12,8 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::{
-        get_pool_price_info, log_pool, try_close_pool, try_close_sell_state, PoolPriceInfo,
+        get_sell_fulfill_pool_price_info, log_pool, try_close_pool, try_close_sell_state,
+        PoolPriceInfo,
     },
     state::{Pool, SellState},
     util::check_allowlists_for_mint_ext,
@@ -125,7 +126,7 @@ pub fn handler<'info>(
         taker_fee,
         referral_fee,
         transfer_sol_to,
-    } = get_pool_price_info(
+    } = get_sell_fulfill_pool_price_info(
         pool,
         owner,
         buyside_sol_escrow_account,

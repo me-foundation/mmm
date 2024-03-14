@@ -774,7 +774,7 @@ pub struct PoolPriceInfo<'info> {
     pub transfer_sol_to: AccountInfo<'info>,
 }
 
-pub fn get_pool_price_info<'info>(
+pub fn get_sell_fulfill_pool_price_info<'info>(
     pool: &Pool,
     owner: &UncheckedAccount<'info>,
     buyside_sol_escrow_account: &AccountInfo<'info>,
