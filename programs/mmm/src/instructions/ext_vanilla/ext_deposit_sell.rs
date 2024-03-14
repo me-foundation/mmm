@@ -9,9 +9,8 @@ use spl_token_2022::onchain::invoke_transfer_checked;
 use crate::{
     constants::*,
     errors::MMMErrorCode,
-    ext_util::check_allowlists_for_mint_ext,
     state::{Pool, SellState},
-    util::log_pool,
+    util::{check_allowlists_for_mint_ext, log_pool},
     DepositSellArgs,
 };
 

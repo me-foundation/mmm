@@ -8,7 +8,6 @@ declare_id!("mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc");
 mod ata;
 mod constants;
 mod errors;
-mod ext_util;
 pub mod instructions;
 pub mod state;
 pub mod util;
@@ -131,5 +130,19 @@ pub mod mmm {
         args: DepositSellArgs,
     ) -> Result<()> {
         instructions::ext_deposit_sell::handler(ctx, args)
+    }
+
+    pub fn ext_fulfill_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, ExtSolFulfillSell<'info>>,
+        args: SolFulfillSellArgs,
+    ) -> Result<()> {
+        instructions::ext_fulfill_sell::handler(ctx, args)
+    }
+
+    pub fn ext_fulfill_buy<'info>(
+        ctx: Context<'_, '_, '_, 'info, ExtSolFulfillBuy<'info>>,
+        args: SolFulfillBuyArgs,
+    ) -> Result<()> {
+        instructions::ext_fulfill_buy::handler(ctx, args)
     }
 }

@@ -16,6 +16,7 @@ import {
 import {
   airdrop,
   createPool,
+  createPoolWithExampleExtDeposits,
   createTestGroupMemberMint,
   createTestGroupMintExt,
   createTestMintAndTokenT22VanillaExt,
@@ -42,51 +43,23 @@ describe('mmm-ext-deposit', () => {
 
   describe('ext_deposit_sell', () => {
     it('correctly verifies depositing nfts with group allowlist', async () => {
-      const { groupKeyPair } = await createTestGroupMintExt(
+      const {
+        mint,
+        recipientTokenAccount,
+        poolData,
+        poolAta,
+        sellState,
+        groupAddress,
+      } = await createPoolWithExampleExtDeposits(
+        program,
         connection,
         wallet.payer,
+        'none',
+        {
+          owner: wallet.publicKey,
+          cosigner,
+        },
       );
-      const { mint, recipientTokenAccount } =
-        await createTestMintAndTokenT22VanillaExt(
-          connection,
-          wallet.payer,
-          undefined,
-          groupKeyPair,
-        );
-
-      const poolData = await createPool(program, {
-        owner: wallet.publicKey,
-        cosigner,
-        allowlists: [
-          {
-            kind: AllowlistKind.metadata,
-            value: mint,
-          },
-          {
-            kind: AllowlistKind.group,
-            value: groupKeyPair.publicKey,
-          },
-          ...getEmptyAllowLists(4),
-        ],
-      });
-
-      const poolAta = await getAssociatedTokenAddress(
-        mint,
-        poolData.poolKey,
-        true,
-        TOKEN_2022_PROGRAM_ID,
-      );
-
-      const { key: sellState } = getMMMSellStatePDA(
-        program.programId,
-        poolData.poolKey,
-        mint,
-      );
-
-      assert.equal(await connection.getBalance(poolAta), 0);
-      assert.equal(await connection.getBalance(sellState), 0);
-      let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
-      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
       await program.methods
         .extDepositSell({
@@ -115,7 +88,7 @@ describe('mmm-ext-deposit', () => {
       );
       assert.equal(Number(nftEscrow.amount), 1);
       assert.equal(nftEscrow.owner.toBase58(), poolData.poolKey.toBase58());
-      poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+      let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
       assert.equal(await connection.getBalance(recipientTokenAccount), 0);
 
@@ -142,7 +115,7 @@ describe('mmm-ext-deposit', () => {
           connection,
           wallet.payer,
           undefined,
-          groupKeyPair,
+          groupAddress,
         );
       const poolAta2 = await getAssociatedTokenAddress(
         mint2,
@@ -210,41 +183,29 @@ describe('mmm-ext-deposit', () => {
     });
 
     it('correctly verifies depositing nfts with ANY allowlist', async () => {
-      const { groupKeyPair } = await createTestGroupMintExt(
+      const {
+        mint,
+        recipientTokenAccount,
+        poolData,
+        poolAta,
+        sellState,
+        groupAddress,
+      } = await createPoolWithExampleExtDeposits(
+        program,
         connection,
         wallet.payer,
-      );
-      const { mint, recipientTokenAccount } =
-        await createTestMintAndTokenT22VanillaExt(
-          connection,
-          wallet.payer,
-          undefined,
-          groupKeyPair,
-        );
-
-      const poolData = await createPool(program, {
-        owner: wallet.publicKey,
-        cosigner,
-        allowlists: [
-          {
-            kind: AllowlistKind.any,
-            value: PublicKey.default,
-          },
-          ...getEmptyAllowLists(5),
-        ],
-      });
-
-      const poolAta = await getAssociatedTokenAddress(
-        mint,
-        poolData.poolKey,
-        true,
-        TOKEN_2022_PROGRAM_ID,
-      );
-
-      const { key: sellState } = getMMMSellStatePDA(
-        program.programId,
-        poolData.poolKey,
-        mint,
+        'none',
+        {
+          owner: wallet.publicKey,
+          cosigner,
+          allowlists: [
+            {
+              kind: AllowlistKind.any,
+              value: PublicKey.default,
+            },
+            ...getEmptyAllowLists(5),
+          ],
+        },
       );
 
       assert.equal(await connection.getBalance(poolAta), 0);
@@ -306,7 +267,7 @@ describe('mmm-ext-deposit', () => {
           connection,
           wallet.payer,
           undefined,
-          groupKeyPair,
+          groupAddress,
         );
       const poolAta2 = await getAssociatedTokenAddress(
         mint2,
@@ -374,51 +335,17 @@ describe('mmm-ext-deposit', () => {
     });
 
     it('failed to verify depositing with wrong allowlist aux', async () => {
-      const { groupKeyPair } = await createTestGroupMintExt(
-        connection,
-        wallet.payer,
-      );
-      const { mint, recipientTokenAccount } =
-        await createTestMintAndTokenT22VanillaExt(
+      const { mint, recipientTokenAccount, poolData, poolAta, sellState } =
+        await createPoolWithExampleExtDeposits(
+          program,
           connection,
           wallet.payer,
-          undefined,
-          groupKeyPair,
+          'none',
+          {
+            owner: wallet.publicKey,
+            cosigner,
+          },
         );
-
-      const poolData = await createPool(program, {
-        owner: wallet.publicKey,
-        cosigner,
-        allowlists: [
-          {
-            kind: AllowlistKind.metadata,
-            value: mint,
-          },
-          {
-            kind: AllowlistKind.group,
-            value: groupKeyPair.publicKey,
-          },
-          ...getEmptyAllowLists(4),
-        ],
-      });
-
-      const poolAta = await getAssociatedTokenAddress(
-        mint,
-        poolData.poolKey,
-        true,
-        TOKEN_2022_PROGRAM_ID,
-      );
-
-      const { key: sellState } = getMMMSellStatePDA(
-        program.programId,
-        poolData.poolKey,
-        mint,
-      );
-
-      assert.equal(await connection.getBalance(poolAta), 0);
-      assert.equal(await connection.getBalance(sellState), 0);
-      let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
-      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
       try {
         await program.methods
@@ -446,22 +373,22 @@ describe('mmm-ext-deposit', () => {
     });
 
     it('failed to verify depositing nfts with external group member pointer', async () => {
-      const { groupKeyPair } = await createTestGroupMintExt(
+      const { groupAddress } = await createTestGroupMintExt(
         connection,
         wallet.payer,
       );
       const { groupMemberKeyPair } = await createTestGroupMemberMint(
         connection,
         wallet.payer,
-        groupKeyPair,
+        groupAddress,
       );
       const { mint, recipientTokenAccount } =
         await createTestMintAndTokenT22VanillaExt(
           connection,
           wallet.payer,
           undefined,
-          groupKeyPair,
-          groupMemberKeyPair,
+          groupAddress,
+          groupMemberKeyPair.publicKey, // external group member pointer
         );
 
       const poolData = await createPool(program, {
@@ -474,7 +401,7 @@ describe('mmm-ext-deposit', () => {
           },
           {
             kind: AllowlistKind.group,
-            value: groupKeyPair.publicKey,
+            value: groupAddress,
           },
           ...getEmptyAllowLists(4),
         ],
@@ -524,7 +451,7 @@ describe('mmm-ext-deposit', () => {
     });
 
     it('failed to verify depositing nfts with disallowed group', async () => {
-      const { groupKeyPair } = await createTestGroupMintExt(
+      const { groupAddress } = await createTestGroupMintExt(
         connection,
         wallet.payer,
       );
@@ -533,7 +460,7 @@ describe('mmm-ext-deposit', () => {
           connection,
           wallet.payer,
           undefined,
-          groupKeyPair,
+          groupAddress,
         );
 
       const poolData = await createPool(program, {

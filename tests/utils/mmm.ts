@@ -40,6 +40,7 @@ import {
   getAssociatedTokenAddress,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
   fromWeb3JsPublicKey,
@@ -67,9 +68,16 @@ import {
   OCP_COMPUTE_UNITS,
 } from './generic';
 import { createProgrammableNftMip1, createProgrammableNftUmi } from './mip1';
-import { getMetaplexInstance, mintCollection, mintNfts } from './nfts';
+import {
+  createTestGroupMintExt,
+  createTestMintAndTokenT22VanillaExt,
+  getMetaplexInstance,
+  mintCollection,
+  mintNfts,
+} from './nfts';
 import { umiMintNfts, Nft, umiMintCollection } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
+import { assert } from 'chai';
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -156,6 +164,107 @@ export const createPool = async (
   await builder.rpc({ skipPreflight: true });
 
   return { referral, uuid, poolKey };
+};
+
+export const createPoolWithExampleExtDeposits = async (
+  program: Program<Mmm>,
+  connection: Connection,
+  payer: Keypair,
+  side: 'buy' | 'sell' | 'both' | 'none',
+  poolArgs: Parameters<typeof createPool>[1],
+) => {
+  const { groupAddress } = await createTestGroupMintExt(connection, payer);
+  const { mint, recipientTokenAccount } =
+    await createTestMintAndTokenT22VanillaExt(
+      connection,
+      payer,
+      poolArgs.owner,
+      groupAddress,
+    );
+
+  const poolData = await createPool(program, {
+    allowlists: [
+      {
+        kind: AllowlistKind.metadata,
+        value: mint,
+      },
+      {
+        kind: AllowlistKind.group,
+        value: groupAddress,
+      },
+      ...getEmptyAllowLists(4),
+    ],
+    ...poolArgs,
+  });
+
+  const poolAta = await getAssociatedTokenAddress(
+    mint,
+    poolData.poolKey,
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+
+  const { key: sellState } = getMMMSellStatePDA(
+    program.programId,
+    poolData.poolKey,
+    mint,
+  );
+
+  assert.equal(await connection.getBalance(poolAta), 0);
+  assert.equal(await connection.getBalance(sellState), 0);
+  let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+  assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
+
+  if (side === 'both' || side === 'sell') {
+    await program.methods
+      .extDepositSell({
+        assetAmount: new anchor.BN(1),
+        allowlistAux: 'example.com',
+      })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey!,
+        pool: poolData.poolKey,
+        assetMint: mint,
+        assetTokenAccount: recipientTokenAccount,
+        sellsideEscrowTokenAccount: poolAta,
+        sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      })
+      .signers([poolArgs.cosigner!])
+      .rpc({ skipPreflight: true });
+  }
+
+  const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+    program.programId,
+    poolData.poolKey,
+  );
+
+  if (side === 'both' || side === 'buy') {
+    await program.methods
+      .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolData.poolKey,
+        buysideSolEscrowAccount: solEscrowKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  return {
+    mint,
+    recipientTokenAccount,
+    poolData,
+    poolAta,
+    sellState,
+    solEscrowKey,
+    groupAddress,
+  };
 };
 
 export const createPoolWithExampleDeposits = async (

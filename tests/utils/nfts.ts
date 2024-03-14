@@ -136,11 +136,11 @@ export async function createTestMintAndTokenT22VanillaExt(
   connection: Connection,
   payer: Keypair,
   recipient?: PublicKey,
-  groupKeyPair?: Keypair,
-  groupMemberKeyPair?: Keypair,
+  groupAddress?: PublicKey,
+  groupMemberAddress?: PublicKey,
 ) {
   const mintKeypair = Keypair.generate();
-  const effectiveGroupKeyPair = groupKeyPair ?? Keypair.generate();
+  const effectiveGroupAddress = groupAddress ?? Keypair.generate().publicKey;
   const tokenProgramId = TOKEN_2022_PROGRAM_ID;
   const effectiveRecipient = recipient ?? payer.publicKey;
   const targetTokenAccount = getAssociatedTokenAddressSync(
@@ -172,7 +172,7 @@ export async function createTestMintAndTokenT22VanillaExt(
     tokenProgramId,
   );
 
-  const memberAddress = groupMemberKeyPair?.publicKey ?? mintKeypair.publicKey;
+  const memberAddress = groupMemberAddress ?? mintKeypair.publicKey;
   const createGroupMemberPointerIx =
     createInitializeGroupMemberPointerInstruction(
       mintKeypair.publicKey,
@@ -204,7 +204,7 @@ export async function createTestMintAndTokenT22VanillaExt(
     member: mintKeypair.publicKey,
     memberMint: mintKeypair.publicKey,
     memberMintAuthority: payer.publicKey,
-    group: effectiveGroupKeyPair.publicKey,
+    group: effectiveGroupAddress,
     groupUpdateAuthority: payer.publicKey,
   });
 
@@ -302,14 +302,14 @@ export async function createTestGroupMintExt(
   await sendAndAssertTx(connection, tx, blockhashData, false);
 
   return {
-    groupKeyPair,
+    groupAddress: groupKeyPair.publicKey,
   };
 }
 
 export async function createTestGroupMemberMint(
   connection: Connection,
   payer: Keypair,
-  groupAddress: Keypair,
+  groupAddress: PublicKey,
 ) {
   const tokenProgramId = TOKEN_2022_PROGRAM_ID;
   const groupMemberKeyPair = Keypair.generate();
@@ -346,7 +346,7 @@ export async function createTestGroupMemberMint(
     member: groupMemberKeyPair.publicKey,
     memberMint: groupMemberKeyPair.publicKey,
     memberMintAuthority: payer.publicKey,
-    group: groupAddress.publicKey,
+    group: groupAddress,
     groupUpdateAuthority: payer.publicKey,
   });
 
