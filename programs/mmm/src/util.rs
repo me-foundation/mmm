@@ -351,7 +351,6 @@ pub fn try_close_pool<'info>(pool: &Account<'info, Pool>, owner: AccountInfo<'in
         return Ok(());
     }
 
-
     pool.to_account_info()
         .data
         .borrow_mut()
