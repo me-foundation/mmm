@@ -1835,6 +1835,79 @@ export type Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "extWithdrawSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -4332,6 +4405,79 @@ export const IDL: Mmm = {
           "name": "args",
           "type": {
             "defined": "SolFulfillBuyArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "extWithdrawSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellsideEscrowTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "allowlistAuxAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "WithdrawSellArgs"
           }
         }
       ]
