@@ -1,8 +1,7 @@
 use crate::{
     constants::{
-        M2_AUCTION_HOUSE, M2_PREFIX, M2_PROGRAM,
-        MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
-        MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
+        M2_AUCTION_HOUSE, M2_PREFIX, M2_PROGRAM, MAX_METADATA_CREATOR_ROYALTY_BP,
+        MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE, MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
     },
     errors::MMMErrorCode,
     state::*,
@@ -25,8 +24,8 @@ use spl_token_2022::{
     },
     state::Mint as Token22Mint,
 };
-use spl_token_metadata_interface::state::TokenMetadata;
 use spl_token_group_interface::state::TokenGroupMember;
+use spl_token_metadata_interface::state::TokenMetadata;
 use std::convert::TryFrom;
 
 #[macro_export]

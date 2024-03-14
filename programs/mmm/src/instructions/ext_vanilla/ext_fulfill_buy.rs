@@ -138,7 +138,7 @@ pub fn handler<'info>(
             total_price,
             lp_fee_bp,
             0, // metadata_royalty_bp
-            pool.buyside_creator_royalty_bp,
+            0, // buyside_creator_royalty_bp,
         )
     }?;
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
