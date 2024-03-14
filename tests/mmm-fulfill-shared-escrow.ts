@@ -226,7 +226,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     assert.equal(poolAccountInfo.buysidePaymentAmount.toNumber(), 0);
   });
 
-  it.only('can fulfill buy with shared escrow for mip1 nfts', async () => {
+  it('can fulfill buy with shared escrow for mip1 nfts', async () => {
     const DEFAULT_ACCOUNTS = {
       tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
       authorizationRulesProgram: AUTH_RULES_PROGRAM_ID,
