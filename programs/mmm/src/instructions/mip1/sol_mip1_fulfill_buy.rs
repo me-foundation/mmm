@@ -488,7 +488,9 @@ pub fn handler<'info>(
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
 
     log_pool("post_sol_mip1_fulfill_buy", pool)?;
-    try_close_pool(pool, owner.to_account_info())?;
+    if !pool.using_shared_escrow() || pool.shared_escrow_count == 0 {
+        try_close_pool(pool, owner.to_account_info())?;
+    }
 
     msg!(
         "{{\"lp_fee\":{},\"royalty_paid\":{},\"total_price\":{}}}",
