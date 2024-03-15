@@ -32,7 +32,7 @@ pub struct ExtDepositeSell<'info> {
         mint::token_program = token_program,
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidTokenMint,
     )]
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         mut,
         associated_token::mint = asset_mint,

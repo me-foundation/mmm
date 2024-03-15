@@ -57,7 +57,7 @@ pub struct ExtSolFulfillSell<'info> {
     )]
     pub buyside_sol_escrow_account: AccountInfo<'info>,
     /// CHECK: check_allowlists_for_mint_ext
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         mut,
         associated_token::mint = asset_mint,

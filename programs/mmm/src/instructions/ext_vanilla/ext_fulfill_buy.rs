@@ -13,7 +13,7 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     index_ra,
-    instructions::{log_pool, try_close_pool},
+    instructions::{check_remaining_accounts_for_m2, log_pool, try_close_pool, withdraw_m2},
     state::{Pool, SellState},
     util::{
         assert_valid_fees_bp, check_allowlists_for_mint_ext, get_buyside_seller_receives,
@@ -59,7 +59,7 @@ pub struct ExtSolFulfillBuy<'info> {
     )]
     pub buyside_sol_escrow_account: UncheckedAccount<'info>,
     /// CHECK: check_allowlists_for_mint_ext
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         mut,
         token::mint = asset_mint,
@@ -152,6 +152,27 @@ pub fn handler<'info>(
             .ok_or(MMMErrorCode::NumericOverflow)?,
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
+
+    // withdraw sol from M2 first if shared escrow is enabled
+    if pool.using_shared_escrow() {
+        check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
+
+        let amount: u64 = (total_price as i64 + maker_fee) as u64;
+        withdraw_m2(
+            pool,
+            ctx.bumps.pool,
+            buyside_sol_escrow_account,
+            index_ra!(remaining_accounts, 1),
+            system_program,
+            index_ra!(remaining_accounts, 0),
+            pool.owner,
+            amount,
+        )?;
+        pool.shared_escrow_count = pool
+            .shared_escrow_count
+            .checked_sub(args.asset_amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?;
+    }
 
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {

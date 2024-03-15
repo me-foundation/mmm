@@ -28,7 +28,7 @@ pub struct ExtWithdrawSell<'info> {
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
-    pub asset_mint: InterfaceAccount<'info, Mint>,
+    pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         init_if_needed,
         payer = owner,
