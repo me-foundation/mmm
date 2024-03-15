@@ -59,6 +59,10 @@ pub struct ExtSolFulfillBuy<'info> {
     )]
     pub buyside_sol_escrow_account: UncheckedAccount<'info>,
     /// CHECK: check_allowlists_for_mint_ext
+    #[account(
+        mint::token_program = token_program,
+        constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidTokenMint,
+    )]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         mut,
@@ -95,9 +99,9 @@ pub struct ExtSolFulfillBuy<'info> {
     // Branch: using shared escrow accounts
     //   0: m2_program
     //   1: shared_escrow_account
-    //   2+: creator accounts
+    //   2+: transfer hook accounts
     // Branch: not using shared escrow accounts
-    //   0+: creator accounts
+    //   0+: transfer hook accounts
 }
 
 pub fn handler<'info>(
@@ -154,7 +158,7 @@ pub fn handler<'info>(
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
     // withdraw sol from M2 first if shared escrow is enabled
-    if pool.using_shared_escrow() {
+    let remaining_account_without_m2 = if pool.using_shared_escrow() {
         check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
 
         let amount: u64 = (total_price as i64 + maker_fee) as u64;
@@ -172,7 +176,10 @@ pub fn handler<'info>(
             .shared_escrow_count
             .checked_sub(args.asset_amount)
             .ok_or(MMMErrorCode::NumericOverflow)?;
-    }
+        &remaining_accounts[2..]
+    } else {
+        remaining_accounts
+    };
 
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {
@@ -198,7 +205,7 @@ pub fn handler<'info>(
             asset_mint.to_account_info(),
             sellside_escrow_token_account.to_account_info(),
             payer.to_account_info(),
-            remaining_accounts,
+            remaining_account_without_m2,
             args.asset_amount,
             0,   // decimals
             &[], // seeds
@@ -235,7 +242,7 @@ pub fn handler<'info>(
             asset_mint.to_account_info(),
             owner_token_account.to_account_info(),
             payer.to_account_info(),
-            remaining_accounts,
+            remaining_account_without_m2,
             args.asset_amount,
             0,   // decimals
             &[], // seeds
