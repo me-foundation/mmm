@@ -8,7 +8,7 @@ import { assert } from 'chai';
 import { Mmm, IDL, MMMProgramID } from '../sdk/src';
 import {
   airdrop,
-  createPoolWithExampleExtDeposits,
+  createPoolWithExampleT22ExtDeposits,
   getTokenAccount2022,
   SIGNATURE_FEE_LAMPORTS,
 } from './utils';
@@ -31,24 +31,17 @@ describe('mmm-ext-withdraw', () => {
   });
 
   it('Withdraw payment', async () => {
-    const {
-      mint,
-      recipientTokenAccount,
-      poolData,
-      poolAta,
-      sellState,
-      solEscrowKey,
-      groupAddress,
-    } = await createPoolWithExampleExtDeposits(
-      program,
-      connection,
-      wallet.payer,
-      'buy',
-      {
-        owner: wallet.publicKey,
-        cosigner,
-      },
-    );
+    const { poolData, solEscrowKey } =
+      await createPoolWithExampleT22ExtDeposits(
+        program,
+        connection,
+        wallet.payer,
+        'buy',
+        {
+          owner: wallet.publicKey,
+          cosigner,
+        },
+      );
 
     const initWalletBalance = await connection.getBalance(wallet.publicKey);
     const poolRent = await connection.getBalance(poolData.poolKey);
@@ -86,7 +79,7 @@ describe('mmm-ext-withdraw', () => {
       sellState,
       solEscrowKey,
       groupAddress,
-    } = await createPoolWithExampleExtDeposits(
+    } = await createPoolWithExampleT22ExtDeposits(
       program,
       connection,
       wallet.payer,

@@ -19,6 +19,8 @@ import {
   MMMProgramID,
   CurveKind,
   getSolFulfillBuyPrices,
+  getM2BuyerSharedEscrow,
+  M2_PROGRAM,
 } from '../sdk/src';
 import {
   IMMUTABLE_OWNER_EXTENSION_LAMPORTS,
@@ -28,7 +30,7 @@ import {
   airdrop,
   assertIsBetween,
   assertTx,
-  createPoolWithExampleExtDeposits,
+  createPoolWithExampleT22ExtDeposits,
   createTestMintAndTokenT22VanillaExt,
   getSellStatePDARent,
   getTokenAccount2022,
@@ -115,7 +117,7 @@ describe('mmm-ext-fulfill', () => {
   describe('ext_fulfill_sell', () => {
     it('Sellside only', async () => {
       const { mint, poolData, poolAta, sellState, solEscrowKey } =
-        await createPoolWithExampleExtDeposits(
+        await createPoolWithExampleT22ExtDeposits(
           program,
           connection,
           wallet.payer,
@@ -232,7 +234,7 @@ describe('mmm-ext-fulfill', () => {
       const seller = Keypair.generate();
       await airdrop(connection, seller.publicKey, 50);
       const { poolData, solEscrowKey, groupAddress } =
-        await createPoolWithExampleExtDeposits(
+        await createPoolWithExampleT22ExtDeposits(
           program,
           connection,
           wallet.payer,
@@ -369,6 +371,323 @@ describe('mmm-ext-fulfill', () => {
       // do not reinvest so sell side asset amount should be 0
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
     });
+
+    it('Buyside only with shared escrow but pool open', async () => {
+      const seller = Keypair.generate();
+      const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey).key;
+      await Promise.all([
+        airdrop(connection, seller.publicKey, 50),
+        airdrop(connection, buyerSharedEscrow, 50),
+      ]);
+      const { poolData, solEscrowKey, groupAddress } =
+        await createPoolWithExampleT22ExtDeposits(
+          program,
+          connection,
+          wallet.payer,
+          'buy', // side
+          {
+            owner: wallet.publicKey,
+            cosigner,
+            curveType: CurveKind.exp,
+            curveDelta: new anchor.BN(125), // 125 bp
+            expiry: new anchor.BN(0),
+            spotPrice: new anchor.BN(0.5 * LAMPORTS_PER_SOL),
+            referralBp: 200,
+            reinvestFulfillBuy: false,
+            reinvestFulfillSell: false,
+          },
+          true, // sharedEscrow
+          2, // sharedEscrowCount, one more so pool will not be closed
+        );
+      const {
+        mint: extraMint,
+        recipientTokenAccount: extraRecipientTokenAccount,
+      } = await createTestMintAndTokenT22VanillaExt(
+        connection,
+        wallet.payer,
+        seller.publicKey,
+        groupAddress,
+      );
+
+      const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+        extraMint,
+        wallet.publicKey,
+        true,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      const { key: extraNftSellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        extraMint,
+      );
+      const extraPoolAta = await getAssociatedTokenAddress(
+        extraMint,
+        poolData.poolKey,
+        true,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      let [
+        initReferralBalance,
+        initSellerBalance,
+        initWalletBalance,
+        initBuyerSharedEscrowBalance,
+      ] = await Promise.all([
+        connection.getBalance(poolData.referral.publicKey),
+        connection.getBalance(seller.publicKey),
+        connection.getBalance(wallet.publicKey),
+        connection.getBalance(buyerSharedEscrow),
+      ]);
+
+      const expectedTotalPrice = 0.5;
+      const tx = await program.methods
+        .extFulfillBuy({
+          assetAmount: new anchor.BN(1),
+          minPaymentAmount: new anchor.BN(
+            expectedTotalPrice * LAMPORTS_PER_SOL,
+          ),
+          allowlistAux: '',
+          takerFeeBp: 0,
+          makerFeeBp: 150,
+        })
+        .accountsStrict({
+          payer: seller.publicKey,
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          assetMint: extraMint,
+          payerAssetAccount: extraRecipientTokenAccount,
+          sellsideEscrowTokenAccount: extraPoolAta,
+          ownerTokenAccount: ownerExtraNftAtaAddress,
+          allowlistAuxAccount: SystemProgram.programId,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+          sellState: extraNftSellState,
+        })
+        .remainingAccounts([
+          {
+            pubkey: M2_PROGRAM,
+            isWritable: false,
+            isSigner: false,
+          },
+          {
+            pubkey: buyerSharedEscrow,
+            isWritable: true,
+            isSigner: false,
+          },
+        ])
+        .transaction();
+
+      const blockhashData = await connection.getLatestBlockhash();
+      tx.feePayer = seller.publicKey;
+      tx.recentBlockhash = blockhashData.blockhash;
+      tx.partialSign(cosigner, seller);
+
+      await sendAndAssertTx(connection, tx, blockhashData, false);
+
+      const expectedMakerFees = expectedTotalPrice * LAMPORTS_PER_SOL * 0.015;
+      const expectedReferralFees = expectedMakerFees;
+      const [
+        sellerBalance,
+        referralBalance,
+        poolAtaBalance,
+        afterWalletBalance,
+        poolEscrowBalance,
+        afterSharedEscrowBalance,
+      ] = await Promise.all([
+        connection.getBalance(seller.publicKey),
+        connection.getBalance(poolData.referral.publicKey),
+        connection.getBalance(extraPoolAta),
+        connection.getBalance(wallet.publicKey),
+        connection.getBalance(solEscrowKey),
+        connection.getBalance(buyerSharedEscrow),
+      ]);
+
+      assert.equal(
+        sellerBalance,
+        initSellerBalance +
+          expectedTotalPrice * LAMPORTS_PER_SOL -
+          SIGNATURE_FEE_LAMPORTS * 2,
+      );
+      assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
+      assert.equal(poolAtaBalance, 0);
+      assert.equal(poolEscrowBalance, 0); // because it's shared escrow, so the pool escrow is empty
+      assert.equal(afterWalletBalance, initWalletBalance);
+      assert.notEqual(afterSharedEscrowBalance, 0);
+      assert.equal(
+        initBuyerSharedEscrowBalance - afterSharedEscrowBalance,
+        expectedTotalPrice * LAMPORTS_PER_SOL + expectedMakerFees,
+      );
+
+      const poolAccountInfo = await program.account.pool.fetch(
+        poolData.poolKey,
+      );
+      assertIsBetween(
+        poolAccountInfo.spotPrice.toNumber(),
+        (expectedTotalPrice * LAMPORTS_PER_SOL) / 1.0125,
+        PRICE_ERROR_RANGE,
+      );
+      // do not reinvest so sell side asset amount should be 0
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
+    });
+
+    it('Buyside only with shared escrow and close the pool', async () => {
+      const seller = Keypair.generate();
+      const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey).key;
+      await Promise.all([
+        airdrop(connection, seller.publicKey, 50),
+        airdrop(connection, buyerSharedEscrow, 50),
+      ]);
+      const { poolData, solEscrowKey, groupAddress } =
+        await createPoolWithExampleT22ExtDeposits(
+          program,
+          connection,
+          wallet.payer,
+          'buy', // side
+          {
+            owner: wallet.publicKey,
+            cosigner,
+            curveType: CurveKind.exp,
+            curveDelta: new anchor.BN(125), // 125 bp
+            expiry: new anchor.BN(0),
+            spotPrice: new anchor.BN(0.5 * LAMPORTS_PER_SOL),
+            referralBp: 200,
+            reinvestFulfillBuy: false,
+            reinvestFulfillSell: false,
+          },
+          true, // sharedEscrow
+          1, // sharedEscrowCount, only one so pool will be closed
+        );
+      const {
+        mint: extraMint,
+        recipientTokenAccount: extraRecipientTokenAccount,
+      } = await createTestMintAndTokenT22VanillaExt(
+        connection,
+        wallet.payer,
+        seller.publicKey,
+        groupAddress,
+      );
+
+      const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
+        extraMint,
+        wallet.publicKey,
+        true,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      const { key: extraNftSellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        extraMint,
+      );
+      const extraPoolAta = await getAssociatedTokenAddress(
+        extraMint,
+        poolData.poolKey,
+        true,
+        TOKEN_2022_PROGRAM_ID,
+      );
+
+      let [
+        initReferralBalance,
+        initSellerBalance,
+        initBuyerSharedEscrowBalance,
+      ] = await Promise.all([
+        connection.getBalance(poolData.referral.publicKey),
+        connection.getBalance(seller.publicKey),
+        connection.getBalance(buyerSharedEscrow),
+      ]);
+
+      const expectedTotalPrice = 0.5;
+      const tx = await program.methods
+        .extFulfillBuy({
+          assetAmount: new anchor.BN(1),
+          minPaymentAmount: new anchor.BN(
+            expectedTotalPrice * LAMPORTS_PER_SOL,
+          ),
+          allowlistAux: '',
+          takerFeeBp: 0,
+          makerFeeBp: 150,
+        })
+        .accountsStrict({
+          payer: seller.publicKey,
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          buysideSolEscrowAccount: solEscrowKey,
+          assetMint: extraMint,
+          payerAssetAccount: extraRecipientTokenAccount,
+          sellsideEscrowTokenAccount: extraPoolAta,
+          ownerTokenAccount: ownerExtraNftAtaAddress,
+          allowlistAuxAccount: SystemProgram.programId,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+          sellState: extraNftSellState,
+        })
+        .remainingAccounts([
+          {
+            pubkey: M2_PROGRAM,
+            isWritable: false,
+            isSigner: false,
+          },
+          {
+            pubkey: buyerSharedEscrow,
+            isWritable: true,
+            isSigner: false,
+          },
+        ])
+        .transaction();
+
+      const blockhashData = await connection.getLatestBlockhash();
+      tx.feePayer = seller.publicKey;
+      tx.recentBlockhash = blockhashData.blockhash;
+      tx.partialSign(cosigner, seller);
+
+      await sendAndAssertTx(connection, tx, blockhashData, false);
+
+      const expectedMakerFees = expectedTotalPrice * LAMPORTS_PER_SOL * 0.015;
+      const expectedReferralFees = expectedMakerFees;
+      const [
+        sellerBalance,
+        referralBalance,
+        poolAtaBalance,
+        poolEscrowBalance,
+        afterSharedEscrowBalance,
+      ] = await Promise.all([
+        connection.getBalance(seller.publicKey),
+        connection.getBalance(poolData.referral.publicKey),
+        connection.getBalance(extraPoolAta),
+        connection.getBalance(solEscrowKey),
+        connection.getBalance(buyerSharedEscrow),
+      ]);
+
+      assert.equal(
+        sellerBalance,
+        initSellerBalance +
+          expectedTotalPrice * LAMPORTS_PER_SOL -
+          SIGNATURE_FEE_LAMPORTS * 2,
+      );
+      assert.equal(referralBalance, initReferralBalance + expectedReferralFees);
+      assert.equal(poolAtaBalance, 0);
+      assert.equal(poolEscrowBalance, 0); // because it's shared escrow, so the pool escrow is empty
+      assert.notEqual(afterSharedEscrowBalance, 0);
+      assert.equal(
+        initBuyerSharedEscrowBalance - afterSharedEscrowBalance,
+        expectedTotalPrice * LAMPORTS_PER_SOL + expectedMakerFees,
+      );
+
+      const poolAccountInfo = await program.account.pool.fetchNullable(
+        poolData.poolKey,
+      );
+      assert.isNull(poolAccountInfo);
+    });
   });
 
   describe('ext_fulfillment', () => {
@@ -376,7 +695,7 @@ describe('mmm-ext-fulfill', () => {
       const seller = Keypair.generate();
       await airdrop(connection, seller.publicKey, 50);
       const { mint, poolData, poolAta, sellState, solEscrowKey, groupAddress } =
-        await createPoolWithExampleExtDeposits(
+        await createPoolWithExampleT22ExtDeposits(
           program,
           connection,
           wallet.payer,

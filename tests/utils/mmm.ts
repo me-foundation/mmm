@@ -166,12 +166,15 @@ export const createPool = async (
   return { referral, uuid, poolKey };
 };
 
-export const createPoolWithExampleExtDeposits = async (
+// create pool for T22 extension
+export const createPoolWithExampleT22ExtDeposits = async (
   program: Program<Mmm>,
   connection: Connection,
   payer: Keypair,
   side: 'buy' | 'sell' | 'both' | 'none',
   poolArgs: Parameters<typeof createPool>[1],
+  sharedEscrow?: boolean,
+  sharedEscrowCount?: number,
 ) => {
   const { groupAddress } = await createTestGroupMintExt(connection, payer);
   const { mint, recipientTokenAccount } =
@@ -215,7 +218,7 @@ export const createPoolWithExampleExtDeposits = async (
   let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
   assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
-  if (side === 'both' || side === 'sell') {
+  if (!sharedEscrow && (side === 'both' || side === 'sell')) {
     await program.methods
       .extDepositSell({
         assetAmount: new anchor.BN(1),
@@ -242,7 +245,7 @@ export const createPoolWithExampleExtDeposits = async (
     poolData.poolKey,
   );
 
-  if (side === 'both' || side === 'buy') {
+  if (!sharedEscrow && (side === 'both' || side === 'buy')) {
     await program.methods
       .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
       .accountsStrict({
@@ -254,6 +257,22 @@ export const createPoolWithExampleExtDeposits = async (
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc({ skipPreflight: true });
+  }
+
+  if (sharedEscrow) {
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
+    await program.methods
+      .setSharedEscrow({
+        sharedEscrowCount: new anchor.BN(sharedEscrowCount || 2),
+      })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolData.poolKey,
+        sharedEscrowAccount,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc();
   }
 
   return {
