@@ -16,7 +16,7 @@ import {
 import {
   airdrop,
   createPool,
-  createPoolWithExampleExtDeposits,
+  createPoolWithExampleT22ExtDeposits,
   createTestGroupMemberMint,
   createTestGroupMintExt,
   createTestMintAndTokenT22VanillaExt,
@@ -50,7 +50,7 @@ describe('mmm-ext-deposit', () => {
         poolAta,
         sellState,
         groupAddress,
-      } = await createPoolWithExampleExtDeposits(
+      } = await createPoolWithExampleT22ExtDeposits(
         program,
         connection,
         wallet.payer,
@@ -190,7 +190,7 @@ describe('mmm-ext-deposit', () => {
         poolAta,
         sellState,
         groupAddress,
-      } = await createPoolWithExampleExtDeposits(
+      } = await createPoolWithExampleT22ExtDeposits(
         program,
         connection,
         wallet.payer,
@@ -336,7 +336,7 @@ describe('mmm-ext-deposit', () => {
 
     it('failed to verify depositing with wrong allowlist aux', async () => {
       const { mint, recipientTokenAccount, poolData, poolAta, sellState } =
-        await createPoolWithExampleExtDeposits(
+        await createPoolWithExampleT22ExtDeposits(
           program,
           connection,
           wallet.payer,
