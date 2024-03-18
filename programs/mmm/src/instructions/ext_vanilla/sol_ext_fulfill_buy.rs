@@ -155,6 +155,7 @@ pub fn handler<'info>(
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
+    // TODO: update lp_fee when shared escrow for both side is enabled
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
 
     // withdraw sol from M2 first if shared escrow is enabled

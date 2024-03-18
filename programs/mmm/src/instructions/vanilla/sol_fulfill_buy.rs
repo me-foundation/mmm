@@ -164,6 +164,8 @@ pub fn handler<'info>(
             pool.buyside_creator_royalty_bp,
         )
     }?;
+
+    // TODO: update lp_fee when shared escrow for both side is enabled
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
 
     assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
