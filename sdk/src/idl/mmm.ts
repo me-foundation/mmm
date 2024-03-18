@@ -1666,7 +1666,7 @@ export type Mmm = {
       ]
     },
     {
-      "name": "extFulfillSell",
+      "name": "solExtFulfillSell",
       "accounts": [
         {
           "name": "payer",
@@ -1744,7 +1744,7 @@ export type Mmm = {
       ]
     },
     {
-      "name": "extFulfillBuy",
+      "name": "solExtFulfillBuy",
       "accounts": [
         {
           "name": "payer",
@@ -4239,7 +4239,7 @@ export const IDL: Mmm = {
       ]
     },
     {
-      "name": "extFulfillSell",
+      "name": "solExtFulfillSell",
       "accounts": [
         {
           "name": "payer",
@@ -4317,7 +4317,7 @@ export const IDL: Mmm = {
       ]
     },
     {
-      "name": "extFulfillBuy",
+      "name": "solExtFulfillBuy",
       "accounts": [
         {
           "name": "payer",

@@ -132,14 +132,14 @@ pub mod mmm {
         instructions::ext_deposit_sell::handler(ctx, args)
     }
 
-    pub fn ext_fulfill_sell<'info>(
+    pub fn sol_ext_fulfill_sell<'info>(
         ctx: Context<'_, '_, '_, 'info, ExtSolFulfillSell<'info>>,
         args: SolFulfillSellArgs,
     ) -> Result<()> {
         instructions::sol_ext_fulfill_sell::handler(ctx, args)
     }
 
-    pub fn ext_fulfill_buy<'info>(
+    pub fn sol_ext_fulfill_buy<'info>(
         ctx: Context<'_, '_, '_, 'info, ExtSolFulfillBuy<'info>>,
         args: SolFulfillBuyArgs,
     ) -> Result<()> {
