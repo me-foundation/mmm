@@ -64,7 +64,7 @@ describe('mmm-ext-fulfill', () => {
     makerFeeBp: number,
   ) {
     const tx = await program.methods
-      .extFulfillSell({
+      .solExtFulfillSell({
         assetAmount: new anchor.BN(1),
         maxPaymentAmount: new anchor.BN(maxPaymentAmount),
         buysideCreatorRoyaltyBp: 0,
@@ -282,7 +282,7 @@ describe('mmm-ext-fulfill', () => {
 
       const expectedTotalPrice = 0.5;
       const tx = await program.methods
-        .extFulfillBuy({
+        .solExtFulfillBuy({
           assetAmount: new anchor.BN(1),
           minPaymentAmount: new anchor.BN(
             expectedTotalPrice * LAMPORTS_PER_SOL,
@@ -437,7 +437,7 @@ describe('mmm-ext-fulfill', () => {
 
       const expectedTotalPrice = 0.5;
       const tx = await program.methods
-        .extFulfillBuy({
+        .solExtFulfillBuy({
           assetAmount: new anchor.BN(1),
           minPaymentAmount: new anchor.BN(
             expectedTotalPrice * LAMPORTS_PER_SOL,
@@ -600,7 +600,7 @@ describe('mmm-ext-fulfill', () => {
 
       const expectedTotalPrice = 0.5;
       const tx = await program.methods
-        .extFulfillBuy({
+        .solExtFulfillBuy({
           assetAmount: new anchor.BN(1),
           minPaymentAmount: new anchor.BN(
             expectedTotalPrice * LAMPORTS_PER_SOL,
@@ -747,7 +747,7 @@ describe('mmm-ext-fulfill', () => {
       });
 
       const tx = await program.methods
-        .extFulfillBuy({
+        .solExtFulfillBuy({
           assetAmount: new anchor.BN(1),
           minPaymentAmount: expectedBuyPrices.sellerReceives,
           allowlistAux: null,
@@ -835,7 +835,7 @@ describe('mmm-ext-fulfill', () => {
 
       {
         const tx = await program.methods
-          .extFulfillSell({
+          .solExtFulfillSell({
             assetAmount: new anchor.BN(1),
             maxPaymentAmount: new anchor.BN(
               LAMPORTS_PER_SOL + expectedTakerFees + expectedLpFees,
