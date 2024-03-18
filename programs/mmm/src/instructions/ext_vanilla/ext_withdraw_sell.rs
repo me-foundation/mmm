@@ -81,7 +81,7 @@ pub fn handler(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
     let asset_mint = &ctx.accounts.asset_mint;
-    
+
     let pool_uuid_key = pool.uuid.key();
     let owner_key = owner.key();
     let pool_seeds: &[&[&[u8]]] = &[&[

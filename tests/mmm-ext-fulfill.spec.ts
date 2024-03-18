@@ -29,7 +29,6 @@ import {
   SIGNATURE_FEE_LAMPORTS,
   airdrop,
   assertIsBetween,
-  assertTx,
   createPoolWithExampleT22ExtDeposits,
   createTestMintAndTokenT22VanillaExt,
   getSellStatePDARent,
@@ -530,6 +529,7 @@ describe('mmm-ext-fulfill', () => {
       );
       // do not reinvest so sell side asset amount should be 0
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
+      assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
     });
 
     it('Buyside only with shared escrow and close the pool', async () => {

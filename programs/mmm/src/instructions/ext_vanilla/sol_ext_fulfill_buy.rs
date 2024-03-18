@@ -155,6 +155,8 @@ pub fn handler<'info>(
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
+    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
+
     // withdraw sol from M2 first if shared escrow is enabled
     let remaining_account_without_m2 = if pool.using_shared_escrow() {
         check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
@@ -178,8 +180,6 @@ pub fn handler<'info>(
     } else {
         remaining_accounts
     };
-
-    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
 
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {

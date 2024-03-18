@@ -3,14 +3,13 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, LAMPORTS_PER_SOL, SystemProgram } from '@solana/web3.js';
+import { Keypair, SystemProgram } from '@solana/web3.js';
 import { assert } from 'chai';
 import { Mmm, IDL, MMMProgramID } from '../sdk/src';
 import {
   airdrop,
   createPoolWithExampleT22ExtDeposits,
   getTokenAccount2022,
-  SIGNATURE_FEE_LAMPORTS,
 } from './utils';
 
 describe('mmm-ext-withdraw', () => {
