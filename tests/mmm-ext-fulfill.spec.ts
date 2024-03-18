@@ -95,18 +95,7 @@ describe('mmm-ext-fulfill', () => {
     tx.recentBlockhash = blockhashData.blockhash;
     tx.partialSign(cosigner, buyer);
 
-    const txId = await connection.sendRawTransaction(tx.serialize(), {
-      skipPreflight: true,
-    });
-    const confirmedTx = await connection.confirmTransaction(
-      {
-        signature: txId,
-        blockhash: blockhashData.blockhash,
-        lastValidBlockHeight: blockhashData.lastValidBlockHeight,
-      },
-      'processed',
-    );
-    assertTx(txId, confirmedTx);
+    await sendAndAssertTx(connection, tx, blockhashData, false);
   }
 
   beforeEach(async () => {
@@ -337,11 +326,17 @@ describe('mmm-ext-fulfill', () => {
         referralBalance,
         afterWalletBalance,
         poolEscrowBalance,
+        ownerNftTokenAccount,
       ] = await Promise.all([
         connection.getBalance(seller.publicKey),
         connection.getBalance(poolData.referral.publicKey),
         connection.getBalance(wallet.publicKey),
         connection.getBalance(solEscrowKey),
+        getTokenAccount2022(
+          connection,
+          ownerExtraNftAtaAddress,
+          TOKEN_2022_PROGRAM_ID,
+        ),
       ]);
 
       assertIsBetween(
@@ -370,6 +365,7 @@ describe('mmm-ext-fulfill', () => {
       );
       // do not reinvest so sell side asset amount should be 0
       assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
+      assert.equal(Number(ownerNftTokenAccount.amount), 1);
     });
 
     it('Buyside only with shared escrow but pool open', async () => {
@@ -788,13 +784,19 @@ describe('mmm-ext-fulfill', () => {
       let tokenAccountRent =
         (await getTokenAccountRent(connection)) +
         IMMUTABLE_OWNER_EXTENSION_LAMPORTS;
-      const sellStatePDARent = await getSellStatePDARent(connection);
 
       const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer
       {
-        const [sellerBalance, referralBalance] = await Promise.all([
+        const [
+          sellerBalance,
+          referralBalance,
+          sellStatePDARent,
+          poolTokenAccount,
+        ] = await Promise.all([
           connection.getBalance(seller.publicKey),
           connection.getBalance(poolData.referral.publicKey),
+          getSellStatePDARent(connection),
+          getTokenAccount2022(connection, extraPoolAta, TOKEN_2022_PROGRAM_ID),
         ]);
 
         assert.equal(
@@ -808,6 +810,7 @@ describe('mmm-ext-fulfill', () => {
           referralBalance,
           initReferralBalance + expectedBuyPrices.takerFeePaid.toNumber(),
         );
+        assert.equal(Number(poolTokenAccount.amount), 1);
         initReferralBalance = referralBalance;
       }
 
@@ -887,7 +890,7 @@ describe('mmm-ext-fulfill', () => {
             expectedLpFees -
             expectedTakerFees -
             expectedTxFees -
-            tokenAccountRent, // no token account rent bc seller ata was closed and pool ata opened
+            tokenAccountRent,
           PRICE_ERROR_RANGE,
         );
         assertIsBetween(

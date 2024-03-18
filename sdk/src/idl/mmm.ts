@@ -2560,12 +2560,12 @@ export type Mmm = {
     },
     {
       "code": 6030,
-      "name": "InValidTokenMetadataExtension",
+      "name": "InvalidTokenMetadataExtension",
       "msg": "Invalid token metadata extensions"
     },
     {
       "code": 6031,
-      "name": "InValidTokenMemberExtension",
+      "name": "InvalidTokenMemberExtension",
       "msg": "Invalid token member extensions"
     }
   ]
@@ -5133,12 +5133,12 @@ export const IDL: Mmm = {
     },
     {
       "code": 6030,
-      "name": "InValidTokenMetadataExtension",
+      "name": "InvalidTokenMetadataExtension",
       "msg": "Invalid token metadata extensions"
     },
     {
       "code": 6031,
-      "name": "InValidTokenMemberExtension",
+      "name": "InvalidTokenMemberExtension",
       "msg": "Invalid token member extensions"
     }
   ]

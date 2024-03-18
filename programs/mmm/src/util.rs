@@ -674,7 +674,7 @@ pub fn check_allowlists_for_mint_ext(
     // verify metadata extension
     if let Ok(metadata_ptr) = mint_deserialized.get_extension::<MetadataPointer>() {
         if Option::<Pubkey>::from(metadata_ptr.metadata_address) != Some(*token_mint.key) {
-            return Err(MMMErrorCode::InValidTokenMetadataExtension.into());
+            return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
         }
     }
     let parsed_metadata = mint_deserialized
@@ -703,7 +703,7 @@ pub fn check_allowlists_for_mint_ext(
     if let Ok(group_member_ptr) = mint_deserialized.get_extension::<GroupMemberPointer>() {
         if Some(*token_mint.key) != Option::<Pubkey>::from(group_member_ptr.member_address) {
             msg!("group member pointer does not point to itself");
-            return Err(MMMErrorCode::InValidTokenMemberExtension.into());
+            return Err(MMMErrorCode::InvalidTokenMemberExtension.into());
         }
     }
 
@@ -755,13 +755,13 @@ pub fn assert_valid_group(
 ) -> Result<Option<Pubkey>> {
     if let Ok(group_member) = mint_deserialized.get_extension::<TokenGroupMember>() {
         // counter spoof check
-        if Some(group_member.mint) != Some(*token_mint.key) {
+        if group_member.mint != *token_mint.key {
             msg!("group member mint does not match the token mint");
-            return Err(MMMErrorCode::InValidTokenMemberExtension.into());
+            return Err(MMMErrorCode::InvalidTokenMemberExtension.into());
         }
         return Ok(Some(group_member.group));
     }
-    Err(MMMErrorCode::InValidTokenMemberExtension.into())
+    Err(MMMErrorCode::InvalidTokenMemberExtension.into())
 }
 
 pub struct PoolPriceInfo<'info> {

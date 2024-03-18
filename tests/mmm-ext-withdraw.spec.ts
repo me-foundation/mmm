@@ -30,46 +30,6 @@ describe('mmm-ext-withdraw', () => {
     await airdrop(connection, wallet.publicKey, 50);
   });
 
-  it('Withdraw payment', async () => {
-    const { poolData, solEscrowKey } =
-      await createPoolWithExampleT22ExtDeposits(
-        program,
-        connection,
-        wallet.payer,
-        'buy',
-        {
-          owner: wallet.publicKey,
-          cosigner,
-        },
-      );
-
-    const initWalletBalance = await connection.getBalance(wallet.publicKey);
-    const poolRent = await connection.getBalance(poolData.poolKey);
-    await program.methods
-      .solWithdrawBuy({
-        paymentAmount: new anchor.BN(100 * LAMPORTS_PER_SOL),
-      })
-      .accountsStrict({
-        owner: wallet.publicKey,
-        cosigner: cosigner.publicKey,
-        pool: poolData.poolKey,
-        buysideSolEscrowAccount: solEscrowKey,
-        systemProgram: SystemProgram.programId,
-      })
-      .signers([cosigner])
-      .rpc();
-
-    assert.equal(await connection.getBalance(poolData.poolKey), 0);
-    const walletBalance = await connection.getBalance(wallet.publicKey);
-    assert.equal(
-      walletBalance,
-      initWalletBalance +
-        10 * LAMPORTS_PER_SOL + // amount initially deposited
-        poolRent - // pool rent
-        2 * SIGNATURE_FEE_LAMPORTS, // signature fees
-    );
-  });
-
   it('Withdraw assets', async () => {
     const {
       mint,

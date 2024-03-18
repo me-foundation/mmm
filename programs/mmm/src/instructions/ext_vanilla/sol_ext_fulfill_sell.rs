@@ -57,6 +57,10 @@ pub struct ExtSolFulfillSell<'info> {
     )]
     pub buyside_sol_escrow_account: AccountInfo<'info>,
     /// CHECK: check_allowlists_for_mint_ext
+    #[account(
+        mint::token_program = token_program,
+        constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidTokenMint,
+    )]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         mut,
@@ -229,7 +233,7 @@ pub fn handler<'info>(
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("ext_post_sol_fulfill_sell", pool)?;
+    log_pool("post_ext_sol_fulfill_sell", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!("{{\"lp_fee\":{},\"total_price\":{}}}", lp_fee, total_price);

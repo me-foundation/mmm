@@ -63,7 +63,7 @@ pub enum MMMErrorCode {
     #[msg("Invalid remaining accounts")]
     InvalidRemainingAccounts, // 0x178d
     #[msg("Invalid token metadata extensions")]
-    InValidTokenMetadataExtension, // 0x178e
+    InvalidTokenMetadataExtension, // 0x178e
     #[msg("Invalid token member extensions")]
-    InValidTokenMemberExtension, // 0x178f
+    InvalidTokenMemberExtension, // 0x178f
 }

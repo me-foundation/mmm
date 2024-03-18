@@ -372,6 +372,45 @@ describe('mmm-ext-deposit', () => {
       }
     });
 
+    it('failed to verify depositing nfts with empty metadata list', async () => {
+      const { mint, recipientTokenAccount, poolData, poolAta, sellState } =
+        await createPoolWithExampleT22ExtDeposits(
+          program,
+          connection,
+          wallet.payer,
+          'none',
+          {
+            owner: wallet.publicKey,
+            cosigner,
+            allowlists: undefined,
+          },
+        );
+
+      try {
+        await program.methods
+          .extDepositSell({
+            assetAmount: new anchor.BN(1),
+            allowlistAux: '',
+          })
+          .accountsStrict({
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            pool: poolData.poolKey,
+            assetMint: mint,
+            assetTokenAccount: recipientTokenAccount,
+            sellsideEscrowTokenAccount: poolAta,
+            sellState,
+            systemProgram: SystemProgram.programId,
+            tokenProgram: TOKEN_2022_PROGRAM_ID,
+            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          })
+          .signers([cosigner])
+          .rpc({ skipPreflight: true });
+      } catch (err) {
+        assertProgramError(err, 'invalid allowlists');
+      }
+    });
+
     it('failed to verify depositing nfts with external group member pointer', async () => {
       const { groupAddress } = await createTestGroupMintExt(
         connection,

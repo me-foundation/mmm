@@ -58,7 +58,6 @@ pub struct ExtSolFulfillBuy<'info> {
         bump,
     )]
     pub buyside_sol_escrow_account: UncheckedAccount<'info>,
-    /// CHECK: check_allowlists_for_mint_ext
     #[account(
         mint::token_program = token_program,
         constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidTokenMint,
@@ -145,7 +144,6 @@ pub fn handler<'info>(
             0, // buyside_creator_royalty_bp,
         )
     }?;
-    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
 
     assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(seller_receives, args.maker_fee_bp)?;
@@ -181,6 +179,8 @@ pub fn handler<'info>(
         remaining_accounts
     };
 
+    let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
+
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {
             return Err(MMMErrorCode::InvalidAccountState.into());
@@ -197,8 +197,6 @@ pub fn handler<'info>(
             system_program.to_account_info(),
             rent.to_account_info(),
         )?;
-        let sellside_escrow_token_account =
-            ctx.accounts.sellside_escrow_token_account.to_account_info();
         invoke_transfer_checked(
             token_program.key,
             payer_asset_account.to_account_info(),
@@ -277,7 +275,6 @@ pub fn handler<'info>(
         &[
             buyside_sol_escrow_account.to_account_info(),
             payer.to_account_info(),
-            system_program.to_account_info(),
         ],
         buyside_sol_escrow_account_seeds,
     )?;
@@ -288,7 +285,6 @@ pub fn handler<'info>(
             &[
                 buyside_sol_escrow_account.to_account_info(),
                 owner.to_account_info(),
-                system_program.to_account_info(),
             ],
             buyside_sol_escrow_account_seeds,
         )?;
@@ -303,7 +299,6 @@ pub fn handler<'info>(
             &[
                 buyside_sol_escrow_account.to_account_info(),
                 referral.to_account_info(),
-                system_program.to_account_info(),
             ],
             buyside_sol_escrow_account_seeds,
         )?;
@@ -339,7 +334,6 @@ pub fn handler<'info>(
                 &[
                     buyside_sol_escrow_account.to_account_info(),
                     shared_escrow_account,
-                    system_program.to_account_info(),
                 ],
                 buyside_sol_escrow_account_seeds,
             )?;
@@ -354,7 +348,7 @@ pub fn handler<'info>(
     }
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
 
-    log_pool("ext_post_sol_fulfill_buy", pool)?;
+    log_pool("post_ext_sol_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     msg!("{{\"lp_fee\":{},\"total_price\":{}}}", lp_fee, total_price,);

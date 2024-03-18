@@ -1,4 +1,4 @@
-use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
+use anchor_lang::{prelude::*, AnchorDeserialize};
 use anchor_spl::{
     associated_token::AssociatedToken,
     token_2022::{close_account, CloseAccount},
@@ -28,6 +28,10 @@ pub struct ExtWithdrawSell<'info> {
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
+    #[account(
+        mint::token_program = token_program,
+        constraint = asset_mint.supply == 1 && asset_mint.decimals == 0 @ MMMErrorCode::InvalidTokenMint,
+    )]
     pub asset_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(
         init_if_needed,
@@ -77,6 +81,15 @@ pub fn handler(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
     let asset_mint = &ctx.accounts.asset_mint;
+    
+    let pool_uuid_key = pool.uuid.key();
+    let owner_key = owner.key();
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        owner_key.as_ref(),
+        pool_uuid_key.as_ref(),
+        &[ctx.bumps.pool],
+    ]];
 
     // Note that check_allowlists_for_mint_ext is optional for withdraw_sell
     // because sometimes the nft might be moved out of the collection
@@ -91,12 +104,7 @@ pub fn handler(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<
         &[], // additional_accounts
         args.asset_amount,
         0, // decimals
-        &[&[
-            POOL_PREFIX.as_bytes(),
-            owner.key().as_ref(),
-            pool.uuid.key().as_ref(),
-            &[ctx.bumps.pool],
-        ]],
+        pool_seeds,
     )?;
 
     // we can close the sellside_escrow_token_account if no amount left
@@ -109,12 +117,7 @@ pub fn handler(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<
                 authority: pool.to_account_info(),
             },
             // seeds should be the PDA of 'pool'
-            &[&[
-                POOL_PREFIX.as_bytes(),
-                owner.key().as_ref(),
-                pool.uuid.key().as_ref(),
-                &[ctx.bumps.pool],
-            ]],
+            pool_seeds,
         ))?;
     }
 

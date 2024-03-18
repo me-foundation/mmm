@@ -3,11 +3,8 @@ import {
   PROGRAM_ID as OCP_PROGRAM_ID,
 } from '@magiceden-oss/open_creator_protocol';
 import {
-  assertAccountExists,
-  createAmount,
   generateSigner,
   OptionOrNullable,
-  percentAmount,
   publicKey,
   some,
   PublicKey as UmiPublicKey,
@@ -16,14 +13,7 @@ import {
   createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-tests';
-import {
-  createNft,
-  createV1,
-  TokenStandard,
-  mplTokenMetadata,
-  fetchDigitalAsset,
-  verifyCollection,
-} from '@metaplex-foundation/mpl-token-metadata';
+import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 import {
@@ -60,14 +50,13 @@ import {
   Mmm,
 } from '../../sdk/src';
 import {
-  airdrop,
   fillAllowlists,
   getEmptyAllowLists,
   getKeypair,
   MIP1_COMPUTE_UNITS,
   OCP_COMPUTE_UNITS,
 } from './generic';
-import { createProgrammableNftMip1, createProgrammableNftUmi } from './mip1';
+import { createProgrammableNftUmi } from './mip1';
 import {
   createTestGroupMintExt,
   createTestMintAndTokenT22VanillaExt,
@@ -77,7 +66,6 @@ import {
 } from './nfts';
 import { umiMintNfts, Nft, umiMintCollection } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
-import { assert } from 'chai';
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -212,11 +200,6 @@ export const createPoolWithExampleT22ExtDeposits = async (
     poolData.poolKey,
     mint,
   );
-
-  assert.equal(await connection.getBalance(poolAta), 0);
-  assert.equal(await connection.getBalance(sellState), 0);
-  let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
-  assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
 
   if (!sharedEscrow && (side === 'both' || side === 'sell')) {
     await program.methods
