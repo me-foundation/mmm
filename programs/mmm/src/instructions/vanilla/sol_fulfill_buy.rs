@@ -155,6 +155,7 @@ pub fn handler<'info>(
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
     let metadata_royalty_bp = get_metadata_royalty_bp(total_price, &parsed_metadata, None);
+    // TODO: update lp_fee_bp when shared escrow for both side is enabled
     let seller_receives = {
         let lp_fee_bp = get_lp_fee_bp(pool, buyside_sol_escrow_account.lamports());
         get_buyside_seller_receives(
