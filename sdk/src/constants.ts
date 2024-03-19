@@ -15,5 +15,6 @@ export enum AllowlistKind {
   mint = 2,
   mcc = 3,
   metadata = 4,
+  group = 5,
   any = 255,
 }

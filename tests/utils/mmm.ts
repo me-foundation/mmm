@@ -3,11 +3,8 @@ import {
   PROGRAM_ID as OCP_PROGRAM_ID,
 } from '@magiceden-oss/open_creator_protocol';
 import {
-  assertAccountExists,
-  createAmount,
   generateSigner,
   OptionOrNullable,
-  percentAmount,
   publicKey,
   some,
   PublicKey as UmiPublicKey,
@@ -16,14 +13,7 @@ import {
   createSignerFromKeypair,
 } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-tests';
-import {
-  createNft,
-  createV1,
-  TokenStandard,
-  mplTokenMetadata,
-  fetchDigitalAsset,
-  verifyCollection,
-} from '@metaplex-foundation/mpl-token-metadata';
+import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 import {
@@ -40,6 +30,7 @@ import {
   getAssociatedTokenAddress,
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
   fromWeb3JsPublicKey,
@@ -59,15 +50,20 @@ import {
   Mmm,
 } from '../../sdk/src';
 import {
-  airdrop,
   fillAllowlists,
   getEmptyAllowLists,
   getKeypair,
   MIP1_COMPUTE_UNITS,
   OCP_COMPUTE_UNITS,
 } from './generic';
-import { createProgrammableNftMip1, createProgrammableNftUmi } from './mip1';
-import { getMetaplexInstance, mintCollection, mintNfts } from './nfts';
+import { createProgrammableNftUmi } from './mip1';
+import {
+  createTestGroupMintExt,
+  createTestMintAndTokenT22VanillaExt,
+  getMetaplexInstance,
+  mintCollection,
+  mintNfts,
+} from './nfts';
 import { umiMintNfts, Nft, umiMintCollection } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
 
@@ -156,6 +152,121 @@ export const createPool = async (
   await builder.rpc({ skipPreflight: true });
 
   return { referral, uuid, poolKey };
+};
+
+// create pool for T22 extension
+export const createPoolWithExampleT22ExtDeposits = async (
+  program: Program<Mmm>,
+  connection: Connection,
+  payer: Keypair,
+  side: 'buy' | 'sell' | 'both' | 'none',
+  poolArgs: Parameters<typeof createPool>[1],
+  sharedEscrow?: boolean,
+  sharedEscrowCount?: number,
+) => {
+  const { groupAddress } = await createTestGroupMintExt(connection, payer);
+  const { mint, recipientTokenAccount } =
+    await createTestMintAndTokenT22VanillaExt(
+      connection,
+      payer,
+      poolArgs.owner,
+      groupAddress,
+    );
+
+  const poolData = await createPool(program, {
+    allowlists: [
+      {
+        kind: AllowlistKind.metadata,
+        value: mint,
+      },
+      {
+        kind: AllowlistKind.group,
+        value: groupAddress,
+      },
+      ...getEmptyAllowLists(4),
+    ],
+    ...poolArgs,
+  });
+
+  const poolAta = await getAssociatedTokenAddress(
+    mint,
+    poolData.poolKey,
+    true,
+    TOKEN_2022_PROGRAM_ID,
+  );
+
+  const { key: sellState } = getMMMSellStatePDA(
+    program.programId,
+    poolData.poolKey,
+    mint,
+  );
+
+  if (!sharedEscrow && (side === 'both' || side === 'sell')) {
+    await program.methods
+      .extDepositSell({
+        assetAmount: new anchor.BN(1),
+        allowlistAux: 'example.com',
+      })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey!,
+        pool: poolData.poolKey,
+        assetMint: mint,
+        assetTokenAccount: recipientTokenAccount,
+        sellsideEscrowTokenAccount: poolAta,
+        sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      })
+      .signers([poolArgs.cosigner!])
+      .rpc({ skipPreflight: true });
+  }
+
+  const { key: solEscrowKey } = getMMMBuysideSolEscrowPDA(
+    program.programId,
+    poolData.poolKey,
+  );
+
+  if (!sharedEscrow && (side === 'both' || side === 'buy')) {
+    await program.methods
+      .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolData.poolKey,
+        buysideSolEscrowAccount: solEscrowKey,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  if (sharedEscrow) {
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
+    await program.methods
+      .setSharedEscrow({
+        sharedEscrowCount: new anchor.BN(sharedEscrowCount || 2),
+      })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolData.poolKey,
+        sharedEscrowAccount,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc();
+  }
+
+  return {
+    mint,
+    recipientTokenAccount,
+    poolData,
+    poolAta,
+    sellState,
+    solEscrowKey,
+    groupAddress,
+  };
 };
 
 export const createPoolWithExampleDeposits = async (

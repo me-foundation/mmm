@@ -1186,7 +1186,7 @@ describe('mmm-fulfill-exp', () => {
             expectedLpFees -
             expectedTakerFees -
             expectedTxFees -
-            tokenAccountRent, // no token account rent bc seller ata was closed and pool ata opened
+            tokenAccountRent,
           PRICE_ERROR_RANGE,
         );
         assertIsBetween(
