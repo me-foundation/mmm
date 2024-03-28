@@ -2411,7 +2411,7 @@ export type Mmm = {
     {
       "code": 6000,
       "name": "InvalidLPFee",
-      "msg": "lp fee bp must be between 0 and 10000"
+      "msg": "lp fee bp must be between 0 and 2000"
     },
     {
       "code": 6001,
@@ -4984,7 +4984,7 @@ export const IDL: Mmm = {
     {
       "code": 6000,
       "name": "InvalidLPFee",
-      "msg": "lp fee bp must be between 0 and 10000"
+      "msg": "lp fee bp must be between 0 and 2000"
     },
     {
       "code": 6001,
