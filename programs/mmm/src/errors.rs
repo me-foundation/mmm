@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum MMMErrorCode {
-    #[msg("lp fee bp must be between 0 and 20000")]
+    #[msg("lp fee bp must be between 0 and 2000")]
     InvalidLPFee, // 0x1770
     #[msg("invalid allowlists")]
     InvalidAllowLists, // 0x1771
