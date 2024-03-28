@@ -101,6 +101,57 @@ describe('mmm-admin', () => {
       assert.deepEqual(poolAccountInfo.paymentMint, PublicKey.default);
       assert.deepEqual(poolAccountInfo.allowlists, allowlists);
     });
+
+    it('lp fee cannot be too large', async () => {
+      const referral = Keypair.generate();
+      const uuid = Keypair.generate();
+      const { key: poolKey } = getMMMPoolPDA(
+        program.programId,
+        wallet.publicKey,
+        uuid.publicKey,
+      );
+      const allowlists = [
+        { kind: AllowlistKind.fvca, value: referral.publicKey },
+        { kind: AllowlistKind.mint, value: cosigner.publicKey },
+        { kind: AllowlistKind.mcc, value: wallet.publicKey },
+        ...getEmptyAllowLists(3),
+      ];
+
+      try {
+        await program.methods
+          .createPool({
+            spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
+            curveType: CurveKind.linear,
+            curveDelta: new anchor.BN(0),
+            reinvestFulfillBuy: true,
+            reinvestFulfillSell: true,
+            expiry: new anchor.BN(42),
+            lpFeeBp: 2_001,
+            referral: referral.publicKey,
+            cosignerAnnotation: new Array(32).fill(0),
+            buysideCreatorRoyaltyBp: 0,
+
+            uuid: uuid.publicKey,
+            paymentMint: PublicKey.default,
+            allowlists,
+          })
+          .accountsStrict({
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            pool: poolKey,
+            systemProgram: SystemProgram.programId,
+          })
+          .signers([cosigner])
+          .rpc();
+
+        assert.ok(false, 'Should have thrown error');
+      } catch (e) {
+        // Should be an AnchorError and force convert the type.
+        expect(e).to.be.instanceOf(AnchorError);
+        const err = e as AnchorError;
+        assert.strictEqual(err.error.errorCode.number, 6000);
+      }
+    });
   });
 
   describe('Can update sol mmm', () => {
