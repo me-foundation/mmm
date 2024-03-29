@@ -1467,7 +1467,6 @@ packages:
       - encoding
       - fastestsmallesttextencoderdecoder
       - utf-8-validate
-    dev: false
 
   /@solana/spl-type-length-value@0.1.0:
     resolution: {integrity: sha512-JBMGB0oR4lPttOZ5XiUGyvylwLQjt1CPJa6qQ5oM+MBCndfjz2TKKkw0eATlLLcYmq1jBVsNlJ2cD6ns2GR7lA==}
@@ -4996,7 +4995,8 @@ packages:
       '@metaplex-foundation/mpl-token-auth-rules': 1.2.0(fastestsmallesttextencoderdecoder@1.0.22)
       '@metaplex-foundation/mpl-token-metadata': 3.1.2(@metaplex-foundation/umi@0.8.10)
       '@project-serum/anchor': 0.26.0
-      '@solana/spl-token': 0.3.11(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/spl-token': 0.4.1(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
+      '@solana/spl-token-metadata': 0.1.2(@solana/web3.js@1.89.1)(fastestsmallesttextencoderdecoder@1.0.22)
       '@solana/web3.js': 1.89.1
       old-mpl-token-metadata: /@metaplex-foundation/mpl-token-metadata@2.12.0(fastestsmallesttextencoderdecoder@1.0.22)
     transitivePeerDependencies:

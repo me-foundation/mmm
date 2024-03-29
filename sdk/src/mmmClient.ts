@@ -34,6 +34,7 @@ import {
   getTokenRecordPDA,
 } from './pda';
 import {
+  doesTokenExtensionExist,
   MetadataProvider,
   MintStateWithAddress,
   RpcMetadataProvider,
@@ -287,9 +288,29 @@ export class MMMClient {
     let builder:
       | ReturnType<MmmMethodsNamespace['solOcpFulfillBuy']>
       | ReturnType<MmmMethodsNamespace['solFulfillBuy']>
-      | ReturnType<MmmMethodsNamespace['solMip1FulfillBuy']>;
+      | ReturnType<MmmMethodsNamespace['solMip1FulfillBuy']>
+      | ReturnType<MmmMethodsNamespace['solExtFulfillBuy']>;
 
-    if (ocpMintState) {
+    if (doesTokenExtensionExist(mintContext)) {
+      builder = this.program.methods.solExtFulfillBuy(args).accountsStrict({
+        payer,
+        owner: this.poolData.owner,
+        cosigner: this.poolData.cosigner,
+        referral: this.poolData.referral,
+        pool: this.poolData.pool,
+        buysideSolEscrowAccount,
+        assetMint,
+        payerAssetAccount: assetTokenAccount,
+        sellsideEscrowTokenAccount,
+        ownerTokenAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: mintContext.tokenProgram,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+      });
+    } else if (ocpMintState) {
       builder = this.program.methods.solOcpFulfillBuy(args).accountsStrict({
         payer,
         owner: this.poolData.owner,
@@ -438,9 +459,26 @@ export class MMMClient {
     let builder:
       | ReturnType<MmmMethodsNamespace['solOcpFulfillSell']>
       | ReturnType<MmmMethodsNamespace['solFulfillSell']>
-      | ReturnType<MmmMethodsNamespace['solMip1FulfillSell']>;
+      | ReturnType<MmmMethodsNamespace['solMip1FulfillSell']>
+      | ReturnType<MmmMethodsNamespace['solExtFulfillSell']>;
 
-    if (ocpMintState) {
+    if (doesTokenExtensionExist(mintContext)) {
+      builder = this.program.methods.solExtFulfillSell(args).accountsStrict({
+        payer,
+        owner: this.poolData.owner,
+        cosigner: this.poolData.cosigner,
+        referral: this.poolData.referral,
+        pool: this.poolData.pool,
+        buysideSolEscrowAccount,
+        assetMint,
+        sellsideEscrowTokenAccount,
+        payerAssetAccount,
+        sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: mintContext.tokenProgram,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      });
+    } else if (ocpMintState) {
       builder = this.program.methods
         .solOcpFulfillSell({
           assetAmount: args.assetAmount,
@@ -586,9 +624,23 @@ export class MMMClient {
     let builder:
       | ReturnType<MmmMethodsNamespace['ocpDepositSell']>
       | ReturnType<MmmMethodsNamespace['depositSell']>
-      | ReturnType<MmmMethodsNamespace['mip1DepositSell']>;
+      | ReturnType<MmmMethodsNamespace['mip1DepositSell']>
+      | ReturnType<MmmMethodsNamespace['extDepositSell']>;
 
-    if (ocpMintState) {
+    if (doesTokenExtensionExist(mintContext)) {
+      builder = this.program.methods.extDepositSell(args).accountsStrict({
+        owner: this.poolData.owner,
+        cosigner: this.poolData.cosigner,
+        pool: this.poolData.pool,
+        assetMint,
+        assetTokenAccount,
+        sellsideEscrowTokenAccount,
+        sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: mintContext.tokenProgram,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      });
+    } else if (ocpMintState) {
       builder = this.program.methods.ocpDepositSell(args).accountsStrict({
         owner: this.poolData.owner,
         pool: this.poolData.pool,
@@ -698,9 +750,25 @@ export class MMMClient {
     let builder:
       | ReturnType<MmmMethodsNamespace['ocpWithdrawSell']>
       | ReturnType<MmmMethodsNamespace['withdrawSell']>
-      | ReturnType<MmmMethodsNamespace['mip1WithdrawSell']>;
+      | ReturnType<MmmMethodsNamespace['mip1WithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['extWithdrawSell']>;
 
-    if (ocpMintState) {
+    if (doesTokenExtensionExist(mintContext)) {
+      builder = this.program.methods.extWithdrawSell(args).accountsStrict({
+        owner: this.poolData.owner,
+        cosigner: this.poolData.cosigner,
+        pool: this.poolData.pool,
+        assetMint,
+        assetTokenAccount,
+        sellsideEscrowTokenAccount,
+        buysideSolEscrowAccount,
+        allowlistAuxAccount: allowlistAuxAccount ?? SystemProgram.programId,
+        sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: mintContext.tokenProgram,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      });
+    } else if (ocpMintState) {
       builder = this.program.methods.ocpWithdrawSell(args).accountsStrict({
         owner: this.poolData.owner,
         pool: this.poolData.pool,
