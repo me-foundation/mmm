@@ -106,6 +106,7 @@ pub fn handler<'info>(
     let payer = &ctx.accounts.payer;
     let payer_asset_account = &ctx.accounts.payer_asset_account;
     let asset_mint = &ctx.accounts.asset_mint;
+    let remaining_accounts = ctx.remaining_accounts;
 
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
@@ -165,7 +166,7 @@ pub fn handler<'info>(
         asset_mint.to_account_info(),
         payer_asset_account.to_account_info(),
         pool.to_account_info(),
-        &[],
+        remaining_accounts,
         args.asset_amount,
         0,
         pool_seeds,

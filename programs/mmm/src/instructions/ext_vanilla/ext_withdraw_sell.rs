@@ -72,7 +72,10 @@ pub struct ExtWithdrawSell<'info> {
     pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
-pub fn handler(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<()> {
+pub fn handler<'info>(
+    ctx: Context<'_, '_, '_, 'info, ExtWithdrawSell<'info>>,
+    args: WithdrawSellArgs,
+) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let asset_token_account = &ctx.accounts.asset_token_account;
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
@@ -90,6 +93,7 @@ pub fn handler(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<
         pool_uuid_key.as_ref(),
         &[ctx.bumps.pool],
     ]];
+    let remaining_accounts = ctx.remaining_accounts;
 
     // Note that check_allowlists_for_mint_ext is optional for withdraw_sell
     // because sometimes the nft might be moved out of the collection
@@ -101,7 +105,7 @@ pub fn handler(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<
         asset_mint.to_account_info(),
         asset_token_account.to_account_info(),
         pool.to_account_info(),
-        &[], // additional_accounts
+        remaining_accounts,
         args.asset_amount,
         0, // decimals
         pool_seeds,
