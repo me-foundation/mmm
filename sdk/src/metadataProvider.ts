@@ -5,7 +5,15 @@ import {
 import { Metaplex } from '@metaplex-foundation/js';
 import { Creator, Metadata, TokenStandard } from 'old-mpl-token-metadata';
 import { AccountInfo, Connection, PublicKey } from '@solana/web3.js';
-import { Mint, unpackMint } from '@solana/spl-token';
+import {
+  ExtensionType,
+  getExtensionData,
+  getMetadataPointerState,
+  Mint,
+  TOKEN_2022_PROGRAM_ID,
+  unpackMint,
+} from '@solana/spl-token';
+import { TokenMetadata, unpack } from '@solana/spl-token-metadata';
 
 export class MetadataProviderError extends Error {
   name = 'MetadataProviderError';
@@ -30,16 +38,17 @@ export interface MetadataProvider {
   get mintAddress(): PublicKey;
   get tokenProgram(): PublicKey;
   get sellerFeeBasisPoints(): number;
+  get splTokenMetadata(): TokenMetadata | undefined;
 }
 
 export class RpcMetadataProvider implements MetadataProvider {
   constructor(
     private readonly mint: PublicKey,
-    public readonly metadataAccount: Metadata,
+    public readonly metadataAccount: Metadata | undefined,
     public readonly mintAccount: Mint & { tokenProgramId: PublicKey },
     public readonly mintStateAccount: MintStateWithAddress | undefined,
   ) {
-    if (!mint.equals(metadataAccount.mint)) {
+    if (!!metadataAccount && !mint.equals(metadataAccount.mint)) {
       throw new MetadataProviderError('mint and metadata mismatch');
     }
   }
@@ -58,15 +67,19 @@ export class RpcMetadataProvider implements MetadataProvider {
         mint,
       ]);
 
-    if (!metadataAi) {
-      throw new MetadataProviderError('metadata not found');
-    }
     if (!mintAi) {
       throw new MetadataProviderError('mint not found');
     }
+    const mintParsed = unpackMint(mint, mintAi, mintAi.owner);
+    if (
+      !metadataAi &&
+      !getMetadataPointerState(mintParsed)?.metadataAddress?.equals(mint)
+    ) {
+      throw new MetadataProviderError('metadata not found');
+    }
     return RpcMetadataProvider.loadFromAccountInfos(mint, mintStateAddress, {
-      metadata: metadataAi,
       mint: mintAi,
+      metadata: metadataAi,
       mintState: mintStateAi,
     });
   }
@@ -76,13 +89,15 @@ export class RpcMetadataProvider implements MetadataProvider {
     mintStateAddress: PublicKey,
     accounts: {
       mint: AccountInfo<Buffer>;
-      metadata: AccountInfo<Buffer>;
+      metadata: AccountInfo<Buffer> | null;
       mintState: AccountInfo<Buffer> | null;
     },
   ): RpcMetadataProvider {
     return new RpcMetadataProvider(
       mint,
-      Metadata.fromAccountInfo(accounts.metadata)[0],
+      accounts.metadata
+        ? Metadata.fromAccountInfo(accounts.metadata)[0]
+        : undefined,
       {
         ...unpackMint(mint, accounts.mint, accounts.mint.owner),
         tokenProgramId: accounts.mint.owner,
@@ -92,15 +107,15 @@ export class RpcMetadataProvider implements MetadataProvider {
   }
 
   get creators(): Creator[] {
-    return this.metadataAccount.data.creators ?? [];
+    return this.metadataAccount?.data.creators ?? [];
   }
 
   get tokenStandard(): TokenStandard | undefined {
-    return this.metadataAccount.tokenStandard ?? undefined;
+    return this.metadataAccount?.tokenStandard ?? undefined;
   }
 
   get ruleset(): PublicKey | undefined {
-    return this.metadataAccount.programmableConfig?.ruleSet ?? undefined;
+    return this.metadataAccount?.programmableConfig?.ruleSet ?? undefined;
   }
 
   get mintState(): MintStateWithAddress | undefined {
@@ -116,7 +131,26 @@ export class RpcMetadataProvider implements MetadataProvider {
   }
 
   get sellerFeeBasisPoints(): number {
-    return this.metadataAccount.data.sellerFeeBasisPoints;
+    return this.metadataAccount?.data.sellerFeeBasisPoints ?? 0;
+  }
+
+  get splTokenMetadata(): TokenMetadata | undefined {
+    if (
+      !getMetadataPointerState(this.mintAccount)?.metadataAddress?.equals(
+        this.mint,
+      )
+    ) {
+      return undefined;
+    }
+
+    const data = getExtensionData(
+      ExtensionType.TokenMetadata,
+      this.mintAccount.tlvData,
+    );
+    if (data === null) {
+      return undefined;
+    }
+    return unpack(data);
   }
 }
 
@@ -133,4 +167,13 @@ function parseMintState(
   } catch (_e) {
     return undefined;
   }
+}
+
+export function doesTokenExtensionExist(
+  mintContext: MetadataProvider,
+): boolean {
+  return (
+    mintContext.tokenProgram.equals(TOKEN_2022_PROGRAM_ID) &&
+    !!mintContext.splTokenMetadata
+  );
 }
