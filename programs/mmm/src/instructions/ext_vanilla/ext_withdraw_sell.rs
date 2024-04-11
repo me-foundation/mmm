@@ -93,19 +93,19 @@ pub fn handler<'info>(
         pool_uuid_key.as_ref(),
         &[ctx.bumps.pool],
     ]];
-    let remaining_accounts = ctx.remaining_accounts;
 
     // Note that check_allowlists_for_mint_ext is optional for withdraw_sell
     // because sometimes the nft might be moved out of the collection
     // and we'd still like to enable the withdraw of those items for the pool owner.
 
+    msg!("ext_withdraw_sell: {:?}", ctx.remaining_accounts);
     invoke_transfer_checked(
         token_program.key,
         sellside_escrow_token_account.to_account_info(),
         asset_mint.to_account_info(),
         asset_token_account.to_account_info(),
         pool.to_account_info(),
-        remaining_accounts,
+        ctx.remaining_accounts,
         args.asset_amount,
         0, // decimals
         pool_seeds,

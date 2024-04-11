@@ -4,7 +4,12 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, PublicKey, SystemProgram } from '@solana/web3.js';
+import {
+  ComputeBudgetProgram,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+} from '@solana/web3.js';
 import { assert, expect } from 'chai';
 import {
   Mmm,
@@ -20,8 +25,12 @@ import {
   createTestGroupMemberMint,
   createTestGroupMintExt,
   createTestMintAndTokenT22VanillaExt,
+  generateRemainingAccounts,
   getEmptyAllowLists,
   getTokenAccount2022,
+  LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,
+  TRANSFER_HOOK_COMPUTE_UNITS,
+  TransferHookArgs,
 } from './utils';
 
 describe('mmm-ext-deposit', () => {
@@ -145,6 +154,188 @@ describe('mmm-ext-deposit', () => {
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
         })
+        .signers([cosigner])
+        .rpc({ skipPreflight: true });
+
+      let nftEscrow2 = await getTokenAccount2022(
+        connection,
+        poolAta2,
+        TOKEN_2022_PROGRAM_ID,
+      );
+      assert.equal(Number(nftEscrow2.amount), 1);
+      assert.equal(nftEscrow2.owner.toBase58(), poolData.poolKey.toBase58());
+      poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+      // should increment by 1
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 2);
+      assert.equal(await connection.getBalance(recipientTokenAccount2), 0);
+
+      const sellStateAccountInfo2 = await program.account.sellState.fetch(
+        sellState2,
+      );
+      assert.equal(
+        sellStateAccountInfo2.pool.toBase58(),
+        poolData.poolKey.toBase58(),
+      );
+      assert.equal(
+        sellStateAccountInfo2.poolOwner.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
+      assert.equal(
+        sellStateAccountInfo2.assetMint.toBase58(),
+        mint2.toBase58(),
+      );
+      assert.equal(sellStateAccountInfo2.assetAmount.toNumber(), 1);
+      assert.deepEqual(
+        sellStateAccountInfo2.cosignerAnnotation,
+        new Array(32).fill(0),
+      );
+    });
+
+    it.only('correctly verifies depositing nfts with group allowlist and transfer hook', async () => {
+      const creatorKeypair = Keypair.generate();
+      const royaltyTransferHookArgs: TransferHookArgs = {
+        transferHookProgramId: LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,
+        creatorAddress: creatorKeypair.publicKey,
+        royaltyBp: 300,
+        legacy: false,
+      };
+      const {
+        mint,
+        recipientTokenAccount,
+        poolData,
+        poolAta,
+        sellState,
+        groupAddress,
+      } = await createPoolWithExampleT22ExtDeposits(
+        program,
+        connection,
+        wallet.payer,
+        'none',
+        {
+          owner: wallet.publicKey,
+          cosigner,
+        },
+        undefined,
+        undefined,
+        royaltyTransferHookArgs,
+      );
+
+      await program.methods
+        .extDepositSell({
+          assetAmount: new anchor.BN(1),
+          allowlistAux: 'example.com',
+        })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolData.poolKey,
+          assetMint: mint,
+          assetTokenAccount: recipientTokenAccount,
+          sellsideEscrowTokenAccount: poolAta,
+          sellState,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .remainingAccounts(
+          await generateRemainingAccounts(
+            connection,
+            mint,
+            royaltyTransferHookArgs,
+          ),
+        )
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: TRANSFER_HOOK_COMPUTE_UNITS,
+          }),
+        ])
+        .signers([cosigner])
+        .rpc({ skipPreflight: true });
+
+      let nftEscrow = await getTokenAccount2022(
+        connection,
+        poolAta,
+        TOKEN_2022_PROGRAM_ID,
+      );
+      assert.equal(Number(nftEscrow.amount), 1);
+      assert.equal(nftEscrow.owner.toBase58(), poolData.poolKey.toBase58());
+      let poolAccountInfo = await program.account.pool.fetch(poolData.poolKey);
+      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 1);
+      assert.equal(await connection.getBalance(recipientTokenAccount), 0);
+
+      const sellStateAccountInfo = await program.account.sellState.fetch(
+        sellState,
+      );
+      assert.equal(
+        sellStateAccountInfo.pool.toBase58(),
+        poolData.poolKey.toBase58(),
+      );
+      assert.equal(
+        sellStateAccountInfo.poolOwner.toBase58(),
+        wallet.publicKey.toBase58(),
+      );
+      assert.equal(sellStateAccountInfo.assetMint.toBase58(), mint.toBase58());
+      assert.equal(sellStateAccountInfo.assetAmount.toNumber(), 1);
+      assert.deepEqual(
+        sellStateAccountInfo.cosignerAnnotation,
+        new Array(32).fill(0),
+      );
+
+      const legacyRoyaltyTransferHookArgs: TransferHookArgs = {
+        transferHookProgramId: LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,
+        creatorAddress: creatorKeypair.publicKey,
+        royaltyBp: 300,
+        legacy: true,
+      };
+      const { mint: mint2, recipientTokenAccount: recipientTokenAccount2 } =
+        await createTestMintAndTokenT22VanillaExt(
+          connection,
+          wallet.payer,
+          undefined,
+          groupAddress,
+          undefined,
+          legacyRoyaltyTransferHookArgs,
+        );
+      const poolAta2 = await getAssociatedTokenAddress(
+        mint2,
+        poolData.poolKey,
+        true,
+        TOKEN_2022_PROGRAM_ID,
+      );
+      let { key: sellState2 } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        mint2,
+      );
+      await program.methods
+        .extDepositSell({
+          assetAmount: new anchor.BN(1),
+          allowlistAux: '',
+        })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolData.poolKey,
+          assetMint: mint2,
+          assetTokenAccount: recipientTokenAccount2,
+          sellsideEscrowTokenAccount: poolAta2,
+          sellState: sellState2,
+          systemProgram: SystemProgram.programId,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        })
+        .remainingAccounts(
+          await generateRemainingAccounts(
+            connection,
+            mint2,
+            royaltyTransferHookArgs,
+          ),
+        )
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: TRANSFER_HOOK_COMPUTE_UNITS,
+          }),
+        ])
         .signers([cosigner])
         .rpc({ skipPreflight: true });
 

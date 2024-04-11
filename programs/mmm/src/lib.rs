@@ -146,7 +146,10 @@ pub mod mmm {
         instructions::sol_ext_fulfill_buy::handler(ctx, args)
     }
 
-    pub fn ext_withdraw_sell(ctx: Context<ExtWithdrawSell>, args: WithdrawSellArgs) -> Result<()> {
+    pub fn ext_withdraw_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, ExtWithdrawSell<'info>>,
+        args: WithdrawSellArgs,
+    ) -> Result<()> {
         instructions::ext_withdraw_sell::handler(ctx, args)
     }
 }

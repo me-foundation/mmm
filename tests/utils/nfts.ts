@@ -6,12 +6,14 @@ import {
   token as getSplTokenAmount,
 } from '@metaplex-foundation/js';
 import {
+  AccountMeta,
   Connection,
   Keypair,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
 } from '@solana/web3.js';
-import { getKeypair, sendAndAssertTx } from './generic';
+import { airdrop, getKeypair, sendAndAssertTx } from './generic';
 import {
   ExtensionType,
   TOKEN_2022_PROGRAM_ID,
@@ -24,11 +26,25 @@ import {
   getAssociatedTokenAddressSync,
   getMintLen,
   createInitializeGroupPointerInstruction,
+  createUpdateFieldInstruction,
+  getExtraAccountMetaAddress,
+  createInitializeTransferHookInstruction,
+  getExtraAccountMetas,
+  resolveExtraAccountMeta,
 } from '@solana/spl-token';
 import {
   createInitializeGroupInstruction,
   createInitializeMemberInstruction,
 } from '@solana/spl-token-group';
+
+export interface TransferHookArgs {
+  transferHookProgramId: PublicKey;
+
+  // libreplex royalty enforcement params
+  creatorAddress?: PublicKey;
+  royaltyBp?: number;
+  legacy?: boolean;
+}
 
 export const getMetaplexInstance = (conn: Connection) => {
   return Metaplex.make(conn).use(keypairIdentity(getKeypair()));
@@ -37,6 +53,10 @@ export const getMetaplexInstance = (conn: Connection) => {
 export const getMetadataURI = (index: number): string => {
   return `nft://${index}.json`;
 };
+
+export const LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID = new PublicKey(
+  'CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV',
+);
 
 export const mintNfts = async (
   conn: Connection,
@@ -132,12 +152,153 @@ export const mintCollection = async (
   return { collection: collectionNft, members: collectionMembers };
 };
 
+// initialize extraAccountMeta list and update onchain metadata
+// to include royalty info
+export async function createLibreplexRoyaltyIxs(
+  connection: Connection,
+  payerAddress: PublicKey,
+  mintAddress: PublicKey,
+  creatorAddress: PublicKey,
+  royaltyBp: number,
+  tokenProgramId: PublicKey,
+  transferHookProgramId: PublicKey,
+  legacy: boolean = false,
+): Promise<(TransactionInstruction | undefined)[]> {
+  // update royalty in additional_metadata
+  let updateMetadataCreatorIx: TransactionInstruction | undefined;
+  let updateMetadataRoyaltyIx: TransactionInstruction | undefined;
+  let updateMetadataLbpRoyaltyIx: TransactionInstruction | undefined;
+
+  if (legacy) {
+    updateMetadataCreatorIx = createUpdateFieldInstruction({
+      programId: tokenProgramId,
+      metadata: mintAddress,
+      updateAuthority: payerAddress,
+      field: '_roa_'.concat(creatorAddress.toBase58()),
+      value: '100',
+    });
+    updateMetadataRoyaltyIx = createUpdateFieldInstruction({
+      programId: tokenProgramId,
+      metadata: mintAddress,
+      updateAuthority: payerAddress,
+      field: '_ros_',
+      value: royaltyBp.toString(),
+    });
+  } else {
+    updateMetadataLbpRoyaltyIx = createUpdateFieldInstruction({
+      programId: tokenProgramId,
+      metadata: mintAddress,
+      updateAuthority: payerAddress,
+      field: '_ro_'.concat(creatorAddress.toBase58()),
+      value: royaltyBp.toString(),
+    });
+  }
+  const extraMetaAccountMetaPda = getExtraAccountMetaAddress(
+    mintAddress,
+    transferHookProgramId!,
+  );
+
+  await Promise.all([
+    airdrop(connection, extraMetaAccountMetaPda, 0.2),
+    airdrop(connection, creatorAddress, 0.2),
+  ]);
+
+  const createExtraAccountMetaIxs = new TransactionInstruction({
+    keys: [
+      {
+        pubkey: extraMetaAccountMetaPda,
+        isSigner: false,
+        isWritable: true,
+      },
+      {
+        pubkey: mintAddress,
+        isSigner: true,
+        isWritable: true,
+      },
+      {
+        pubkey: payerAddress,
+        isSigner: true,
+        isWritable: true,
+      },
+      {
+        pubkey: SystemProgram.programId,
+        isSigner: false,
+        isWritable: false,
+      },
+    ],
+    programId: transferHookProgramId!,
+    // reverse engineered from
+    // https://github.com/coral-xyz/anchor/pull/2728/files#diff-6525567dc7687fefb293a515c4f504f416f296a696244d6e8b4081786e871ff0R159
+    // however we also need to add padding due to the optional colleciton level deny list
+    data: Buffer.from([43, 34, 13, 49, 167, 88, 235, 235, 0, 0, 0, 0]),
+  });
+
+  return [
+    updateMetadataLbpRoyaltyIx,
+    updateMetadataCreatorIx,
+    updateMetadataRoyaltyIx,
+    createExtraAccountMetaIxs,
+  ];
+}
+
+export async function generateRemainingAccounts(
+  connection: Connection,
+  mint: PublicKey,
+  transferHookArgs: TransferHookArgs,
+  isFulfill: boolean = false,
+): Promise<AccountMeta[]> {
+  const validateStateAccount = getExtraAccountMetaAddress(
+    mint,
+    transferHookArgs.transferHookProgramId,
+  );
+
+  const accountInfo = await connection.getAccountInfo(validateStateAccount);
+  if (accountInfo === null) {
+    throw new Error('validateStateAccount account not found');
+  }
+  const extraAccountMetas = getExtraAccountMetas(accountInfo);
+  const previousMetas: AccountMeta[] = [];
+  for (const extraAccountMeta of extraAccountMetas) {
+    const accountMeta = await resolveExtraAccountMeta(
+      connection,
+      extraAccountMeta,
+      previousMetas,
+      accountInfo.data,
+      transferHookArgs.transferHookProgramId,
+    );
+    previousMetas.push(accountMeta);
+  }
+
+  return [
+    ...(isFulfill
+      ? [
+          {
+            pubkey: transferHookArgs.creatorAddress!,
+            isWritable: true,
+            isSigner: false,
+          },
+        ]
+      : []),
+    {
+      pubkey: transferHookArgs.transferHookProgramId,
+      isWritable: false,
+      isSigner: false,
+    },
+    {
+      pubkey: validateStateAccount,
+      isWritable: false,
+      isSigner: false,
+    },
+  ].concat(previousMetas);
+}
+
 export async function createTestMintAndTokenT22VanillaExt(
   connection: Connection,
   payer: Keypair,
   recipient?: PublicKey,
   groupAddress?: PublicKey,
   groupMemberAddress?: PublicKey,
+  transferHookArgs?: TransferHookArgs,
 ) {
   const mintKeypair = Keypair.generate();
   const effectiveGroupAddress = groupAddress ?? Keypair.generate().publicKey;
@@ -153,6 +314,7 @@ export async function createTestMintAndTokenT22VanillaExt(
   const mintSpace = getMintLen([
     ExtensionType.MetadataPointer,
     ExtensionType.GroupMemberPointer,
+    ...(transferHookArgs ? [ExtensionType.TransferHook] : []),
   ]);
   const mintLamports = await connection.getMinimumBalanceForRentExemption(
     mintSpace * 2,
@@ -225,13 +387,53 @@ export async function createTestMintAndTokenT22VanillaExt(
     tokenProgramId,
   );
 
+  const ixs: TransactionInstruction[] = [];
+  if (
+    transferHookArgs?.transferHookProgramId ===
+    LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID
+  ) {
+    const createTransferHookIx = createInitializeTransferHookInstruction(
+      mintKeypair.publicKey,
+      payer.publicKey,
+      transferHookArgs.transferHookProgramId,
+      tokenProgramId,
+    );
+
+    const [
+      updateMetadataLbpRoyaltyIx,
+      updateMetadataCreatorIx,
+      updateMetadataRoyaltyIx,
+      createExtraAccountMetaIxs,
+    ] = await createLibreplexRoyaltyIxs(
+      connection,
+      payer.publicKey,
+      mintKeypair.publicKey,
+      transferHookArgs.creatorAddress!,
+      transferHookArgs.royaltyBp!,
+      tokenProgramId,
+      transferHookArgs.transferHookProgramId,
+      transferHookArgs.legacy,
+    );
+
+    ixs.push(
+      createTransferHookIx,
+      createInitMintIx,
+      createExtraAccountMetaIxs!,
+      createMetadataIx,
+      ...(updateMetadataCreatorIx
+        ? [updateMetadataCreatorIx!, updateMetadataRoyaltyIx!]
+        : [updateMetadataLbpRoyaltyIx!]),
+    );
+  } else {
+    ixs.push(createInitMintIx, createMetadataIx);
+  }
+
   const blockhashData = await connection.getLatestBlockhash();
   const tx = new Transaction().add(
     createMintAccountIx,
     createGroupMemberPointerIx,
     createMetadataPointerIx,
-    createInitMintIx,
-    createMetadataIx,
+    ...ixs,
     createGroupMemberIx,
     createAtaIx,
     mintToIx,

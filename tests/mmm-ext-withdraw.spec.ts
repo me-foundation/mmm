@@ -3,13 +3,17 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Keypair, SystemProgram } from '@solana/web3.js';
+import { ComputeBudgetProgram, Keypair, SystemProgram } from '@solana/web3.js';
 import { assert } from 'chai';
 import { Mmm, IDL, MMMProgramID } from '../sdk/src';
 import {
   airdrop,
   createPoolWithExampleT22ExtDeposits,
+  generateRemainingAccounts,
   getTokenAccount2022,
+  LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,
+  TRANSFER_HOOK_COMPUTE_UNITS,
+  TransferHookArgs,
 } from './utils';
 
 describe('mmm-ext-withdraw', () => {
@@ -65,6 +69,146 @@ describe('mmm-ext-withdraw', () => {
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       })
+      .signers([cosigner])
+      .rpc({ skipPreflight: true });
+
+    const ownerNftAta = await getTokenAccount2022(
+      connection,
+      recipientTokenAccount,
+      TOKEN_2022_PROGRAM_ID,
+    );
+    assert.equal(Number(ownerNftAta.amount), 1);
+    assert.equal(ownerNftAta.owner.toBase58(), wallet.publicKey.toBase58());
+  });
+
+  it('Withdraw assets with royanty enforcement transfer hook', async () => {
+    const creatorKeypair = Keypair.generate();
+    const royaltyTransferHookArgs: TransferHookArgs = {
+      transferHookProgramId: LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,
+      creatorAddress: creatorKeypair.publicKey,
+      royaltyBp: 300,
+      legacy: false,
+    };
+    const {
+      mint,
+      recipientTokenAccount,
+      poolData,
+      poolAta,
+      sellState,
+      solEscrowKey,
+      groupAddress,
+    } = await createPoolWithExampleT22ExtDeposits(
+      program,
+      connection,
+      wallet.payer,
+      'sell',
+      {
+        owner: wallet.publicKey,
+        cosigner,
+      },
+      undefined,
+      undefined,
+      royaltyTransferHookArgs,
+    );
+
+    await program.methods
+      .extWithdrawSell({ assetAmount: new anchor.BN(1), allowlistAux: null })
+      .accountsStrict({
+        owner: wallet.publicKey,
+        cosigner: cosigner.publicKey,
+        pool: poolData.poolKey,
+        assetMint: mint,
+        assetTokenAccount: recipientTokenAccount,
+        sellsideEscrowTokenAccount: poolAta,
+        buysideSolEscrowAccount: solEscrowKey,
+        allowlistAuxAccount: SystemProgram.programId,
+        sellState: sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      })
+      .remainingAccounts(
+        await generateRemainingAccounts(
+          connection,
+          mint,
+          royaltyTransferHookArgs,
+        ),
+      )
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: TRANSFER_HOOK_COMPUTE_UNITS,
+        }),
+      ])
+      .signers([cosigner])
+      .rpc({ skipPreflight: true });
+
+    const ownerNftAta = await getTokenAccount2022(
+      connection,
+      recipientTokenAccount,
+      TOKEN_2022_PROGRAM_ID,
+    );
+    assert.equal(Number(ownerNftAta.amount), 1);
+    assert.equal(ownerNftAta.owner.toBase58(), wallet.publicKey.toBase58());
+  });
+
+  it('Withdraw assets with royanty enforcement transfer hook legacy', async () => {
+    const creatorKeypair = Keypair.generate();
+    const royaltyTransferHookArgs: TransferHookArgs = {
+      transferHookProgramId: LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,
+      creatorAddress: creatorKeypair.publicKey,
+      royaltyBp: 300,
+      legacy: true,
+    };
+    const {
+      mint,
+      recipientTokenAccount,
+      poolData,
+      poolAta,
+      sellState,
+      solEscrowKey,
+      groupAddress,
+    } = await createPoolWithExampleT22ExtDeposits(
+      program,
+      connection,
+      wallet.payer,
+      'sell',
+      {
+        owner: wallet.publicKey,
+        cosigner,
+      },
+      undefined,
+      undefined,
+      royaltyTransferHookArgs,
+    );
+
+    await program.methods
+      .extWithdrawSell({ assetAmount: new anchor.BN(1), allowlistAux: null })
+      .accountsStrict({
+        owner: wallet.publicKey,
+        cosigner: cosigner.publicKey,
+        pool: poolData.poolKey,
+        assetMint: mint,
+        assetTokenAccount: recipientTokenAccount,
+        sellsideEscrowTokenAccount: poolAta,
+        buysideSolEscrowAccount: solEscrowKey,
+        allowlistAuxAccount: SystemProgram.programId,
+        sellState: sellState,
+        systemProgram: SystemProgram.programId,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      })
+      .remainingAccounts(
+        await generateRemainingAccounts(
+          connection,
+          mint,
+          royaltyTransferHookArgs,
+        ),
+      )
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: TRANSFER_HOOK_COMPUTE_UNITS,
+        }),
+      ])
       .signers([cosigner])
       .rpc({ skipPreflight: true });
 

@@ -55,14 +55,17 @@ import {
   getKeypair,
   MIP1_COMPUTE_UNITS,
   OCP_COMPUTE_UNITS,
+  TRANSFER_HOOK_COMPUTE_UNITS,
 } from './generic';
 import { createProgrammableNftUmi } from './mip1';
 import {
   createTestGroupMintExt,
   createTestMintAndTokenT22VanillaExt,
+  generateRemainingAccounts,
   getMetaplexInstance,
   mintCollection,
   mintNfts,
+  TransferHookArgs,
 } from './nfts';
 import { umiMintNfts, Nft, umiMintCollection } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
@@ -163,6 +166,7 @@ export const createPoolWithExampleT22ExtDeposits = async (
   poolArgs: Parameters<typeof createPool>[1],
   sharedEscrow?: boolean,
   sharedEscrowCount?: number,
+  transferHookArgs?: TransferHookArgs,
 ) => {
   const { groupAddress } = await createTestGroupMintExt(connection, payer);
   const { mint, recipientTokenAccount } =
@@ -171,6 +175,8 @@ export const createPoolWithExampleT22ExtDeposits = async (
       payer,
       poolArgs.owner,
       groupAddress,
+      undefined,
+      transferHookArgs,
     );
 
   const poolData = await createPool(program, {
@@ -219,6 +225,16 @@ export const createPoolWithExampleT22ExtDeposits = async (
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       })
+      .remainingAccounts(
+        transferHookArgs
+          ? await generateRemainingAccounts(connection, mint, transferHookArgs)
+          : [],
+      )
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: TRANSFER_HOOK_COMPUTE_UNITS,
+        }),
+      ])
       .signers([poolArgs.cosigner!])
       .rpc({ skipPreflight: true });
   }
@@ -238,6 +254,16 @@ export const createPoolWithExampleT22ExtDeposits = async (
         buysideSolEscrowAccount: solEscrowKey,
         systemProgram: SystemProgram.programId,
       })
+      .remainingAccounts(
+        transferHookArgs
+          ? await generateRemainingAccounts(connection, mint, transferHookArgs)
+          : [],
+      )
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: TRANSFER_HOOK_COMPUTE_UNITS,
+        }),
+      ])
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc({ skipPreflight: true });
   }
