@@ -63,7 +63,7 @@ export class LibreplexRoyaltyProvider implements TransferHookProvider {
         ? [
             {
               pubkey: royaltyInfo.creatorAddress,
-              isWritable: false,
+              isWritable: true,
               isSigner: false,
             },
           ]
