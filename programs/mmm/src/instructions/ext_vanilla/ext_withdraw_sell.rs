@@ -98,7 +98,6 @@ pub fn handler<'info>(
     // because sometimes the nft might be moved out of the collection
     // and we'd still like to enable the withdraw of those items for the pool owner.
 
-    msg!("ext_withdraw_sell: {:?}", ctx.remaining_accounts);
     invoke_transfer_checked(
         token_program.key,
         sellside_escrow_token_account.to_account_info(),
