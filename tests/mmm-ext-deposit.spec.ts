@@ -191,7 +191,7 @@ describe('mmm-ext-deposit', () => {
       );
     });
 
-    it.only('correctly verifies depositing nfts with group allowlist and transfer hook', async () => {
+    it('correctly verifies depositing nfts with group allowlist and transfer hook', async () => {
       const creatorKeypair = Keypair.generate();
       const royaltyTransferHookArgs: TransferHookArgs = {
         transferHookProgramId: LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,

@@ -274,7 +274,7 @@ export async function generateRemainingAccounts(
       ? [
           {
             pubkey: transferHookArgs.creatorAddress!,
-            isWritable: true,
+            isWritable: false,
             isSigner: false,
           },
         ]
