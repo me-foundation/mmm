@@ -13,10 +13,14 @@ import {
 import { unpack } from '@solana/spl-token-metadata';
 import { AccountMeta, Connection, PublicKey } from '@solana/web3.js';
 
+export interface RemainingAccountArgs {
+  shouldIncludeCreator?: boolean;
+}
+
 export interface TransferHookProvider {
   isTransferHookProgramAllowed(): boolean;
   getAccountMetaList(connection: Connection): Promise<AccountMeta[]>;
-  getRemainingAccounts(isFulfill: boolean): Promise<AccountMeta[]>;
+  getRemainingAccounts(args: RemainingAccountArgs): Promise<AccountMeta[]>;
 }
 
 const LIBREPLEX_ROYALTY_ENFORCEMENT_PREFIX = '_ro_';
@@ -48,7 +52,9 @@ export class LibreplexRoyaltyProvider implements TransferHookProvider {
     return new LibreplexRoyaltyProvider(connection, mint);
   }
 
-  async getRemainingAccounts(isFulfill: boolean): Promise<AccountMeta[]> {
+  async getRemainingAccounts(
+    args: RemainingAccountArgs,
+  ): Promise<AccountMeta[]> {
     if (!this.isTransferHookProgramAllowed()) {
       return [];
     }
@@ -59,7 +65,7 @@ export class LibreplexRoyaltyProvider implements TransferHookProvider {
     }
 
     return [
-      ...(isFulfill
+      ...(args.shouldIncludeCreator
         ? [
             {
               pubkey: royaltyInfo.creatorAddress,

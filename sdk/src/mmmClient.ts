@@ -273,12 +273,11 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
-    const mintContext =
-      metadataProvider ??
-      (await this.metadataProviderGenerator(assetMint, this.conn));
-    const transferHookContext =
+    const [mintContext, transferHookContext] = await Promise.all([
+      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
       transferHookProvider ??
-      (await this.transferHookProviderGenerator(assetMint, this.conn));
+        this.transferHookProviderGenerator(assetMint, this.conn),
+    ]);
 
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
       MMMProgramID,
@@ -457,7 +456,9 @@ export class MMMClient {
 
     if (transferHookContext.isTransferHookProgramAllowed()) {
       builder = builder.remainingAccounts(
-        await transferHookContext.getRemainingAccounts(true),
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: true,
+        }),
       );
     }
     return await builder.instruction();
@@ -477,12 +478,11 @@ export class MMMClient {
       this.poolData.pool,
     );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const mintContext =
-      metadataProvider ??
-      (await this.metadataProviderGenerator(assetMint, this.conn));
-    const transferHookContext =
+    const [mintContext, transferHookContext] = await Promise.all([
+      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
       transferHookProvider ??
-      (await this.transferHookProviderGenerator(assetMint, this.conn));
+        this.transferHookProviderGenerator(assetMint, this.conn),
+    ]);
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -638,7 +638,9 @@ export class MMMClient {
 
     if (transferHookContext.isTransferHookProgramAllowed()) {
       builder = builder.remainingAccounts(
-        await transferHookContext.getRemainingAccounts(true),
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: true,
+        }),
       );
     }
     return await builder.instruction();
@@ -653,12 +655,11 @@ export class MMMClient {
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const mintContext =
-      metadataProvider ??
-      (await this.metadataProviderGenerator(assetMint, this.conn));
-    const transferHookContext =
+    const [mintContext, transferHookContext] = await Promise.all([
+      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
       transferHookProvider ??
-      (await this.transferHookProviderGenerator(assetMint, this.conn));
+        this.transferHookProviderGenerator(assetMint, this.conn),
+    ]);
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -769,7 +770,9 @@ export class MMMClient {
 
     if (transferHookContext.isTransferHookProgramAllowed()) {
       builder = builder.remainingAccounts(
-        await transferHookContext.getRemainingAccounts(false),
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: false,
+        }),
       );
     }
     return await builder.instruction();
@@ -783,12 +786,11 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
-    const mintContext =
-      metadataProvider ??
-      (await this.metadataProviderGenerator(assetMint, this.conn));
-    const transferHookContext =
+    const [mintContext, transferHookContext] = await Promise.all([
+      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
       transferHookProvider ??
-      (await this.transferHookProviderGenerator(assetMint, this.conn));
+        this.transferHookProviderGenerator(assetMint, this.conn),
+    ]);
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -908,7 +910,9 @@ export class MMMClient {
 
     if (transferHookContext.isTransferHookProgramAllowed()) {
       builder = builder.remainingAccounts(
-        await transferHookContext.getRemainingAccounts(false),
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: false,
+        }),
       );
     }
     return await builder.instruction();
