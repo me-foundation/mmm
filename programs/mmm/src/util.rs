@@ -458,7 +458,6 @@ pub fn pay_creator_fees_in_sol_ext<'info>(
     payer: AccountInfo<'info>,
     sfbp: u16,
     payer_seeds: &[&[&[u8]]],
-    system_program: AccountInfo<'info>,
 ) -> Result<u64> {
     let royalty = ((total_price as u128)
         .checked_mul(sfbp as u128)

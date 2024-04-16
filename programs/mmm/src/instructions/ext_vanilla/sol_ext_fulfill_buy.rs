@@ -279,7 +279,6 @@ pub fn handler<'info>(
                 buyside_sol_escrow_account.to_account_info(),
                 sfbp,
                 buyside_sol_escrow_account_seeds,
-                system_program.to_account_info(),
             )?
         } else {
             0

@@ -230,7 +230,6 @@ pub fn handler<'info>(
                 payer.to_account_info(),
                 sfbp,
                 &[&[&[]]],
-                system_program.to_account_info(),
             )?
         } else {
             0
