@@ -497,11 +497,7 @@ pub fn pay_creator_fees_in_sol_ext<'info>(
                 creator_account.key,
                 royalty,
             ),
-            &[
-                payer.to_account_info(),
-                creator_account.to_account_info(),
-                system_program.to_account_info(),
-            ],
+            &[payer.to_account_info(), creator_account.to_account_info()],
             payer_seeds,
         )?;
     }

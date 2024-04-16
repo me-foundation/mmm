@@ -4,14 +4,22 @@ import {
   getExtraAccountMetaAddress,
   getExtraAccountMetas,
   getMetadataPointerState,
-  getMint,
   getTransferHook,
   Mint,
   resolveExtraAccountMeta,
-  TOKEN_2022_PROGRAM_ID,
 } from '@solana/spl-token';
 import { unpack } from '@solana/spl-token-metadata';
 import { AccountMeta, Connection, PublicKey } from '@solana/web3.js';
+import {
+  LIBPREPLEX_ROYALTY_PROGRAM_ID,
+  LIBREPLEX_ROYALTY_ENFORCEMENT_BP_KEY_LEGACY,
+  LIBREPLEX_ROYALTY_ENFORCEMENT_CREATOR_PREFIX_LEGACY,
+  LIBREPLEX_ROYALTY_ENFORCEMENT_PREFIX,
+} from './constants';
+
+const ALLOWED_TRANSFER_HOOK_PROGRAM_IDS: PublicKey[] = [
+  LIBPREPLEX_ROYALTY_PROGRAM_ID,
+];
 
 export interface RemainingAccountArgs {
   shouldIncludeCreator?: boolean;
@@ -23,33 +31,21 @@ export interface TransferHookProvider {
   getRemainingAccounts(args: RemainingAccountArgs): Promise<AccountMeta[]>;
 }
 
-const LIBREPLEX_ROYALTY_ENFORCEMENT_PREFIX = '_ro_';
-// legacy for backwards compatibility
-const LIBREPLEX_ROYALTY_ENFORCEMENT_CREATOR_PREFIX_LEGACY = '_roa_';
-const LIBREPLEX_ROYALTY_ENFORCEMENT_BP_KEY_LEGACY = '_ros_';
-
-export class LibreplexRoyaltyProvider implements TransferHookProvider {
-  private TRANSFER_HOOK_PROGRAM_ID = new PublicKey(
-    'CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV',
-  ); // libreplex royalty enforcement program id
+export class MintExtTransferHookProvider implements TransferHookProvider {
+  private readonly transferHookProgramId: PublicKey | undefined;
 
   constructor(
     private readonly connection: Connection,
     private readonly mint: Mint,
-  ) {}
+  ) {
+    this.transferHookProgramId = getTransferHook(this.mint)?.programId;
+  }
 
   static async loadFromRpc(
-    mintAddress: PublicKey,
+    mint: Mint,
     connection: Connection,
-  ): Promise<LibreplexRoyaltyProvider> {
-    const mint = await getMint(
-      connection,
-      mintAddress,
-      'confirmed',
-      TOKEN_2022_PROGRAM_ID,
-    );
-
-    return new LibreplexRoyaltyProvider(connection, mint);
+  ): Promise<MintExtTransferHookProvider> {
+    return new MintExtTransferHookProvider(connection, mint);
   }
 
   async getRemainingAccounts(
@@ -59,33 +55,37 @@ export class LibreplexRoyaltyProvider implements TransferHookProvider {
       return [];
     }
 
-    const royaltyInfo = this.getLibreplexRoyaltyInfo();
-    if (!royaltyInfo) {
-      return [];
-    }
+    const accountMetaList = await this.getAccountMetaList(this.connection);
+    if (this.transferHookProgramId?.equals(LIBPREPLEX_ROYALTY_PROGRAM_ID)) {
+      const royaltyInfo = this.getLibreplexRoyaltyInfo();
+      if (!royaltyInfo) {
+        return [];
+      }
 
-    return [
-      ...(args.shouldIncludeCreator
-        ? [
-            {
-              pubkey: royaltyInfo.creatorAddress,
-              isWritable: true,
-              isSigner: false,
-            },
-          ]
-        : []),
-      ...(await this.getAccountMetaList(this.connection)),
-    ];
+      return [
+        ...(args.shouldIncludeCreator
+          ? [
+              {
+                pubkey: royaltyInfo.creatorAddress,
+                isWritable: true,
+                isSigner: false,
+              },
+            ]
+          : []),
+        ...accountMetaList,
+      ];
+    }
+    return [];
   }
 
   async getAccountMetaList(connection: Connection): Promise<AccountMeta[]> {
-    if (!this.isTransferHookProgramAllowed()) {
+    if (!this.transferHookProgramId) {
       return [];
     }
 
     const validateStateAccount = getExtraAccountMetaAddress(
       this.mint.address,
-      this.TRANSFER_HOOK_PROGRAM_ID,
+      this.transferHookProgramId,
     );
 
     const accountInfo = await connection.getAccountInfo(validateStateAccount);
@@ -100,14 +100,14 @@ export class LibreplexRoyaltyProvider implements TransferHookProvider {
         extraAccountMeta,
         previousMetas,
         accountInfo.data,
-        this.TRANSFER_HOOK_PROGRAM_ID,
+        this.transferHookProgramId,
       );
       previousMetas.push(accountMeta);
     }
 
     return [
       {
-        pubkey: this.TRANSFER_HOOK_PROGRAM_ID,
+        pubkey: this.transferHookProgramId,
         isSigner: false,
         isWritable: true,
       },
@@ -121,11 +121,9 @@ export class LibreplexRoyaltyProvider implements TransferHookProvider {
   }
 
   isTransferHookProgramAllowed(): boolean {
-    return (
-      getTransferHook(this.mint)?.programId.equals(
-        this.TRANSFER_HOOK_PROGRAM_ID,
-      ) ?? false
-    );
+    return this.transferHookProgramId
+      ? ALLOWED_TRANSFER_HOOK_PROGRAM_IDS.includes(this.transferHookProgramId)
+      : false;
   }
 
   private getLibreplexRoyaltyInfo():
@@ -151,10 +149,10 @@ export class LibreplexRoyaltyProvider implements TransferHookProvider {
       return undefined;
     }
     const royaltyInfo =
-      LibreplexRoyaltyProvider.getLibreplexRoyaltyInfo(
+      MintExtTransferHookProvider.getLibreplexRoyaltyInfo(
         tokenMetadata.additionalMetadata,
       ) ||
-      LibreplexRoyaltyProvider.getLibreplexRoyaltyInfoLegacy(
+      MintExtTransferHookProvider.getLibreplexRoyaltyInfoLegacy(
         tokenMetadata.additionalMetadata,
       );
     if (!royaltyInfo) {

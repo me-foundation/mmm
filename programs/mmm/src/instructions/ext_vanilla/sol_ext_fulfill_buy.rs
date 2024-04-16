@@ -269,21 +269,24 @@ pub fn handler<'info>(
         ))?;
     }
 
-    let mut royalty_paid: u64 = 0;
-    if let Ok(transfer_hook_program_id) =
+    let royalty_paid: u64 = if let Ok(transfer_hook_program_id) =
         get_transfer_hook_program_id(&asset_mint.to_account_info())
     {
         if transfer_hook_program_id == Some(LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID) {
-            royalty_paid = pay_creator_fees_in_sol_ext(
+            pay_creator_fees_in_sol_ext(
                 seller_receives,
                 optional_creator_account,
                 buyside_sol_escrow_account.to_account_info(),
                 sfbp,
                 buyside_sol_escrow_account_seeds,
                 system_program.to_account_info(),
-            )?;
+            )?
+        } else {
+            0
         }
-    }
+    } else {
+        0
+    };
 
     // prevent frontrun by pool config changes
     let payment_amount = total_price

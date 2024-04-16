@@ -13,6 +13,7 @@ import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
+  Mint,
 } from '@solana/spl-token';
 import {
   Connection,
@@ -41,7 +42,7 @@ import {
   RpcMetadataProvider,
 } from './metadataProvider';
 import {
-  LibreplexRoyaltyProvider,
+  MintExtTransferHookProvider,
   TransferHookProvider,
 } from './transferHookProvider';
 
@@ -74,7 +75,7 @@ export class MMMClient {
     conn: Connection,
   ) => Promise<MetadataProvider>;
   private readonly transferHookProviderGenerator: (
-    mint: PublicKey,
+    mint: Mint,
     conn: Connection,
   ) => Promise<TransferHookProvider>;
 
@@ -88,7 +89,7 @@ export class MMMClient {
       conn: Connection,
     ) => Promise<MetadataProvider>,
     transferHookProviderGenerator?: (
-      mint: PublicKey,
+      mint: Mint,
       conn: Connection,
     ) => Promise<TransferHookProvider>,
   ) {
@@ -103,7 +104,7 @@ export class MMMClient {
     this.metadataProviderGenerator =
       metadataProviderGenerator ?? RpcMetadataProvider.loadFromRpc;
     this.transferHookProviderGenerator =
-      transferHookProviderGenerator ?? LibreplexRoyaltyProvider.loadFromRpc;
+      transferHookProviderGenerator ?? MintExtTransferHookProvider.loadFromRpc;
   }
 
   signTx(insArr: TransactionInstruction[]): Transaction {
@@ -273,11 +274,15 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
-    const [mintContext, transferHookContext] = await Promise.all([
-      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
       transferHookProvider ??
-        this.transferHookProviderGenerator(assetMint, this.conn),
-    ]);
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
 
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
       MMMProgramID,
@@ -478,11 +483,15 @@ export class MMMClient {
       this.poolData.pool,
     );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const [mintContext, transferHookContext] = await Promise.all([
-      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
       transferHookProvider ??
-        this.transferHookProviderGenerator(assetMint, this.conn),
-    ]);
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -655,11 +664,15 @@ export class MMMClient {
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
-    const [mintContext, transferHookContext] = await Promise.all([
-      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
       transferHookProvider ??
-        this.transferHookProviderGenerator(assetMint, this.conn),
-    ]);
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -786,11 +799,15 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
-    const [mintContext, transferHookContext] = await Promise.all([
-      metadataProvider ?? this.metadataProviderGenerator(assetMint, this.conn),
+    const mintContext =
+      metadataProvider ??
+      (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
       transferHookProvider ??
-        this.transferHookProviderGenerator(assetMint, this.conn),
-    ]);
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,

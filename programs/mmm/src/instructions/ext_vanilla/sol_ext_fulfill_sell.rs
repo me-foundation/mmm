@@ -220,21 +220,24 @@ pub fn handler<'info>(
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
 
-    let mut royalty_paid: u64 = 0;
-    if let Ok(transfer_hook_program_id) =
+    let royalty_paid: u64 = if let Ok(transfer_hook_program_id) =
         get_transfer_hook_program_id(&asset_mint.to_account_info())
     {
         if transfer_hook_program_id == Some(LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID) {
-            royalty_paid = pay_creator_fees_in_sol_ext(
+            pay_creator_fees_in_sol_ext(
                 total_price,
                 optional_creator_account,
                 payer.to_account_info(),
                 sfbp,
                 &[&[&[]]],
                 system_program.to_account_info(),
-            )?;
+            )?
+        } else {
+            0
         }
-    }
+    } else {
+        0
+    };
 
     // prevent frontrun by pool config changes
     let payment_amount = total_price
