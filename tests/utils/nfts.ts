@@ -389,8 +389,9 @@ export async function createTestMintAndTokenT22VanillaExt(
 
   const ixs: TransactionInstruction[] = [];
   if (
-    transferHookArgs?.transferHookProgramId ===
-    LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID
+    transferHookArgs?.transferHookProgramId.equals(
+      LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID,
+    )
   ) {
     const createTransferHookIx = createInitializeTransferHookInstruction(
       mintKeypair.publicKey,

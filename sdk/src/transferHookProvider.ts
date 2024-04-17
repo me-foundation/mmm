@@ -122,7 +122,9 @@ export class MintExtTransferHookProvider implements TransferHookProvider {
 
   isTransferHookProgramAllowed(): boolean {
     return this.transferHookProgramId
-      ? ALLOWED_TRANSFER_HOOK_PROGRAM_IDS.includes(this.transferHookProgramId)
+      ? ALLOWED_TRANSFER_HOOK_PROGRAM_IDS.some((v) =>
+          v.equals(this.transferHookProgramId!),
+        )
       : false;
   }
 
