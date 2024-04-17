@@ -13,7 +13,10 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     index_ra,
-    instructions::{check_remaining_accounts_for_m2, log_pool, try_close_pool, withdraw_m2},
+    instructions::{
+        check_remaining_accounts_for_m2, get_transfer_hook_program_id, log_pool,
+        pay_creator_fees_in_sol_ext, split_remaining_account_for_ext, try_close_pool, withdraw_m2,
+    },
     state::{Pool, SellState},
     util::{
         assert_valid_fees_bp, check_allowlists_for_mint_ext, get_buyside_seller_receives,
@@ -126,6 +129,16 @@ pub fn handler<'info>(
         &[ctx.bumps.buyside_sol_escrow_account],
     ]];
     let remaining_accounts = ctx.remaining_accounts;
+    if pool.using_shared_escrow() {
+        check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
+    }
+
+    let (optional_creator_account, remaining_account_without_m2, sfbp) =
+        split_remaining_account_for_ext(
+            remaining_accounts,
+            &asset_mint.to_account_info(),
+            pool.using_shared_escrow(),
+        )?;
 
     check_allowlists_for_mint_ext(
         &pool.allowlists,
@@ -141,8 +154,8 @@ pub fn handler<'info>(
         get_buyside_seller_receives(
             total_price,
             lp_fee_bp,
-            0, // metadata_royalty_bp
-            0, // buyside_creator_royalty_bp,
+            sfbp, // royalty_bp
+            10_000,
         )
     }?;
 
@@ -160,9 +173,7 @@ pub fn handler<'info>(
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
 
     // withdraw sol from M2 first if shared escrow is enabled
-    let remaining_account_without_m2 = if pool.using_shared_escrow() {
-        check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
-
+    if pool.using_shared_escrow() {
         let amount: u64 = (total_price as i64 + maker_fee) as u64;
         withdraw_m2(
             pool,
@@ -178,10 +189,7 @@ pub fn handler<'info>(
             .shared_escrow_count
             .checked_sub(args.asset_amount)
             .ok_or(MMMErrorCode::NumericOverflow)?;
-        &remaining_accounts[2..]
-    } else {
-        remaining_accounts
-    };
+    }
 
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {
@@ -261,13 +269,32 @@ pub fn handler<'info>(
         ))?;
     }
 
+    let royalty_paid: u64 = if let Ok(transfer_hook_program_id) =
+        get_transfer_hook_program_id(&asset_mint.to_account_info())
+    {
+        if transfer_hook_program_id == Some(LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID) {
+            pay_creator_fees_in_sol_ext(
+                seller_receives,
+                optional_creator_account,
+                buyside_sol_escrow_account.to_account_info(),
+                sfbp,
+                buyside_sol_escrow_account_seeds,
+            )?
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+
     // prevent frontrun by pool config changes
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(taker_fee as u64)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }
@@ -353,7 +380,12 @@ pub fn handler<'info>(
     log_pool("post_ext_sol_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
-    msg!("{{\"lp_fee\":{},\"total_price\":{}}}", lp_fee, total_price,);
+    msg!(
+        "{{\"lp_fee\":{},\"total_price\":{},\"royalty_paid\":{}}}",
+        lp_fee,
+        total_price,
+        royalty_paid,
+    );
 
     Ok(())
 }

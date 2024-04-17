@@ -1,7 +1,8 @@
 use crate::{
     constants::{
-        M2_AUCTION_HOUSE, M2_PREFIX, M2_PROGRAM, MAX_METADATA_CREATOR_ROYALTY_BP,
-        MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE, MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
+        LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID, M2_AUCTION_HOUSE, M2_PREFIX, M2_PROGRAM,
+        MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
+        MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
     },
     errors::MMMErrorCode,
     state::*,
@@ -20,13 +21,13 @@ use solana_program::program::invoke_signed;
 use spl_token_2022::{
     extension::{
         group_member_pointer::GroupMemberPointer, metadata_pointer::MetadataPointer,
-        BaseStateWithExtensions, StateWithExtensions,
+        transfer_hook::TransferHook, BaseStateWithExtensions, StateWithExtensions,
     },
     state::Mint as Token22Mint,
 };
 use spl_token_group_interface::state::TokenGroupMember;
 use spl_token_metadata_interface::state::TokenMetadata;
-use std::convert::TryFrom;
+use std::{convert::TryFrom, str::FromStr};
 
 #[macro_export]
 macro_rules! index_ra {
@@ -451,6 +452,58 @@ pub fn get_metadata_royalty_bp(
 }
 
 #[allow(clippy::too_many_arguments)]
+pub fn pay_creator_fees_in_sol_ext<'info>(
+    total_price: u64,
+    optional_creator_account: Option<&AccountInfo<'info>>,
+    payer: AccountInfo<'info>,
+    sfbp: u16,
+    payer_seeds: &[&[&[u8]]],
+) -> Result<u64> {
+    let royalty = ((total_price as u128)
+        .checked_mul(sfbp as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?) as u64;
+
+    if royalty == 0 {
+        return Ok(0);
+    }
+
+    let creator_account = if let Some(creator_account) = optional_creator_account {
+        creator_account
+    } else {
+        return Ok(0);
+    };
+
+    if payer.lamports() < royalty {
+        return Err(MMMErrorCode::NotEnoughBalance.into());
+    }
+
+    if sfbp > MAX_METADATA_CREATOR_ROYALTY_BP {
+        return Err(MMMErrorCode::InvalidBP.into());
+    }
+    let min_rent = Rent::get()?.minimum_balance(0);
+
+    let creator_lamports = creator_account.lamports();
+    if creator_lamports
+        .checked_add(royalty)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        > min_rent
+    {
+        anchor_lang::solana_program::program::invoke_signed(
+            &anchor_lang::solana_program::system_instruction::transfer(
+                payer.key,
+                creator_account.key,
+                royalty,
+            ),
+            &[payer.to_account_info(), creator_account.to_account_info()],
+            payer_seeds,
+        )?;
+    }
+    Ok(royalty)
+}
+
+#[allow(clippy::too_many_arguments)]
 pub fn pay_creator_fees_in_sol<'info>(
     buyside_creator_royalty_bp: u16,
     total_price: u64,
@@ -659,27 +712,14 @@ pub fn check_remaining_accounts_for_m2(
 
 pub fn check_allowlists_for_mint_ext(
     allowlists: &[Allowlist],
-    token_mint: &AccountInfo,
+    mint: &AccountInfo,
     allowlist_aux: Option<String>,
 ) -> Result<TokenMetadata> {
-    if token_mint.owner != &spl_token_2022::ID || token_mint.data_is_empty() {
-        return Err(MMMErrorCode::InvalidTokenMint.into());
-    }
-    let borrowed_data = token_mint.data.borrow();
-    let mint_deserialized = StateWithExtensions::<Token22Mint>::unpack(&borrowed_data)?;
-    if !mint_deserialized.base.is_initialized {
+    if mint.owner != &spl_token_2022::ID || mint.data_is_empty() {
         return Err(MMMErrorCode::InvalidTokenMint.into());
     }
 
-    // verify metadata extension
-    if let Ok(metadata_ptr) = mint_deserialized.get_extension::<MetadataPointer>() {
-        if Option::<Pubkey>::from(metadata_ptr.metadata_address) != Some(*token_mint.key) {
-            return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
-        }
-    }
-    let parsed_metadata = mint_deserialized
-        .get_variable_len_extension::<TokenMetadata>()
-        .unwrap();
+    let parsed_metadata = assert_and_get_metadata_from_ext(mint)?;
 
     if allowlists
         .iter()
@@ -699,13 +739,7 @@ pub fn check_allowlists_for_mint_ext(
         }
     }
 
-    // verify group member extension
-    if let Ok(group_member_ptr) = mint_deserialized.get_extension::<GroupMemberPointer>() {
-        if Some(*token_mint.key) != Option::<Pubkey>::from(group_member_ptr.member_address) {
-            msg!("group member pointer does not point to itself");
-            return Err(MMMErrorCode::InvalidTokenMemberExtension.into());
-        }
-    }
+    assert_valid_group_member_pointer(mint)?;
 
     for allowlist_val in allowlists.iter() {
         match allowlist_val.kind {
@@ -718,7 +752,7 @@ pub fn check_allowlists_for_mint_ext(
                 return Err(MMMErrorCode::InvalidAllowLists.into());
             }
             ALLOWLIST_KIND_MINT => {
-                if token_mint.key() == allowlist_val.value {
+                if mint.key() == allowlist_val.value {
                     return Ok(parsed_metadata);
                 }
             }
@@ -726,7 +760,7 @@ pub fn check_allowlists_for_mint_ext(
                 return Err(MMMErrorCode::InvalidAllowLists.into());
             }
             ALLOWLIST_KIND_GROUP => {
-                let group_address = assert_valid_group(&mint_deserialized, token_mint)?;
+                let group_address = assert_and_get_valid_group(mint)?;
                 if group_address != Some(allowlist_val.value) {
                     msg!("group address |{}| is not allowed", group_address.unwrap());
                     return Err(MMMErrorCode::InvalidAllowLists.into());
@@ -749,13 +783,15 @@ pub fn check_allowlists_for_mint_ext(
     Err(MMMErrorCode::InvalidAllowLists.into())
 }
 
-pub fn assert_valid_group(
-    mint_deserialized: &StateWithExtensions<'_, Token22Mint>,
-    token_mint: &AccountInfo,
-) -> Result<Option<Pubkey>> {
+pub fn assert_and_get_valid_group(mint: &AccountInfo) -> Result<Option<Pubkey>> {
+    let borrowed_data = mint.data.borrow();
+    let mint_deserialized = StateWithExtensions::<Token22Mint>::unpack(&borrowed_data)?;
+    if !mint_deserialized.base.is_initialized {
+        return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
+    }
     if let Ok(group_member) = mint_deserialized.get_extension::<TokenGroupMember>() {
         // counter spoof check
-        if group_member.mint != *token_mint.key {
+        if group_member.mint != *mint.key {
             msg!("group member mint does not match the token mint");
             return Err(MMMErrorCode::InvalidTokenMemberExtension.into());
         }
@@ -810,4 +846,255 @@ pub fn get_sell_fulfill_pool_price_info<'info>(
         referral_fee,
         transfer_sol_to,
     })
+}
+
+pub fn split_remaining_account_for_ext<'a, 'info>(
+    remaining_accounts: &'a [AccountInfo<'info>],
+    token_mint: &AccountInfo,
+    is_using_shared_escrow: bool,
+) -> Result<(
+    Option<&'a AccountInfo<'info>>,
+    &'a [AccountInfo<'info>],
+    u16,
+)> {
+    // for shared escrow before the transfer hook accounts
+    // we have m2_program + shared_escrow_account
+    let split_idx = if is_using_shared_escrow { 2 } else { 0 };
+    if let Ok(transfer_hook_program_id) = get_transfer_hook_program_id(token_mint) {
+        if transfer_hook_program_id == Some(LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID) {
+            let creator_account = index_ra!(remaining_accounts, split_idx);
+            if let Ok(sfbp) =
+                assert_creator_valid_for_ext(&token_mint.to_account_info(), creator_account.key)
+            {
+                return Ok((
+                    Some(creator_account),
+                    &remaining_accounts[(split_idx + 1)..],
+                    sfbp,
+                ));
+            }
+        }
+    }
+    Ok((None, remaining_accounts, 0))
+}
+
+pub fn get_transfer_hook_program_id(mint: &AccountInfo) -> Result<Option<Pubkey>> {
+    let borrowed_data = mint.data.borrow();
+    let mint_deserialized = StateWithExtensions::<Token22Mint>::unpack(&borrowed_data)?;
+    if !mint_deserialized.base.is_initialized {
+        return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
+    }
+    if let Ok(extension) = mint_deserialized.get_extension::<TransferHook>() {
+        return Ok(Option::<Pubkey>::from(extension.program_id));
+    }
+    Ok(None)
+}
+
+pub fn assert_creator_valid_for_ext(mint: &AccountInfo, creator: &Pubkey) -> Result<u16> {
+    if mint.data_is_empty() || mint.owner != &spl_token_2022::ID {
+        return Err(MMMErrorCode::InvalidTokenStandard.into());
+    }
+
+    if let Ok(token_metadata) = assert_and_get_metadata_from_ext(mint) {
+        if let Ok(sfbp) = get_royalty_enforcement_from_additional_metadata(
+            &token_metadata.additional_metadata,
+            creator,
+        ) {
+            return Ok(sfbp);
+        }
+        // fallback to legacy encoding standard, can be removed once creator updates to the
+        // latest encoding standard
+        if let Ok(sfbp) = get_royalty_enforcement_legacy_from_additional_metadata(
+            &token_metadata.additional_metadata,
+            creator,
+        ) {
+            return Ok(sfbp);
+        }
+    }
+    Err(MMMErrorCode::InvalidCreatorAddress.into())
+}
+
+pub fn assert_valid_group_member_pointer(mint: &AccountInfo) -> Result<()> {
+    let borrowed_data = mint.data.borrow();
+    let mint_deserialized = StateWithExtensions::<Token22Mint>::unpack(&borrowed_data)?;
+    if !mint_deserialized.base.is_initialized {
+        return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
+    }
+    if let Ok(group_member_ptr) = mint_deserialized.get_extension::<GroupMemberPointer>() {
+        if Some(*mint.key) != Option::<Pubkey>::from(group_member_ptr.member_address) {
+            msg!("group member pointer does not point to itself");
+            return Err(MMMErrorCode::InvalidTokenMemberExtension.into());
+        }
+    }
+    Ok(())
+}
+
+pub fn assert_and_get_metadata_from_ext(mint: &AccountInfo) -> Result<TokenMetadata> {
+    let borrowed_data = mint.data.borrow();
+    let mint_deserialized = StateWithExtensions::<Token22Mint>::unpack(&borrowed_data)?;
+    if !mint_deserialized.base.is_initialized {
+        return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
+    }
+
+    if let Ok(extension) = mint_deserialized.get_extension::<MetadataPointer>() {
+        if Option::<Pubkey>::from(extension.metadata_address) != Some(*mint.key) {
+            return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
+        }
+    }
+    if let Ok(token_metadata) = mint_deserialized.get_variable_len_extension::<TokenMetadata>() {
+        if token_metadata.mint != *mint.key {
+            return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
+        }
+        Ok(token_metadata)
+    } else {
+        Err(MMMErrorCode::InvalidTokenMetadataExtension.into())
+    }
+}
+
+pub fn get_royalty_enforcement_from_additional_metadata(
+    additional_metadata: &[(String, String)],
+    creator: &Pubkey,
+) -> Result<u16> {
+    for additional_meta in additional_metadata.iter() {
+        if additional_meta.0.starts_with("_ro_") {
+            let expected_creator = &additional_meta.0[4..];
+            let sfbp: u16 = additional_meta.1.parse::<u16>().unwrap();
+            if Pubkey::from_str(expected_creator).unwrap().eq(creator) {
+                if sfbp > 10_000 {
+                    return Err(MMMErrorCode::InvalidBP.into());
+                }
+                return Ok(sfbp);
+            }
+        }
+    }
+    Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into())
+}
+
+pub fn get_royalty_enforcement_legacy_from_additional_metadata(
+    additional_metadata: &[(String, String)],
+    creator: &Pubkey,
+) -> Result<u16> {
+    let mut sfbp: u16 = 0;
+    let mut expected_creator: &str = "";
+    let mut is_first_seen_royalty: bool = true;
+    for additional_meta in additional_metadata.iter() {
+        if additional_meta.0.starts_with("_roa_") {
+            expected_creator = &additional_meta.0[5..];
+            if !Pubkey::from_str(expected_creator).unwrap().eq(creator) {
+                return Err(MMMErrorCode::InvalidCreatorAddress.into());
+            }
+            let share = additional_meta.1.parse::<u16>().unwrap();
+            if share != 100 {
+                return Err(MMMErrorCode::InvalidCreatorAddress.into());
+            }
+        } else if additional_meta.0 == "_ros_" && is_first_seen_royalty {
+            // return the first seen royalty
+            is_first_seen_royalty = false;
+            sfbp = additional_meta.1.parse::<u16>().unwrap();
+            if sfbp > 10_000 {
+                return Err(MMMErrorCode::InvalidBP.into());
+            }
+        }
+    }
+    if sfbp > 0 && expected_creator != "" {
+        return Ok(sfbp);
+    }
+    Err(MMMErrorCode::InvalidCreatorAddress.into())
+}
+
+fn decode_hex(s: &str) -> Vec<u8> {
+    (0..s.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use anchor_spl::token_2022;
+    use std::str::FromStr;
+
+    use super::*;
+
+    pub const T22_LIBREPLEX_ROYALTY_ENFORCEMENT_ACCOUNT_DATA_STR: &str = "00000000f44743c862fb455afa2663e12584e9147a58ee3a65ed11ec6e67e2b7997230200100000000000000000101000000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a79100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000112004000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a7912a8bdd3a8f9bf26e037369cfcdb8b627f06611e598accf90410f40073befdf8f16004000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a7912a8bdd3a8f9bf26e037369cfcdb8b627f06611e598accf90410f40073befdf8f0e004000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a791aba41af6c8792187d8323772a501b618b4a4666f033502fa32793d0fc268054c13000001e07bb0500091230c31f27344e73d3cfd60406e4597572cace5e3dd315557d9bc2a8bdd3a8f9bf26e037369cfcdb8b627f06611e598accf90410f40073befdf8f0a0000004c6f6c6c692023393033050000006c6f6c6c695500000068747470733a2f2f676174657761792e70696e69742e696f2f697066732f516d553259634c4373427738726e4a4d4565337052705938363533426a706a367566467932747848686e4e6a46422f3735312e6a736f6e02000000310000005f726f615f333346334647734273784368664a616a356544666e33674778584b4e376f74464e783656795a69317261534a03000000313030050000005f726f735f03000000333030";
+
+    #[test]
+    fn test_get_transfer_hook_program_id() {
+        let mut account_data = decode_hex(T22_LIBREPLEX_ROYALTY_ENFORCEMENT_ACCOUNT_DATA_STR);
+        let pkey = Pubkey::from_str("3s5pZ7ca3JLnQqdU2xNPsVAXK7j1KgP8y4ymeHFb9P98").unwrap();
+        let mut lamports = 10;
+        let account_info = AccountInfo::new(
+            &pkey,
+            false,
+            false,
+            &mut lamports,
+            &mut account_data,
+            &token_2022::ID,
+            false,
+            1,
+        );
+        match get_transfer_hook_program_id(&account_info) {
+            Ok(pubkey) => assert_eq!(
+                pubkey,
+                Some(Pubkey::from_str("CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV").unwrap())
+            ),
+            Err(e) => panic!("{:?}", e),
+        }
+    }
+
+    #[test]
+    fn test_assert_and_get_metadata_from_ext() {
+        let mut account_data = decode_hex(T22_LIBREPLEX_ROYALTY_ENFORCEMENT_ACCOUNT_DATA_STR);
+        let pkey = Pubkey::from_str("3s5pZ7ca3JLnQqdU2xNPsVAXK7j1KgP8y4ymeHFb9P98").unwrap();
+        let mut lamports = 10;
+        let account_info = AccountInfo::new(
+            &pkey,
+            false,
+            false,
+            &mut lamports,
+            &mut account_data,
+            &token_2022::ID,
+            false,
+            1,
+        );
+
+        match assert_and_get_metadata_from_ext(&account_info) {
+            Ok(token_metadata) => assert_eq!(token_metadata.mint, pkey),
+            Err(e) => panic!("{:?}", e),
+        }
+    }
+
+    #[test]
+    fn test_assert_creator_valid_for_ext() {
+        let mut account_data = decode_hex(T22_LIBREPLEX_ROYALTY_ENFORCEMENT_ACCOUNT_DATA_STR);
+        let pkey = Pubkey::from_str("3s5pZ7ca3JLnQqdU2xNPsVAXK7j1KgP8y4ymeHFb9P98").unwrap();
+        let creator = Pubkey::from_str("33F3FGsBsxChfJaj5eDfn3gGxXKN7otFNx6VyZi1raSJ").unwrap();
+        let mut lamports = 10;
+        let account_info = AccountInfo::new(
+            &pkey,
+            false,
+            false,
+            &mut lamports,
+            &mut account_data,
+            &token_2022::ID,
+            false,
+            1,
+        );
+        match assert_creator_valid_for_ext(&account_info, &creator) {
+            Ok(sfbp) => assert_eq!(sfbp, 300),
+            Err(e) => panic!("{:?}", e),
+        }
+    }
+
+    #[test]
+    fn test_get_royalty_enforcement_from_additional_metadata() {
+        let additional_metadata: Vec<(String, String)> = vec![(
+            "_ro_GimcpFDRMCiXRRwPrLqUSh6n2Cm4odkagNBkTuE9a7wG".to_string(),
+            "200".to_string(),
+        )];
+        let creator = Pubkey::from_str("GimcpFDRMCiXRRwPrLqUSh6n2Cm4odkagNBkTuE9a7wG").unwrap();
+        match get_royalty_enforcement_from_additional_metadata(&additional_metadata, &creator) {
+            Ok(sfbp) => assert_eq!(sfbp, 200),
+            Err(e) => panic!("{:?}", e),
+        }
+    }
 }

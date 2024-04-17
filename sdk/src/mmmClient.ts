@@ -13,6 +13,7 @@ import * as anchor from '@project-serum/anchor';
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
+  Mint,
 } from '@solana/spl-token';
 import {
   Connection,
@@ -32,6 +33,7 @@ import {
   getMMMPoolPDA,
   getMMMSellStatePDA,
   getTokenRecordPDA,
+  M2_PROGRAM,
 } from './pda';
 import {
   doesTokenExtensionExist,
@@ -39,6 +41,10 @@ import {
   MintStateWithAddress,
   RpcMetadataProvider,
 } from './metadataProvider';
+import {
+  MintExtTransferHookProvider,
+  TransferHookProvider,
+} from './transferHookProvider';
 
 export const getEmptyAllowLists = (num: number) => {
   const emptyAllowList = {
@@ -68,6 +74,10 @@ export class MMMClient {
     mint: PublicKey,
     conn: Connection,
   ) => Promise<MetadataProvider>;
+  private readonly transferHookProviderGenerator: (
+    mint: Mint,
+    conn: Connection,
+  ) => Promise<TransferHookProvider>;
 
   poolData: (anchor.IdlAccounts<Mmm>['pool'] & { pool: PublicKey }) | undefined;
 
@@ -78,6 +88,10 @@ export class MMMClient {
       mint: PublicKey,
       conn: Connection,
     ) => Promise<MetadataProvider>,
+    transferHookProviderGenerator?: (
+      mint: Mint,
+      conn: Connection,
+    ) => Promise<TransferHookProvider>,
   ) {
     this.conn = conn;
     this.provider = new anchor.AnchorProvider(this.conn, dummyKeypair, {
@@ -89,6 +103,8 @@ export class MMMClient {
     this.mpl = new Metaplex(conn);
     this.metadataProviderGenerator =
       metadataProviderGenerator ?? RpcMetadataProvider.loadFromRpc;
+    this.transferHookProviderGenerator =
+      transferHookProviderGenerator ?? MintExtTransferHookProvider.loadFromRpc;
   }
 
   signTx(insArr: TransactionInstruction[]): Transaction {
@@ -255,11 +271,19 @@ export class MMMClient {
     assetTokenAccount: PublicKey,
     allowlistAuxAccount?: PublicKey,
     metadataProvider?: MetadataProvider,
+    transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     const mintContext =
       metadataProvider ??
       (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
+      transferHookProvider ??
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
+
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
       MMMProgramID,
       this.poolData.pool,
@@ -401,10 +425,27 @@ export class MMMClient {
       }
     }
 
+    // Add m2 and shared escrow account here as remaining accounts for shared escrow pool.
+    if (!this.poolData.sharedEscrowAccount.equals(PublicKey.default)) {
+      builder = builder.remainingAccounts([
+        {
+          pubkey: M2_PROGRAM,
+          isSigner: false,
+          isWritable: false,
+        },
+        {
+          pubkey: this.poolData.sharedEscrowAccount,
+          isWritable: true,
+          isSigner: false,
+        },
+      ]);
+    }
+
     if (
-      this.poolData.buysideCreatorRoyaltyBp > 0 ||
-      ocpMintState ||
-      tokenStandard === TokenStandard.ProgrammableNonFungible
+      (this.poolData.buysideCreatorRoyaltyBp > 0 ||
+        ocpMintState ||
+        tokenStandard === TokenStandard.ProgrammableNonFungible) &&
+      !transferHookContext.isTransferHookProgramAllowed()
     ) {
       const creators = mintContext.creators;
       if (creators.length > 0) {
@@ -417,6 +458,14 @@ export class MMMClient {
         );
       }
     }
+
+    if (transferHookContext.isTransferHookProgramAllowed()) {
+      builder = builder.remainingAccounts(
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: true,
+        }),
+      );
+    }
     return await builder.instruction();
   }
 
@@ -426,6 +475,7 @@ export class MMMClient {
     assetMint: PublicKey,
     allowlistAuxAccount?: PublicKey,
     metadataProvider?: MetadataProvider,
+    transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
@@ -436,6 +486,12 @@ export class MMMClient {
     const mintContext =
       metadataProvider ??
       (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
+      transferHookProvider ??
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -572,9 +628,10 @@ export class MMMClient {
     }
 
     if (
-      args.buysideCreatorRoyaltyBp > 0 ||
-      ocpMintState ||
-      tokenStandard === TokenStandard.ProgrammableNonFungible
+      (args.buysideCreatorRoyaltyBp > 0 ||
+        ocpMintState ||
+        tokenStandard === TokenStandard.ProgrammableNonFungible) &&
+      !transferHookContext.isTransferHookProgramAllowed()
     ) {
       const creators = mintContext.creators;
       if (creators.length > 0) {
@@ -587,6 +644,14 @@ export class MMMClient {
         );
       }
     }
+
+    if (transferHookContext.isTransferHookProgramAllowed()) {
+      builder = builder.remainingAccounts(
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: true,
+        }),
+      );
+    }
     return await builder.instruction();
   }
 
@@ -595,12 +660,19 @@ export class MMMClient {
     assetMint: PublicKey,
     allowlistAuxAccount?: PublicKey,
     metadataProvider?: MetadataProvider,
+    transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
     const mintContext =
       metadataProvider ??
       (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
+      transferHookProvider ??
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -708,6 +780,14 @@ export class MMMClient {
         });
       }
     }
+
+    if (transferHookContext.isTransferHookProgramAllowed()) {
+      builder = builder.remainingAccounts(
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: false,
+        }),
+      );
+    }
     return await builder.instruction();
   }
 
@@ -716,11 +796,18 @@ export class MMMClient {
     assetMint: PublicKey,
     allowlistAuxAccount?: PublicKey,
     metadataProvider?: MetadataProvider,
+    transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
     const mintContext =
       metadataProvider ??
       (await this.metadataProviderGenerator(assetMint, this.conn));
+    const transferHookContext =
+      transferHookProvider ??
+      (await this.transferHookProviderGenerator(
+        mintContext.mintAccount,
+        this.conn,
+      ));
 
     const { key: sellState } = getMMMSellStatePDA(
       MMMProgramID,
@@ -836,6 +923,14 @@ export class MMMClient {
           rent: SYSVAR_RENT_PUBKEY,
         });
       }
+    }
+
+    if (transferHookContext.isTransferHookProgramAllowed()) {
+      builder = builder.remainingAccounts(
+        await transferHookContext.getRemainingAccounts({
+          shouldIncludeCreator: false,
+        }),
+      );
     }
     return await builder.instruction();
   }

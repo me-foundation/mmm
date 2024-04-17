@@ -21,3 +21,6 @@ pub const MPL_TOKEN_AUTH_RULES: Pubkey = pubkey!("auth9SigNpDKz4sJJ1DfCTuZrZNSAg
 pub const M2_PROGRAM: Pubkey = pubkey!("M2mx93ekt1fmXSVkTrUL9xVFHkmME8HTUi5Cyc5aF7K");
 pub const M2_PREFIX: &str = "m2";
 pub const M2_AUCTION_HOUSE: Pubkey = pubkey!("E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1t6F6fkgUWe");
+
+pub const LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID: Pubkey =
+    pubkey!("CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV");

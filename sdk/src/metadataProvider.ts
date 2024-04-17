@@ -39,6 +39,7 @@ export interface MetadataProvider {
   get tokenProgram(): PublicKey;
   get sellerFeeBasisPoints(): number;
   get splTokenMetadata(): TokenMetadata | undefined;
+  get mintAccount(): Mint & { tokenProgramId: PublicKey };
 }
 
 export class RpcMetadataProvider implements MetadataProvider {

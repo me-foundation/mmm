@@ -12,8 +12,9 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     instructions::{
-        get_sell_fulfill_pool_price_info, log_pool, try_close_pool, try_close_sell_state,
-        PoolPriceInfo,
+        get_sell_fulfill_pool_price_info, get_transfer_hook_program_id, log_pool,
+        pay_creator_fees_in_sol_ext, split_remaining_account_for_ext, try_close_pool,
+        try_close_sell_state, PoolPriceInfo,
     },
     state::{Pool, SellState},
     util::check_allowlists_for_mint_ext,
@@ -106,6 +107,9 @@ pub fn handler<'info>(
     let payer = &ctx.accounts.payer;
     let payer_asset_account = &ctx.accounts.payer_asset_account;
     let asset_mint = &ctx.accounts.asset_mint;
+    let remaining_accounts = ctx.remaining_accounts;
+    let (optional_creator_account, remaining_account_without_creator, sfbp) =
+        split_remaining_account_for_ext(remaining_accounts, &asset_mint.to_account_info(), false)?;
 
     let sellside_escrow_token_account = &ctx.accounts.sellside_escrow_token_account;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
@@ -165,7 +169,7 @@ pub fn handler<'info>(
         asset_mint.to_account_info(),
         payer_asset_account.to_account_info(),
         pool.to_account_info(),
-        &[],
+        remaining_account_without_creator,
         args.asset_amount,
         0,
         pool_seeds,
@@ -216,11 +220,31 @@ pub fn handler<'info>(
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?;
 
+    let royalty_paid: u64 = if let Ok(transfer_hook_program_id) =
+        get_transfer_hook_program_id(&asset_mint.to_account_info())
+    {
+        if transfer_hook_program_id == Some(LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID) {
+            pay_creator_fees_in_sol_ext(
+                total_price,
+                optional_creator_account,
+                payer.to_account_info(),
+                sfbp,
+                &[&[&[]]],
+            )?
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+
     // prevent frontrun by pool config changes
     let payment_amount = total_price
         .checked_add(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_add(taker_fee as u64)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_add(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     if payment_amount > args.max_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
@@ -236,7 +260,12 @@ pub fn handler<'info>(
     log_pool("post_ext_sol_fulfill_sell", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
-    msg!("{{\"lp_fee\":{},\"total_price\":{}}}", lp_fee, total_price);
+    msg!(
+        "{{\"lp_fee\":{},\"total_price\":{},\"royalty_paid\":{}}}",
+        lp_fee,
+        total_price,
+        royalty_paid,
+    );
 
     Ok(())
 }

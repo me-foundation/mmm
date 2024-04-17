@@ -1,3 +1,5 @@
+import { PublicKey } from '@solana/web3.js';
+
 export const PREFIXES = {
   POOL: 'mmm_pool',
   BUYSIDE_SOL_ESCROW: 'mmm_buyside_sol_escrow_account',
@@ -18,3 +20,13 @@ export enum AllowlistKind {
   group = 5,
   any = 255,
 }
+
+// Libreplex royalty enforcement program
+export const LIBREPLEX_ROYALTY_ENFORCEMENT_PREFIX = '_ro_';
+// legacy for backwards compatibility
+export const LIBREPLEX_ROYALTY_ENFORCEMENT_CREATOR_PREFIX_LEGACY = '_roa_';
+export const LIBREPLEX_ROYALTY_ENFORCEMENT_BP_KEY_LEGACY = '_ros_';
+
+export const LIBPREPLEX_ROYALTY_PROGRAM_ID = new PublicKey(
+  'CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV',
+);
