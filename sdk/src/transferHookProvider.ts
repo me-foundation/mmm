@@ -109,12 +109,12 @@ export class MintExtTransferHookProvider implements TransferHookProvider {
       {
         pubkey: this.transferHookProgramId,
         isSigner: false,
-        isWritable: true,
+        isWritable: false,
       },
       {
         pubkey: validateStateAccount,
         isSigner: false,
-        isWritable: true,
+        isWritable: false,
       },
       ...previousMetas,
     ];
