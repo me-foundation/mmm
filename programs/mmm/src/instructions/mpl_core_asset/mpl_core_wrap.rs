@@ -2,7 +2,6 @@ use mpl_core::ID;
 use solana_program::pubkey::Pubkey;
 use std::ops::Deref;
 
-// TODO: move to shared library
 #[derive(Clone)]
 pub struct AssetInterface;
 

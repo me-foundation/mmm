@@ -152,4 +152,11 @@ pub mod mmm {
     ) -> Result<()> {
         instructions::ext_withdraw_sell::handler(ctx, args)
     }
+
+    pub fn mpl_core_deposit_sell(
+        ctx: Context<MplCoreDepositSell>,
+        args: DepositSellArgs,
+    ) -> Result<()> {
+        instructions::mpl_core_deposit_sell::handler(ctx, args)
+    }
 }

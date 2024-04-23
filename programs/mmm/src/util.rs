@@ -6,12 +6,14 @@ use crate::{
     },
     errors::MMMErrorCode,
     state::*,
+    IndexableAsset,
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
 use m2_interface::{
     withdraw_by_mmm_ix_with_program_id, WithdrawByMMMArgs, WithdrawByMmmIxArgs, WithdrawByMmmKeys,
 };
+use mpl_core::types::UpdateAuthority;
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
     types::TokenStandard,
@@ -772,6 +774,62 @@ pub fn check_allowlists_for_mint_ext(
                 // Group is validated in a separate function.
                 // These checks are separate since allowlist values are unioned together.
                 continue;
+            }
+            _ => {
+                return Err(MMMErrorCode::InvalidAllowLists.into());
+            }
+        }
+    }
+
+    // at the end, we didn't find a match, thus return err
+    Err(MMMErrorCode::InvalidAllowLists.into())
+}
+
+pub fn check_allowlists_for_mpl_core<'info>(
+    allowlists: &[Allowlist],
+    asset: &Box<Account<'info, IndexableAsset>>,
+    allowlist_aux: Option<String>,
+) -> Result<()> {
+    if allowlists
+        .iter()
+        .any(|&val| val.kind == ALLOWLIST_KIND_METADATA)
+    {
+        // If allowlist_aux is not passed in, do not validate URI.
+        if let Some(ref aux_key) = allowlist_aux {
+            // Handle URI padding.
+            if !asset.uri.trim().starts_with(aux_key) {
+                msg!(
+                    "Failed metadata validation. Expected URI: |{}| but got |{}|",
+                    *aux_key,
+                    asset.uri
+                );
+                return Err(MMMErrorCode::UnexpectedMetadataUri.into());
+            }
+        }
+    }
+
+    for allowlist_val in allowlists.iter() {
+        match allowlist_val.kind {
+            ALLOWLIST_KIND_EMPTY => {
+                continue;
+            }
+            ALLOWLIST_KIND_ANY => {
+                // any is a special case, we don't need to check anything else
+                return Ok(());
+            }
+            ALLOWLIST_KIND_UPGRADE_AUTHORITY => {
+                if let UpdateAuthority::Collection(collection_address) = asset.update_authority {
+                    if collection_address != allowlist_val.value {
+                        return Err(MMMErrorCode::InvalidAllowLists.into());
+                    }
+                } else {
+                    return Err(MMMErrorCode::InvalidAllowLists.into());
+                }
+            }
+            ALLOWLIST_KIND_MINT => {
+                if asset.key() != allowlist_val.value {
+                    return Err(MMMErrorCode::InvalidAllowLists.into());
+                }
             }
             _ => {
                 return Err(MMMErrorCode::InvalidAllowLists.into());
