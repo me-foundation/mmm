@@ -25,7 +25,10 @@ pub struct MplCoreDepositSell<'info> {
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
-    /// CHECK: check asset later
+    #[account(
+        mut,
+        constraint = asset.to_account_info().owner == asset_program.key,
+    )]    
     pub asset: Box<Account<'info, IndexableAsset>>,
     #[account(
         init_if_needed,

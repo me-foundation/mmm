@@ -817,11 +817,12 @@ pub fn check_allowlists_for_mpl_core<'info>(
                 // any is a special case, we don't need to check anything else
                 return Ok(());
             }
-            ALLOWLIST_KIND_UPGRADE_AUTHORITY => {
+            ALLOWLIST_KIND_UPDATE_AUTHORITY => {
                 if let UpdateAuthority::Collection(collection_address) = asset.update_authority {
                     if collection_address != allowlist_val.value {
                         return Err(MMMErrorCode::InvalidAllowLists.into());
                     }
+                    return Ok(());
                 } else {
                     return Err(MMMErrorCode::InvalidAllowLists.into());
                 }
