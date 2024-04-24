@@ -832,6 +832,11 @@ pub fn check_allowlists_for_mpl_core<'info>(
                     return Err(MMMErrorCode::InvalidAllowLists.into());
                 }
             }
+            ALLOWLIST_KIND_METADATA => {
+                // Do not validate URI here, as we already did it above.
+                // These checks are separate since allowlist values are unioned together.
+                continue;
+            }
             _ => {
                 return Err(MMMErrorCode::InvalidAllowLists.into());
             }
