@@ -1938,17 +1938,17 @@ export type Mmm = {
           "isSigner": false
         },
         {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         },
         {
           "name": "assetProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "collection",
           "isMut": false,
           "isSigner": false
         }
@@ -4569,17 +4569,17 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         },
         {
           "name": "assetProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "collection",
           "isMut": false,
           "isSigner": false
         }

@@ -39,11 +39,11 @@ pub struct MplCoreDepositSell<'info> {
         bump
     )]
     pub sell_state: Account<'info, SellState>,
+    /// CHECK: check collection later
+    collection: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
     pub asset_program: Interface<'info, AssetInterface>,
-    /// CHECK: check collection later
-    collection: UncheckedAccount<'info>,
 }
 
 pub fn handler(ctx: Context<MplCoreDepositSell>, args: DepositSellArgs) -> Result<()> {
