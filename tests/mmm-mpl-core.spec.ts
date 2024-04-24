@@ -105,7 +105,7 @@ describe('mmm-mpl-core', () => {
     assert.equal(refreshedAsset.owner.toString(), poolData.poolKey.toString());
   });
 
-  it.only("can't deposit sell - asset from other collection", async () => {
+  it("can't deposit sell - asset from other collection", async () => {
     const { asset, collection } = await createTestMplCoreAsset(
       publicKey(wallet.publicKey),
       {
