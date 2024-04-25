@@ -8,11 +8,16 @@ use crate::{
     errors::MMMErrorCode,
     state::{Pool, SellState},
     util::{check_allowlists_for_mpl_core, log_pool},
-    AssetInterface, DepositSellArgs, IndexableAsset,
+    AssetInterface, IndexableAsset,
 };
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct MplCoreDepositSellArgs {
+    pub allowlist_aux: Option<String>,
+}
+
 #[derive(Accounts)]
-#[instruction(args:DepositSellArgs)]
+#[instruction(args:MplCoreDepositSellArgs)]
 pub struct MplCoreDepositSell<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
@@ -49,7 +54,7 @@ pub struct MplCoreDepositSell<'info> {
     pub asset_program: Interface<'info, AssetInterface>,
 }
 
-pub fn handler(ctx: Context<MplCoreDepositSell>, args: DepositSellArgs) -> Result<()> {
+pub fn handler(ctx: Context<MplCoreDepositSell>, args: MplCoreDepositSellArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let asset = &ctx.accounts.asset;
     let pool = &mut ctx.accounts.pool;
@@ -91,7 +96,7 @@ pub fn handler(ctx: Context<MplCoreDepositSell>, args: DepositSellArgs) -> Resul
 
     pool.sellside_asset_amount = pool
         .sellside_asset_amount
-        .checked_add(args.asset_amount)
+        .checked_add(1)
         .ok_or(MMMErrorCode::NumericOverflow)?;
 
     sell_state.pool = pool.key();
@@ -100,7 +105,7 @@ pub fn handler(ctx: Context<MplCoreDepositSell>, args: DepositSellArgs) -> Resul
     sell_state.cosigner_annotation = pool.cosigner_annotation;
     sell_state.asset_amount = sell_state
         .asset_amount
-        .checked_add(args.asset_amount)
+        .checked_add(1)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     log_pool("post_mpl_core_deposit_sell", pool)?;
 

@@ -1957,7 +1957,7 @@ export type Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "DepositSellArgs"
+            "defined": "MplCoreDepositSellArgs"
           }
         }
       ]
@@ -2285,6 +2285,20 @@ export type Mmm = {
           {
             "name": "takerFeeBp",
             "type": "i16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreDepositSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -4588,7 +4602,7 @@ export const IDL: Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "DepositSellArgs"
+            "defined": "MplCoreDepositSellArgs"
           }
         }
       ]
@@ -4916,6 +4930,20 @@ export const IDL: Mmm = {
           {
             "name": "takerFeeBp",
             "type": "i16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreDepositSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }

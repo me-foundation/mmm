@@ -50,7 +50,7 @@ describe('mmm-mpl-core', () => {
     const allowlists = [
       {
         value: toWeb3JsPublicKey(collection!.publicKey),
-        kind: AllowlistKind.update_authority,
+        kind: AllowlistKind.mpl_core_collection,
       },
       ...getEmptyAllowLists(5),
     ];
@@ -68,7 +68,6 @@ describe('mmm-mpl-core', () => {
 
     await program.methods
       .mplCoreDepositSell({
-        assetAmount: new anchor.BN(1),
         allowlistAux: null,
       })
       .accountsStrict({
@@ -119,7 +118,7 @@ describe('mmm-mpl-core', () => {
       allowlists: [
         {
           value: Keypair.generate().publicKey, // different collection
-          kind: AllowlistKind.update_authority,
+          kind: AllowlistKind.mpl_core_collection,
         },
         ...getEmptyAllowLists(5),
       ],
@@ -134,7 +133,6 @@ describe('mmm-mpl-core', () => {
     try {
       await program.methods
         .mplCoreDepositSell({
-          assetAmount: new anchor.BN(1),
           allowlistAux: null,
         })
         .accountsStrict({
@@ -191,7 +189,6 @@ describe('mmm-mpl-core', () => {
     try {
       await program.methods
         .mplCoreDepositSell({
-          assetAmount: new anchor.BN(1),
           allowlistAux: null,
         })
         .accountsStrict({

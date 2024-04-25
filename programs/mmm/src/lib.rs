@@ -155,7 +155,7 @@ pub mod mmm {
 
     pub fn mpl_core_deposit_sell(
         ctx: Context<MplCoreDepositSell>,
-        args: DepositSellArgs,
+        args: MplCoreDepositSellArgs,
     ) -> Result<()> {
         instructions::mpl_core_deposit_sell::handler(ctx, args)
     }

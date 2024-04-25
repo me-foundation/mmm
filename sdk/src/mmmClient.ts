@@ -702,20 +702,25 @@ export class MMMClient {
       const asset = deserializeAssetV1(
         convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
       );
-      builder = this.program.methods.mplCoreDepositSell(args).accountsStrict({
-        owner: this.poolData.owner,
-        cosigner: this.poolData.cosigner,
-        pool: this.poolData.pool,
-        asset: assetMint,
-        sellState: getMMMSellStatePDA(
-          MMMProgramID,
-          this.poolData.pool,
-          assetMint,
-        ).key,
-        collection: collectionAddress(asset) || PublicKey.default,
-        systemProgram: SystemProgram.programId,
-        assetProgram: MPL_CORE_PROGRAM_ID,
-      });
+      const mplCoreArgs = {
+        allowlistAux: args.allowlistAux,
+      } as anchor.IdlTypes<Mmm>['MplCoreDepositSellArgs'];
+      builder = this.program.methods
+        .mplCoreDepositSell(mplCoreArgs)
+        .accountsStrict({
+          owner: this.poolData.owner,
+          cosigner: this.poolData.cosigner,
+          pool: this.poolData.pool,
+          asset: assetMint,
+          sellState: getMMMSellStatePDA(
+            MMMProgramID,
+            this.poolData.pool,
+            assetMint,
+          ).key,
+          collection: collectionAddress(asset) || PublicKey.default,
+          systemProgram: SystemProgram.programId,
+          assetProgram: MPL_CORE_PROGRAM_ID,
+        });
 
       return await builder.instruction();
     }
