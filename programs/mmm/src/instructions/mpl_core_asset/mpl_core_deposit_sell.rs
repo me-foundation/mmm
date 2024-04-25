@@ -28,7 +28,7 @@ pub struct MplCoreDepositSell<'info> {
     #[account(
         mut,
         constraint = asset.to_account_info().owner == asset_program.key,
-    )]    
+    )]
     pub asset: Box<Account<'info, IndexableAsset>>,
     #[account(
         init_if_needed,
