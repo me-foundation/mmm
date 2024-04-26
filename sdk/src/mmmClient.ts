@@ -45,6 +45,12 @@ import {
   MintExtTransferHookProvider,
   TransferHookProvider,
 } from './transferHookProvider';
+import {
+  collectionAddress,
+  deserializeAssetV1,
+  MPL_CORE_PROGRAM_ID,
+} from '@metaplex-foundation/mpl-core';
+import { lamports, publicKey, RpcAccount } from '@metaplex-foundation/umi';
 
 export const getEmptyAllowLists = (num: number) => {
   const emptyAllowList = {
@@ -57,6 +63,26 @@ export const getEmptyAllowLists = (num: number) => {
 export const MMMProgramID = new PublicKey(
   'mmm3XBJg5gk8XJxEKBvdgptZz6SgK4tXvn36sodowMc',
 );
+
+export function isMplCoreAsset(
+  account: anchor.web3.AccountInfo<Buffer>,
+): boolean {
+  return account?.owner.equals(new PublicKey(MPL_CORE_PROGRAM_ID)) ?? false;
+}
+
+export function convertAccountInfoToRpcAccount(
+  assetAddress: PublicKey,
+  accountInfo: anchor.web3.AccountInfo<Buffer>,
+): RpcAccount {
+  return {
+    executable: accountInfo.executable,
+    owner: MPL_CORE_PROGRAM_ID,
+    lamports: lamports(accountInfo.lamports),
+    rentEpoch: accountInfo.rentEpoch,
+    publicKey: publicKey(assetAddress),
+    data: accountInfo.data,
+  };
+}
 
 const dummyKeypair = new anchor.Wallet(new anchor.web3.Keypair());
 
@@ -663,6 +689,42 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+
+    let builder:
+      | ReturnType<MmmMethodsNamespace['ocpDepositSell']>
+      | ReturnType<MmmMethodsNamespace['depositSell']>
+      | ReturnType<MmmMethodsNamespace['mip1DepositSell']>
+      | ReturnType<MmmMethodsNamespace['extDepositSell']>
+      | ReturnType<MmmMethodsNamespace['mplCoreDepositSell']>;
+
+    const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
+    if (!!mintOrCoreAsset && isMplCoreAsset(mintOrCoreAsset)) {
+      const asset = deserializeAssetV1(
+        convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
+      );
+      const mplCoreArgs = {
+        allowlistAux: args.allowlistAux,
+      } as anchor.IdlTypes<Mmm>['MplCoreDepositSellArgs'];
+      builder = this.program.methods
+        .mplCoreDepositSell(mplCoreArgs)
+        .accountsStrict({
+          owner: this.poolData.owner,
+          cosigner: this.poolData.cosigner,
+          pool: this.poolData.pool,
+          asset: assetMint,
+          sellState: getMMMSellStatePDA(
+            MMMProgramID,
+            this.poolData.pool,
+            assetMint,
+          ).key,
+          collection: collectionAddress(asset) || PublicKey.default,
+          systemProgram: SystemProgram.programId,
+          assetProgram: MPL_CORE_PROGRAM_ID,
+        });
+
+      return await builder.instruction();
+    }
+
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
     const mintContext =
       metadataProvider ??
@@ -693,11 +755,6 @@ export class MMMClient {
     );
 
     const ocpMintState = mintContext.mintState;
-    let builder:
-      | ReturnType<MmmMethodsNamespace['ocpDepositSell']>
-      | ReturnType<MmmMethodsNamespace['depositSell']>
-      | ReturnType<MmmMethodsNamespace['mip1DepositSell']>
-      | ReturnType<MmmMethodsNamespace['extDepositSell']>;
 
     if (doesTokenExtensionExist(mintContext)) {
       builder = this.program.methods.extDepositSell(args).accountsStrict({

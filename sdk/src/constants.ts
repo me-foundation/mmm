@@ -18,6 +18,7 @@ export enum AllowlistKind {
   mcc = 3,
   metadata = 4,
   group = 5,
+  mpl_core_collection = 6,
   any = 255,
 }
 

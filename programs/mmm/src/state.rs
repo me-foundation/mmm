@@ -11,6 +11,7 @@ pub const ALLOWLIST_KIND_MINT: u8 = 2;
 pub const ALLOWLIST_KIND_MCC: u8 = 3;
 pub const ALLOWLIST_KIND_METADATA: u8 = 4;
 pub const ALLOWLIST_KIND_GROUP: u8 = 5;
+pub const ALLOWLIST_KIND_MPL_CORE_COLLECTION: u8 = 6;
 // ANY nft will pass the allowlist check, please make sure to use cosigner to check NFT validity
 pub const ALLOWLIST_KIND_ANY: u8 = u8::MAX;
 
@@ -27,10 +28,11 @@ impl Allowlist {
     // kind == 3: verified MCC
     // kind == 4: metadata
     // kind == 5: group extension
-    // kind == 6,7,... will be supported in the future
+    // kind == 6: upgrade authority
+    // kind == 7,8,... will be supported in the future
     // kind == 255: any
     pub fn valid(&self) -> bool {
-        if self.kind > ALLOWLIST_KIND_GROUP && self.kind != ALLOWLIST_KIND_ANY {
+        if self.kind > ALLOWLIST_KIND_MPL_CORE_COLLECTION && self.kind != ALLOWLIST_KIND_ANY {
             return false;
         }
         if self.kind != 0 && self.kind != ALLOWLIST_KIND_ANY {

@@ -36,6 +36,9 @@ address = "99jtJwGDfaBKXtc7kxQneAGbERGK8F5XyJWHv7qTbj9G" # global deny list for 
 [[test.validator.clone]]
 address = "CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV" # libreplex royalty enforcement
 
+[[test.validator.clone]]
+address = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d" # metaplex core program
+
 [[test.genesis]]
 address = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 program = "./tests/deps/spl_token_2022.so"

@@ -1908,6 +1908,59 @@ export type Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "mplCoreDepositSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreDepositSellArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -2232,6 +2285,20 @@ export type Mmm = {
           {
             "name": "takerFeeBp",
             "type": "i16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreDepositSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -2567,6 +2634,11 @@ export type Mmm = {
       "code": 6031,
       "name": "InvalidTokenMemberExtension",
       "msg": "Invalid token member extensions"
+    },
+    {
+      "code": 6032,
+      "name": "InvalidAssetCollection",
+      "msg": "Invalid asset collection"
     }
   ]
 };
@@ -4481,6 +4553,59 @@ export const IDL: Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "mplCoreDepositSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreDepositSellArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -4805,6 +4930,20 @@ export const IDL: Mmm = {
           {
             "name": "takerFeeBp",
             "type": "i16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreDepositSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
           }
         ]
       }
@@ -5140,6 +5279,11 @@ export const IDL: Mmm = {
       "code": 6031,
       "name": "InvalidTokenMemberExtension",
       "msg": "Invalid token member extensions"
+    },
+    {
+      "code": 6032,
+      "name": "InvalidAssetCollection",
+      "msg": "Invalid asset collection"
     }
   ]
 };
