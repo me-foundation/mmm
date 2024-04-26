@@ -1961,6 +1961,57 @@ export type Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "mplCoreWithdrawSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -4606,6 +4657,57 @@ export const IDL: Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "mplCoreWithdrawSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [

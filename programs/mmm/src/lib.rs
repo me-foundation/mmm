@@ -159,4 +159,8 @@ pub mod mmm {
     ) -> Result<()> {
         instructions::mpl_core_deposit_sell::handler(ctx, args)
     }
+
+    pub fn mpl_core_withdraw_sell(ctx: Context<MplCoreWithdrawSell>) -> Result<()> {
+        instructions::mpl_core_withdraw_sell::handler(ctx)
+    }
 }
