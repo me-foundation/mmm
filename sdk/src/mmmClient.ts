@@ -856,6 +856,41 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let builder:
+      | ReturnType<MmmMethodsNamespace['ocpWithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['withdrawSell']>
+      | ReturnType<MmmMethodsNamespace['mip1WithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['extWithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['mplCoreWithdrawSell']>;
+
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      this.poolData.pool,
+    );
+
+    const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
+    if (mintOrCoreAsset && isMplCoreAsset(mintOrCoreAsset)) {
+      const asset = deserializeAssetV1(
+        convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
+      );
+      builder = this.program.methods.mplCoreWithdrawSell().accountsStrict({
+        owner: this.poolData.owner,
+        cosigner: this.poolData.cosigner,
+        pool: this.poolData.pool,
+        asset: assetMint,
+        buysideSolEscrowAccount,
+        sellState: getMMMSellStatePDA(
+          MMMProgramID,
+          this.poolData.pool,
+          assetMint,
+        ).key,
+        collection: collectionAddress(asset) || PublicKey.default,
+        systemProgram: SystemProgram.programId,
+        assetProgram: MPL_CORE_PROGRAM_ID,
+      });
+
+      return await builder.instruction();
+    }
     const mintContext =
       metadataProvider ??
       (await this.metadataProviderGenerator(assetMint, this.conn));
@@ -884,18 +919,9 @@ export class MMMClient {
       mintContext.tokenProgram,
     );
 
-    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
-      MMMProgramID,
-      this.poolData.pool,
-    );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
 
     const ocpMintState = mintContext.mintState;
-    let builder:
-      | ReturnType<MmmMethodsNamespace['ocpWithdrawSell']>
-      | ReturnType<MmmMethodsNamespace['withdrawSell']>
-      | ReturnType<MmmMethodsNamespace['mip1WithdrawSell']>
-      | ReturnType<MmmMethodsNamespace['extWithdrawSell']>;
 
     if (doesTokenExtensionExist(mintContext)) {
       builder = this.program.methods.extWithdrawSell(args).accountsStrict({
