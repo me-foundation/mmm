@@ -27,9 +27,9 @@ pub const LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID: Pubkey =
     pubkey!("CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV");
 
 pub const T22_EXTENSION_ALLOW_LIST: [spl_token_2022::extension::ExtensionType; 5] = [
+    ExtensionType::GroupMemberPointer,
     ExtensionType::MetadataPointer,
     ExtensionType::TokenMetadata,
-    ExtensionType::TransferHook,
-    ExtensionType::GroupMemberPointer,
     ExtensionType::TokenGroupMember,
+    ExtensionType::TransferHook,
 ];
