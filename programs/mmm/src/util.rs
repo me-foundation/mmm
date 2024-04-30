@@ -716,7 +716,7 @@ pub fn assert_valid_extension(mint_deserialized: &StateWithExtensions<Token22Min
     let extension_types = mint_deserialized.get_extension_types()?;
     for ext in extension_types.iter() {
         if !T22_EXTENSION_ALLOW_LIST.contains(ext) {
-            return Err(MMMErrorCode::InvalidTokenMint.into());
+            return Err(MMMErrorCode::InvalidTokenExtension.into());
         }
     }
 
