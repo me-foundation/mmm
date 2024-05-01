@@ -26,9 +26,10 @@ pub const M2_AUCTION_HOUSE: Pubkey = pubkey!("E8cU1WiRWjanGxmn96ewBgk9vPTcL6AEZ1
 pub const LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID: Pubkey =
     pubkey!("CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV");
 
-pub const T22_EXTENSION_ALLOW_LIST: [spl_token_2022::extension::ExtensionType; 5] = [
+pub const T22_EXTENSION_ALLOW_LIST: [spl_token_2022::extension::ExtensionType; 6] = [
     ExtensionType::GroupMemberPointer,
     ExtensionType::MetadataPointer,
+    ExtensionType::MintCloseAuthority,
     ExtensionType::TokenMetadata,
     ExtensionType::TokenGroupMember,
     ExtensionType::TransferHook,
