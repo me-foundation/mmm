@@ -67,5 +67,7 @@ pub enum MMMErrorCode {
     #[msg("Invalid token member extensions")]
     InvalidTokenMemberExtension, // 0x178f
     #[msg("Invalid asset collection")]
-    InvalidAssetCollection,
+    InvalidAssetCollection, // 0x1790
+    #[msg("Invalid token extension")]
+    InvalidTokenExtension, // 0x1791
 }

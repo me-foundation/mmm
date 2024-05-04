@@ -2,7 +2,7 @@ use crate::{
     constants::{
         LIBREPLEX_ROYALTY_ENFORCEMENT_PROGRAM_ID, M2_AUCTION_HOUSE, M2_PREFIX, M2_PROGRAM,
         MAX_METADATA_CREATOR_ROYALTY_BP, MAX_REFERRAL_FEE_BP, MAX_TOTAL_PRICE,
-        MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
+        MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX, T22_EXTENSION_ALLOW_LIST,
     },
     errors::MMMErrorCode,
     state::*,
@@ -712,6 +712,17 @@ pub fn check_remaining_accounts_for_m2(
     Ok(())
 }
 
+pub fn assert_valid_extension(mint_deserialized: &StateWithExtensions<Token22Mint>) -> Result<()> {
+    let extension_types = mint_deserialized.get_extension_types()?;
+    for ext in extension_types.iter() {
+        if !T22_EXTENSION_ALLOW_LIST.contains(ext) {
+            return Err(MMMErrorCode::InvalidTokenExtension.into());
+        }
+    }
+
+    Ok(())
+}
+
 pub fn check_allowlists_for_mint_ext(
     allowlists: &[Allowlist],
     mint: &AccountInfo,
@@ -721,6 +732,12 @@ pub fn check_allowlists_for_mint_ext(
         return Err(MMMErrorCode::InvalidTokenMint.into());
     }
 
+    let borrowed_data = mint.data.borrow();
+    let mint_deserialized = StateWithExtensions::<Token22Mint>::unpack(&borrowed_data)?;
+    if !mint_deserialized.base.is_initialized {
+        return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
+    }
+    assert_valid_extension(&mint_deserialized)?;
     let parsed_metadata = assert_and_get_metadata_from_ext(mint)?;
 
     if allowlists
@@ -741,7 +758,7 @@ pub fn check_allowlists_for_mint_ext(
         }
     }
 
-    assert_valid_group_member_pointer(mint)?;
+    assert_valid_group_member_pointer(&mint_deserialized, mint.key)?;
 
     for allowlist_val in allowlists.iter() {
         match allowlist_val.kind {
@@ -972,14 +989,12 @@ pub fn assert_creator_valid_for_ext(mint: &AccountInfo, creator: &Pubkey) -> Res
     Err(MMMErrorCode::InvalidCreatorAddress.into())
 }
 
-pub fn assert_valid_group_member_pointer(mint: &AccountInfo) -> Result<()> {
-    let borrowed_data = mint.data.borrow();
-    let mint_deserialized = StateWithExtensions::<Token22Mint>::unpack(&borrowed_data)?;
-    if !mint_deserialized.base.is_initialized {
-        return Err(MMMErrorCode::InvalidTokenMetadataExtension.into());
-    }
+pub fn assert_valid_group_member_pointer(
+    mint_deserialized: &StateWithExtensions<Token22Mint>,
+    mint_key: &Pubkey,
+) -> Result<()> {
     if let Ok(group_member_ptr) = mint_deserialized.get_extension::<GroupMemberPointer>() {
-        if Some(*mint.key) != Option::<Pubkey>::from(group_member_ptr.member_address) {
+        if Some(*mint_key) != Option::<Pubkey>::from(group_member_ptr.member_address) {
             msg!("group member pointer does not point to itself");
             return Err(MMMErrorCode::InvalidTokenMemberExtension.into());
         }
@@ -1060,13 +1075,6 @@ pub fn get_royalty_enforcement_legacy_from_additional_metadata(
     Err(MMMErrorCode::InvalidCreatorAddress.into())
 }
 
-fn decode_hex(s: &str) -> Vec<u8> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use anchor_spl::token_2022;
@@ -1075,6 +1083,13 @@ mod tests {
     use super::*;
 
     pub const T22_LIBREPLEX_ROYALTY_ENFORCEMENT_ACCOUNT_DATA_STR: &str = "00000000f44743c862fb455afa2663e12584e9147a58ee3a65ed11ec6e67e2b7997230200100000000000000000101000000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a79100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000112004000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a7912a8bdd3a8f9bf26e037369cfcdb8b627f06611e598accf90410f40073befdf8f16004000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a7912a8bdd3a8f9bf26e037369cfcdb8b627f06611e598accf90410f40073befdf8f0e004000d1403acb68b8612b6e4cab280028e5fff33fa0bb78d293fbd5f4bd2a7c59a791aba41af6c8792187d8323772a501b618b4a4666f033502fa32793d0fc268054c13000001e07bb0500091230c31f27344e73d3cfd60406e4597572cace5e3dd315557d9bc2a8bdd3a8f9bf26e037369cfcdb8b627f06611e598accf90410f40073befdf8f0a0000004c6f6c6c692023393033050000006c6f6c6c695500000068747470733a2f2f676174657761792e70696e69742e696f2f697066732f516d553259634c4373427738726e4a4d4565337052705938363533426a706a367566467932747848686e4e6a46422f3735312e6a736f6e02000000310000005f726f615f333346334647734273784368664a616a356544666e33674778584b4e376f74464e783656795a69317261534a03000000313030050000005f726f735f03000000333030";
+
+    fn decode_hex(s: &str) -> Vec<u8> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
+    }
 
     #[test]
     fn test_get_transfer_hook_program_id() {
