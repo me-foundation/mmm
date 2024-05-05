@@ -1982,7 +1982,7 @@ export type Mmm = {
         },
         {
           "name": "asset",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -4678,7 +4678,7 @@ export const IDL: Mmm = {
         },
         {
           "name": "asset",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {

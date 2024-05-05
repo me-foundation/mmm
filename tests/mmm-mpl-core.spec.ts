@@ -5,6 +5,7 @@ import {
   IDL,
   MMMProgramID,
   Mmm,
+  getMMMBuysideSolEscrowPDA,
   getMMMSellStatePDA,
 } from '../sdk/src';
 import {
@@ -39,7 +40,7 @@ describe('mmm-mpl-core', () => {
     await airdrop(connection, creator.publicKey, 10);
   });
 
-  it('can deposit sell - asset with collection', async () => {
+  it('can deposit & withdraw sell - asset with collection', async () => {
     const { asset, collection } = await createTestMplCoreAsset(
       publicKey(wallet.publicKey),
       {
@@ -102,6 +103,43 @@ describe('mmm-mpl-core', () => {
 
     // Verify asset account.
     assert.equal(refreshedAsset.owner.toString(), poolData.poolKey.toString());
+
+    // Withdraw
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      poolData.poolKey,
+    );
+
+    await program.methods
+      .mplCoreWithdrawSell()
+      .accounts({
+        owner: wallet.publicKey,
+        cosigner: cosigner.publicKey,
+        pool: poolData.poolKey,
+        asset: asset.publicKey,
+        collection: collection!.publicKey,
+        sellState,
+        buysideSolEscrowAccount,
+        systemProgram: SystemProgram.programId,
+        assetProgram: MPL_CORE_PROGRAM_ID,
+      })
+      .preInstructions([
+        ComputeBudgetProgram.setComputeUnitLimit({
+          units: 1_000_000,
+        }),
+      ])
+      .signers([cosigner])
+      .rpc({ skipPreflight: true });
+
+    const refreshedAssetAfterWithdraw = await getTestMplCoreAsset(
+      asset.publicKey,
+    );
+
+    // Verify asset account.
+    assert.equal(
+      refreshedAssetAfterWithdraw.owner.toString(),
+      wallet.publicKey.toString(),
+    );
   });
 
   it("can't deposit sell - asset from other collection", async () => {

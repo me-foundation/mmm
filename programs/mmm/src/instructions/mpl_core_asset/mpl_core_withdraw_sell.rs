@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use mpl_core::{instructions::TransferV1Builder, types::UpdateAuthority};
-use solana_program::program::invoke;
+use solana_program::program::{invoke, invoke_signed};
 
 use crate::{
     constants::*,
@@ -23,6 +23,10 @@ pub struct MplCoreWithdrawSell<'info> {
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
+    #[account(
+        mut,
+        constraint = asset.to_account_info().owner == asset_program.key,
+    )]
     pub asset: Box<Account<'info, IndexableAsset>>,
     /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
@@ -58,6 +62,7 @@ pub fn handler(ctx: Context<MplCoreWithdrawSell>) -> Result<()> {
     let transfer_asset_builder = TransferV1Builder::new()
         .asset(asset.key())
         .payer(owner.key())
+        .authority(Some(pool.key()))
         .collection(
             if let UpdateAuthority::Collection(collection_address) = asset.update_authority {
                 Some(collection_address)
@@ -80,7 +85,18 @@ pub fn handler(ctx: Context<MplCoreWithdrawSell>) -> Result<()> {
         account_infos.push(collection.to_account_info());
     }
 
-    invoke(&transfer_asset_builder, account_infos.as_slice())?;
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        pool.owner.as_ref(),
+        pool.uuid.as_ref(),
+        &[ctx.bumps.pool],
+    ]];
+
+    invoke_signed(
+        &transfer_asset_builder,
+        account_infos.as_slice(),
+        pool_seeds,
+    )?;
 
     pool.sellside_asset_amount = pool
         .sellside_asset_amount
