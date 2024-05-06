@@ -5,6 +5,7 @@ use crate::{
         MIN_SOL_ESCROW_BALANCE_BP, POOL_PREFIX,
     },
     errors::MMMErrorCode,
+    get_creators_from_royalties,
     state::*,
     IndexableAsset,
 };
@@ -13,10 +14,10 @@ use anchor_spl::token_interface::Mint;
 use m2_interface::{
     withdraw_by_mmm_ix_with_program_id, WithdrawByMMMArgs, WithdrawByMmmIxArgs, WithdrawByMmmKeys,
 };
-use mpl_core::types::UpdateAuthority;
+use mpl_core::types::{Royalties, UpdateAuthority};
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
-    types::TokenStandard,
+    types::{Creator, TokenStandard},
 };
 use open_creator_protocol::state::Policy;
 use solana_program::program::invoke_signed;
@@ -439,16 +440,15 @@ pub fn try_close_sell_state<'info>(
 
 pub fn get_metadata_royalty_bp(
     total_price: u64,
-    parsed_metadata: &Metadata,
+    parsed_metadata: &impl MetadataTrait,
     policy: Option<&Account<'_, Policy>>,
 ) -> u16 {
     match policy {
-        None => parsed_metadata.seller_fee_basis_points,
+        None => parsed_metadata.get_seller_fee_basis_points(),
         Some(p) => match &p.dynamic_royalty {
-            None => parsed_metadata.seller_fee_basis_points,
-            Some(dynamic_royalty) => {
-                dynamic_royalty.get_royalty_bp(total_price, parsed_metadata.seller_fee_basis_points)
-            }
+            None => parsed_metadata.get_seller_fee_basis_points(),
+            Some(dynamic_royalty) => dynamic_royalty
+                .get_royalty_bp(total_price, parsed_metadata.get_seller_fee_basis_points()),
         },
     }
 }
@@ -509,7 +509,7 @@ pub fn pay_creator_fees_in_sol_ext<'info>(
 pub fn pay_creator_fees_in_sol<'info>(
     buyside_creator_royalty_bp: u16,
     total_price: u64,
-    parsed_metadata: &Metadata,
+    parsed_metadata: &dyn MetadataTrait,
     creator_accounts: &[AccountInfo<'info>],
     payer: AccountInfo<'info>,
     metadata_royalty_bp: u16,
@@ -535,8 +535,8 @@ pub fn pay_creator_fees_in_sol<'info>(
         return Ok(0);
     }
 
-    let creators = if let Some(creators) = &parsed_metadata.creators {
-        creators
+    let creators = if let Some(creators) = parsed_metadata.get_creators() {
+        creators.clone()
     } else {
         return Ok(0);
     };
@@ -546,7 +546,7 @@ pub fn pay_creator_fees_in_sol<'info>(
     }
 
     // hardcoded the max threshold for InvalidMetadataCreatorRoyalty
-    if parsed_metadata.seller_fee_basis_points > MAX_METADATA_CREATOR_ROYALTY_BP {
+    if parsed_metadata.get_seller_fee_basis_points() > MAX_METADATA_CREATOR_ROYALTY_BP {
         return Err(MMMErrorCode::InvalidMetadataCreatorRoyalty.into());
     }
     let min_rent = Rent::get()?.minimum_balance(0);
@@ -1065,6 +1065,43 @@ fn decode_hex(s: &str) -> Vec<u8> {
         .step_by(2)
         .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
         .collect()
+}
+
+// mpl core
+pub trait MetadataTrait {
+    fn get_seller_fee_basis_points(&self) -> u16;
+    fn get_creators(&self) -> Option<Vec<Creator>>;
+}
+
+pub struct MplCoreMetadata {
+    pub seller_fee_basis_points: u16,
+    pub creators: Option<Vec<Creator>>,
+}
+
+impl MetadataTrait for MplCoreMetadata {
+    fn get_seller_fee_basis_points(&self) -> u16 {
+        self.seller_fee_basis_points
+    }
+
+    fn get_creators(&self) -> Option<Vec<Creator>> {
+        self.creators.clone()
+    }
+}
+impl MetadataTrait for Metadata {
+    fn get_seller_fee_basis_points(&self) -> u16 {
+        self.seller_fee_basis_points
+    }
+
+    fn get_creators(&self) -> Option<Vec<Creator>> {
+        self.creators.clone()
+    }
+}
+
+pub fn create_core_metadata_core(royalties: &Royalties) -> MplCoreMetadata {
+    MplCoreMetadata {
+        seller_fee_basis_points: royalties.basis_points,
+        creators: Some(get_creators_from_royalties(royalties)),
+    }
 }
 
 #[cfg(test)]
