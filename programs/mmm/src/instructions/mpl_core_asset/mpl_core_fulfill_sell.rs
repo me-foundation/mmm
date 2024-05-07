@@ -60,8 +60,6 @@ pub struct MplCoreFulfillSell<'info> {
         constraint = asset.to_account_info().owner == asset_program.key,
     )]
     pub asset: Box<Account<'info, IndexableAsset>>,
-    /// CHECK: will be used for allowlist checks
-    pub allowlist_aux_account: UncheckedAccount<'info>,
     #[account(
         mut,
         seeds = [
@@ -155,8 +153,8 @@ pub fn handler<'info>(
 
     let mut account_infos = vec![
         asset.to_account_info(),
-        owner.to_account_info(),
         pool.to_account_info(),
+        payer.to_account_info(),
     ];
     if collection.key != &Pubkey::default() {
         if UpdateAuthority::Collection(collection.key()) != asset.update_authority {
@@ -179,7 +177,6 @@ pub fn handler<'info>(
             &[
                 payer.to_account_info(),
                 owner.to_account_info(),
-                system_program.to_account_info(),
             ],
         )?;
     }
@@ -194,7 +191,6 @@ pub fn handler<'info>(
             &[
                 payer.to_account_info(),
                 referral.to_account_info(),
-                system_program.to_account_info(),
             ],
         )?;
     }

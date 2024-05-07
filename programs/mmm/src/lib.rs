@@ -163,4 +163,11 @@ pub mod mmm {
     pub fn mpl_core_withdraw_sell(ctx: Context<MplCoreWithdrawSell>) -> Result<()> {
         instructions::mpl_core_withdraw_sell::handler(ctx)
     }
+
+    pub fn mpl_core_fulfill_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, MplCoreFulfillSell<'info>>,
+        args: SolFulfillSellArgs,
+    ) -> Result<()> {
+        instructions::mpl_core_fulfill_sell::handler(ctx, args)
+    }
 }
