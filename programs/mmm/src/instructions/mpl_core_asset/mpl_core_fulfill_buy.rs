@@ -233,7 +233,7 @@ pub fn handler<'info>(
         let mut account_infos = vec![
             asset.to_account_info(),
             owner.to_account_info(),
-            pool.to_account_info(),
+            payer.to_account_info(),
         ];
         if collection.key != &Pubkey::default() {
             if UpdateAuthority::Collection(collection.key()) != asset.update_authority {
