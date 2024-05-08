@@ -1227,7 +1227,7 @@ export const createPoolWithExampleMplCoreDeposits = async (
     assetArgs,
   );
 
-  const allowlists = [
+  const allowlists = poolArgs.allowlists ?? [
     {
       value: toWeb3JsPublicKey(collection!.publicKey),
       kind: AllowlistKind.mpl_core_collection,
