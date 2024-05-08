@@ -352,6 +352,99 @@ describe('mmm-mpl-core', () => {
         wallet.publicKey.toString(),
       );
     });
+
+    it('cant deposit sell - denylist', async () => {
+      const { asset, collection } = await createTestMplCoreAsset(
+        publicKey(wallet.publicKey),
+        {
+          collectionConfig: {
+            plugins: [
+              pluginAuthorityPair({
+                type: 'Royalties',
+                data: {
+                  basisPoints: 500,
+                  creators: [
+                    {
+                      address: publicKey(creator1.publicKey),
+                      percentage: 20,
+                    },
+                    {
+                      address: publicKey(creator2.publicKey),
+                      percentage: 80,
+                    },
+                  ],
+                  ruleSet: ruleSet('ProgramDenyList', [
+                    [
+                      publicKey(MMMProgramID),
+                      publicKey(SystemProgram.programId),
+                    ],
+                  ]),
+                },
+              }),
+            ],
+          },
+          assetConfig: {
+            plugins: [],
+          },
+        },
+      );
+
+      const poolData = await createPool(program, {
+        owner: wallet.publicKey,
+        cosigner,
+        allowlists: [
+          {
+            value: Keypair.generate().publicKey, // different collection
+            kind: AllowlistKind.mpl_core_collection,
+          },
+          ...getEmptyAllowLists(5),
+        ],
+      });
+
+      const { key: sellState } = getMMMSellStatePDA(
+        program.programId,
+        poolData.poolKey,
+        toWeb3JsPublicKey(asset.publicKey),
+      );
+
+      try {
+        await program.methods
+          .mplCoreDepositSell({
+            allowlistAux: null,
+          })
+          .accountsStrict({
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            pool: poolData.poolKey,
+            asset: asset.publicKey,
+            sellState,
+            collection: collection!.publicKey,
+            systemProgram: SystemProgram.programId,
+            assetProgram: MPL_CORE_PROGRAM_ID,
+          })
+          .preInstructions([
+            ComputeBudgetProgram.setComputeUnitLimit({
+              units: 1_000_000,
+            }),
+          ])
+          .signers([cosigner])
+          .rpc({ skipPreflight: true });
+      } catch (e) {
+        expect(e).to.be.instanceOf(ProgramError);
+        const err = e as ProgramError;
+
+        assert.strictEqual(err.msg, 'invalid allowlists');
+        assert.strictEqual(err.code, 6001);
+      }
+
+      const refreshedAsset = await getTestMplCoreAsset(asset.publicKey);
+
+      // Verify asset account.
+      assert.equal(
+        refreshedAsset.owner.toString(),
+        wallet.publicKey.toString(),
+      );
+    });
   });
 
   describe('fulfill sell', () => {
@@ -538,7 +631,7 @@ describe('mmm-mpl-core', () => {
       assert.equal(poolAccount.sellsideAssetAmount.toNumber(), 0);
     });
 
-    it('can fulfill sell - collection level royalty', async () => {
+    it('can fulfill sell - collection level royalty & allowlist', async () => {
       const { asset, collection } = await createTestMplCoreAsset(
         publicKey(wallet.publicKey),
         {
@@ -558,7 +651,12 @@ describe('mmm-mpl-core', () => {
                       percentage: 80,
                     },
                   ],
-                  ruleSet: ruleSet('None'),
+                  ruleSet: ruleSet('ProgramAllowList', [
+                    [
+                      publicKey(MMMProgramID),
+                      publicKey(SystemProgram.programId),
+                    ],
+                  ]),
                 },
               }),
             ],
@@ -1301,11 +1399,9 @@ describe('mmm-mpl-core', () => {
           .signers([cosigner, seller])
           .rpc({ skipPreflight: true });
       } catch (e) {
-        console.log(`Error type: ${JSON.stringify(e)}`);
         expect(e).to.be.instanceOf(ProgramError);
         const err = e as ProgramError;
 
-        console.log(`err: ${err}`);
         assert.strictEqual(err.msg, 'invalid allowlists');
         assert.strictEqual(err.code, 6001);
       }

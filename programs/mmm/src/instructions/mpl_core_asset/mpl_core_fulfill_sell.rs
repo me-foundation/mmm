@@ -21,10 +21,6 @@ use crate::{
     AssetInterface, IndexableAsset, SolFulfillSellArgs,
 };
 
-// FulfillSell means a buyer wants to buy NFT/SFT from the pool
-// where the pool has some sellside asset liquidity. Therefore,
-// the buyer expects to pay a max_payment_amount for the asset_amount
-// that the buyer wants to buy.
 #[derive(Accounts)]
 #[instruction(args:SolFulfillSellArgs)]
 pub struct MplCoreFulfillSell<'info> {

@@ -22,10 +22,6 @@ use crate::{
     AssetInterface, IndexableAsset, SolFulfillBuyArgs,
 };
 
-// FulfillBuy means a seller wants to sell NFT/SFT into the pool
-// where the pool has some buyside payment liquidity. Therefore,
-// the seller expects a min_payment_amount that goes back to the
-// seller's wallet for the asset_amount that the seller wants to sell.
 #[derive(Accounts)]
 #[instruction(args:SolFulfillBuyArgs)]
 pub struct MplCoreFulfillBuy<'info> {
@@ -287,7 +283,6 @@ pub fn handler<'info>(
         &[
             buyside_sol_escrow_account.to_account_info(),
             payer.to_account_info(),
-            system_program.to_account_info(),
         ],
         buyside_sol_escrow_account_seeds,
     )?;
@@ -353,7 +348,6 @@ pub fn handler<'info>(
                 &[
                     buyside_sol_escrow_account.to_account_info(),
                     shared_escrow_account,
-                    system_program.to_account_info(),
                 ],
                 buyside_sol_escrow_account_seeds,
             )?;
