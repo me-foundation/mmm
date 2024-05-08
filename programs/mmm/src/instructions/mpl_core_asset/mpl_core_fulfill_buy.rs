@@ -4,14 +4,22 @@ use solana_program::program::invoke;
 use std::convert::TryFrom;
 
 use crate::{
-    assert_valid_core_plugins, constants::*, deserialize_collection_asset, errors::MMMErrorCode, get_royalties_from_plugin, index_ra, instructions::{
+    assert_valid_core_plugins,
+    constants::*,
+    deserialize_collection_asset,
+    errors::MMMErrorCode,
+    get_royalties_from_plugin, index_ra,
+    instructions::{
         check_allowlists_for_mpl_core, check_remaining_accounts_for_m2, create_core_metadata_core,
         withdraw_m2,
-    }, state::{Pool, SellState}, util::{
+    },
+    state::{Pool, SellState},
+    util::{
         assert_valid_fees_bp, get_buyside_seller_receives, get_lp_fee_bp, get_metadata_royalty_bp,
         get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool,
         pay_creator_fees_in_sol, try_close_escrow, try_close_pool, try_close_sell_state,
-    }, AssetInterface, IndexableAsset, SolFulfillBuyArgs
+    },
+    AssetInterface, IndexableAsset, SolFulfillBuyArgs,
 };
 
 // FulfillBuy means a seller wants to sell NFT/SFT into the pool
