@@ -174,10 +174,7 @@ pub fn handler<'info>(
             &anchor_lang::solana_program::system_instruction::transfer(
                 payer.key, owner.key, lp_fee,
             ),
-            &[
-                payer.to_account_info(),
-                owner.to_account_info(),
-            ],
+            &[payer.to_account_info(), owner.to_account_info()],
         )?;
     }
 
@@ -188,10 +185,7 @@ pub fn handler<'info>(
                 referral.key,
                 referral_fee,
             ),
-            &[
-                payer.to_account_info(),
-                referral.to_account_info(),
-            ],
+            &[payer.to_account_info(), referral.to_account_info()],
         )?;
     }
 
