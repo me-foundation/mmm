@@ -4,6 +4,7 @@ use mpl_core::types::UpdateAuthority;
 use solana_program::program::invoke;
 
 use crate::{
+    assert_valid_core_plugins,
     constants::*,
     errors::MMMErrorCode,
     state::{Pool, SellState},
@@ -65,6 +66,7 @@ pub fn handler(ctx: Context<MplCoreDepositSell>, args: MplCoreDepositSellArgs) -
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
+    assert_valid_core_plugins(asset)?;
     let _ = check_allowlists_for_mpl_core(&pool.allowlists, asset, args.allowlist_aux)?;
 
     let transfer_asset_builder = TransferV1Builder::new()

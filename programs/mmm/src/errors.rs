@@ -70,4 +70,6 @@ pub enum MMMErrorCode {
     InvalidAssetCollection, // 0x1790
     #[msg("Invalid token extension")]
     InvalidTokenExtension, // 0x1791
+    #[msg("Unsupported asset plugin")]
+    UnsupportedAssetPlugin, // 0x1792
 }

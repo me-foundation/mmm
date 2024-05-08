@@ -9,6 +9,13 @@ use std::ops::Deref;
 
 use crate::errors::MMMErrorCode;
 
+pub const CORE_ALLOW_LIST: [PluginType; 4] = [
+    PluginType::Royalties,
+    PluginType::Attributes,
+    PluginType::Edition,
+    PluginType::MasterEdition,
+];
+
 #[derive(Clone)]
 pub struct AssetInterface;
 
@@ -97,4 +104,13 @@ pub fn get_royalties_from_plugin(
         }
     }
     None
+}
+
+pub fn assert_valid_core_plugins(asset: &IndexableAsset) -> Result<(), Error> {
+    for plugin in asset.plugins.keys() {
+        if !CORE_ALLOW_LIST.contains(plugin) {
+            return Err(MMMErrorCode::UnsupportedAssetPlugin.into());
+        }
+    }
+    Ok(())
 }

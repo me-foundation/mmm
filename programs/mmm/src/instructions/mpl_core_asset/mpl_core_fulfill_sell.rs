@@ -4,20 +4,13 @@ use solana_program::program::invoke_signed;
 use std::convert::TryFrom;
 
 use crate::{
-    constants::*,
-    deserialize_collection_asset,
-    errors::MMMErrorCode,
-    get_royalties_from_plugin,
-    instructions::{
+    assert_valid_core_plugins, constants::*, deserialize_collection_asset, errors::MMMErrorCode, get_royalties_from_plugin, instructions::{
         check_allowlists_for_mpl_core, create_core_metadata_core, get_sell_fulfill_pool_price_info,
         PoolPriceInfo,
-    },
-    state::{Pool, SellState},
-    util::{
+    }, state::{Pool, SellState}, util::{
         get_metadata_royalty_bp, log_pool, pay_creator_fees_in_sol, try_close_pool,
         try_close_sell_state,
-    },
-    AssetInterface, IndexableAsset, SolFulfillSellArgs,
+    }, AssetInterface, IndexableAsset, SolFulfillSellArgs
 };
 
 // FulfillSell means a buyer wants to buy NFT/SFT from the pool
@@ -98,6 +91,7 @@ pub fn handler<'info>(
     ]];
     let collection = &ctx.accounts.collection;
 
+    assert_valid_core_plugins(asset)?;
     let _ = check_allowlists_for_mpl_core(&pool.allowlists, asset, args.allowlist_aux)?;
 
     let PoolPriceInfo {

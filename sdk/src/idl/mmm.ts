@@ -2826,6 +2826,16 @@ export type Mmm = {
       "code": 6032,
       "name": "InvalidAssetCollection",
       "msg": "Invalid asset collection"
+    },
+    {
+      "code": 6033,
+      "name": "InvalidTokenExtension",
+      "msg": "Invalid token extension"
+    },
+    {
+      "code": 6034,
+      "name": "UnsupportedAssetPlugin",
+      "msg": "Unsupported asset plugin"
     }
   ]
 };
@@ -5658,6 +5668,16 @@ export const IDL: Mmm = {
       "code": 6032,
       "name": "InvalidAssetCollection",
       "msg": "Invalid asset collection"
+    },
+    {
+      "code": 6033,
+      "name": "InvalidTokenExtension",
+      "msg": "Invalid token extension"
+    },
+    {
+      "code": 6034,
+      "name": "UnsupportedAssetPlugin",
+      "msg": "Unsupported asset plugin"
     }
   ]
 };
