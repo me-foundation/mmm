@@ -822,7 +822,7 @@ describe('mmm-mpl-core', () => {
   });
 
   describe('fulfill buy', () => {
-    it.only('can fulfill buy - collection royalty & reinvest', async () => {
+    it('can fulfill buy - collection royalty & reinvest', async () => {
       const spotPrice = 0.5;
       const seller = Keypair.generate();
       await airdrop(connection, seller.publicKey, 10);
@@ -1007,6 +1007,132 @@ describe('mmm-mpl-core', () => {
       // Check pool state
       const poolAccount = await program.account.pool.fetch(poolData.poolKey);
       assert.equal(poolAccount.sellsideAssetAmount.toNumber(), 1);
+    });
+
+    it('cant fulfill buy - different collection', async () => {
+      const spotPrice = 0.5;
+      const seller = Keypair.generate();
+      await airdrop(connection, seller.publicKey, 10);
+      const {
+        asset,
+        collection,
+        poolData,
+        sellState,
+        buysideSolEscrowAccount,
+      } = await createPoolWithExampleMplCoreDeposits(
+        program,
+        {
+          owner: wallet.publicKey,
+          cosigner,
+          curveType: CurveKind.exp,
+          curveDelta: new anchor.BN(125), // 125 bp
+          expiry: new anchor.BN(0),
+          spotPrice: new anchor.BN(spotPrice * LAMPORTS_PER_SOL),
+          referralBp: 200,
+          reinvestFulfillBuy: true,
+          reinvestFulfillSell: false,
+          buysideCreatorRoyaltyBp: 10000,
+          allowlists: [
+            {
+              value: Keypair.generate().publicKey,
+              kind: AllowlistKind.mpl_core_collection, // different collection
+            },
+            ...getEmptyAllowLists(5),
+          ],
+        },
+        'buy',
+        seller.publicKey,
+        {
+          collectionConfig: {
+            plugins: [
+              pluginAuthorityPair({
+                type: 'Royalties',
+                data: {
+                  basisPoints: 500,
+                  creators: [
+                    {
+                      address: publicKey(creator1.publicKey),
+                      percentage: 20,
+                    },
+                    {
+                      address: publicKey(creator2.publicKey),
+                      percentage: 80,
+                    },
+                  ],
+                  ruleSet: ruleSet('None'),
+                },
+              }),
+            ],
+          },
+          assetConfig: {
+            plugins: [],
+          },
+        },
+      );
+
+      // Fulfill buy
+      const buyer = Keypair.generate();
+      await airdrop(connection, buyer.publicKey, 10);
+      try {
+        await program.methods
+          .mplCoreFulfillBuy({
+            assetAmount: new anchor.BN(1),
+            minPaymentAmount: new anchor.BN(0),
+            allowlistAux: '',
+            takerFeeBp: 100,
+            makerFeeBp: 0,
+          })
+          .accountsStrict({
+            payer: seller.publicKey,
+            owner: wallet.publicKey,
+            cosigner: cosigner.publicKey,
+            referral: poolData.referral.publicKey,
+            pool: poolData.poolKey,
+            buysideSolEscrowAccount,
+            asset: asset.publicKey,
+            sellState,
+            collection: collection!.publicKey,
+            systemProgram: SystemProgram.programId,
+            assetProgram: MPL_CORE_PROGRAM_ID,
+          })
+          .remainingAccounts([
+            {
+              pubkey: creator1.publicKey,
+              isSigner: false,
+              isWritable: true,
+            },
+            {
+              pubkey: creator2.publicKey,
+              isSigner: false,
+              isWritable: true,
+            },
+          ])
+          .preInstructions([
+            ComputeBudgetProgram.setComputeUnitLimit({
+              units: 1_000_000,
+            }),
+          ])
+          .signers([cosigner, seller])
+          .rpc({ skipPreflight: true });
+      } catch (e) {
+        console.log(`Error type: ${JSON.stringify(e)}`);
+        expect(e).to.be.instanceOf(ProgramError);
+        const err = e as ProgramError;
+
+        console.log(`err: ${err}`);
+        assert.strictEqual(err.msg, 'invalid allowlists');
+        assert.strictEqual(err.code, 6001);
+      }
+
+      const refreshedAssetAfterFulfill = await getTestMplCoreAsset(
+        asset.publicKey,
+      );
+
+      // Verify asset account.
+      assert.equal(
+        refreshedAssetAfterFulfill.owner.toString(),
+        seller.publicKey.toString(),
+      );
     });
   });
 });
