@@ -213,7 +213,7 @@ pub fn handler<'info>(
             let metadata = create_core_metadata_core(&royalties);
             let royalty_bp = get_metadata_royalty_bp(total_price, &metadata, None);
             pay_creator_fees_in_sol(
-                args.buyside_creator_royalty_bp,
+                10000,
                 total_price,
                 &metadata,
                 ctx.remaining_accounts,

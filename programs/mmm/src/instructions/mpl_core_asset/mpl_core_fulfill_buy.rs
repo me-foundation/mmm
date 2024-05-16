@@ -251,7 +251,7 @@ pub fn handler<'info>(
     // pool owner as buyer is going to pay the royalties
     let royalty_paid = if let Some(metadata) = &metadata {
         pay_creator_fees_in_sol(
-            pool.buyside_creator_royalty_bp,
+            10000,
             seller_receives,
             metadata,
             creator_accounts,
