@@ -78,6 +78,7 @@ describe('mmm-mpl-core', () => {
     const tx = await program.methods
       .mplCoreDepositSell({
         allowlistAux: null,
+        compressionProof: null,
       })
       .accountsStrict({
         owner: wallet.publicKey,
@@ -154,6 +155,7 @@ describe('mmm-mpl-core', () => {
       await program.methods
         .mplCoreDepositSell({
           allowlistAux: null,
+          compressionProof: null,
         })
         .accountsStrict({
           owner: wallet.publicKey,
@@ -198,7 +200,9 @@ describe('mmm-mpl-core', () => {
       );
 
       await program.methods
-        .mplCoreWithdrawSell()
+        .mplCoreWithdrawSell({
+          compressionProof: null,
+        })
         .accounts({
           owner: wallet.publicKey,
           cosigner: cosigner.publicKey,
@@ -259,6 +263,7 @@ describe('mmm-mpl-core', () => {
         await program.methods
           .mplCoreDepositSell({
             allowlistAux: null,
+            compressionProof: null,
           })
           .accountsStrict({
             owner: wallet.publicKey,
@@ -318,6 +323,7 @@ describe('mmm-mpl-core', () => {
         await program.methods
           .mplCoreDepositSell({
             allowlistAux: null,
+            compressionProof: null,
           })
           .accountsStrict({
             owner: wallet.publicKey,
@@ -411,6 +417,7 @@ describe('mmm-mpl-core', () => {
         await program.methods
           .mplCoreDepositSell({
             allowlistAux: null,
+            compressionProof: null,
           })
           .accountsStrict({
             owner: wallet.publicKey,
@@ -524,7 +531,6 @@ describe('mmm-mpl-core', () => {
       let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
       const tx = await program.methods
         .mplCoreFulfillSell({
-          assetAmount: new anchor.BN(1),
           maxPaymentAmount: new anchor.BN(
             1.02 * LAMPORTS_PER_SOL + expectedTakerFees,
           ),
@@ -532,6 +538,7 @@ describe('mmm-mpl-core', () => {
           allowlistAux: '',
           takerFeeBp: 100,
           makerFeeBp: 0,
+          compressionProof: null,
         })
         .accountsStrict({
           payer: buyer.publicKey,
@@ -694,7 +701,6 @@ describe('mmm-mpl-core', () => {
       let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
       const tx = await program.methods
         .mplCoreFulfillSell({
-          assetAmount: new anchor.BN(1),
           maxPaymentAmount: new anchor.BN(
             1.05 * LAMPORTS_PER_SOL + expectedTakerFees,
           ),
@@ -702,6 +708,7 @@ describe('mmm-mpl-core', () => {
           allowlistAux: '',
           takerFeeBp: 100,
           makerFeeBp: 0,
+          compressionProof: null,
         })
         .accountsStrict({
           payer: buyer.publicKey,
@@ -838,7 +845,6 @@ describe('mmm-mpl-core', () => {
       let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
       const tx = await program.methods
         .mplCoreFulfillSell({
-          assetAmount: new anchor.BN(1),
           maxPaymentAmount: new anchor.BN(
             1.01 * LAMPORTS_PER_SOL + expectedTakerFees,
           ),
@@ -846,6 +852,7 @@ describe('mmm-mpl-core', () => {
           allowlistAux: '',
           takerFeeBp: 100,
           makerFeeBp: 0,
+          compressionProof: null,
         })
         .accountsStrict({
           payer: buyer.publicKey,
@@ -996,11 +1003,11 @@ describe('mmm-mpl-core', () => {
       });
       const tx = await program.methods
         .mplCoreFulfillBuy({
-          assetAmount: new anchor.BN(1),
           minPaymentAmount: new anchor.BN(expectedBuyPrices.sellerReceives),
           allowlistAux: '',
           takerFeeBp: 100,
           makerFeeBp: 0,
+          compressionProof: null,
         })
         .accountsStrict({
           payer: seller.publicKey,
@@ -1183,11 +1190,11 @@ describe('mmm-mpl-core', () => {
       });
       const tx = await program.methods
         .mplCoreFulfillBuy({
-          assetAmount: new anchor.BN(1),
           minPaymentAmount: new anchor.BN(expectedBuyPrices.sellerReceives),
           allowlistAux: '',
           takerFeeBp: 100,
           makerFeeBp: 0,
+          compressionProof: null,
         })
         .accountsStrict({
           payer: seller.publicKey,
@@ -1357,11 +1364,11 @@ describe('mmm-mpl-core', () => {
       try {
         await program.methods
           .mplCoreFulfillBuy({
-            assetAmount: new anchor.BN(1),
             minPaymentAmount: new anchor.BN(0),
             allowlistAux: '',
             takerFeeBp: 100,
             makerFeeBp: 0,
+            compressionProof: null,
           })
           .accountsStrict({
             payer: seller.publicKey,

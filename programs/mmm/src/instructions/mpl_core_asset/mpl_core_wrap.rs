@@ -1,6 +1,6 @@
 use anchor_lang::{accounts::unchecked_account::UncheckedAccount, error::Error};
 use mpl_core::{
-    types::{Plugin, PluginType, Royalties},
+    types::{Plugin, PluginType, Royalties, UpdateAuthority},
     ID,
 };
 use mpl_token_metadata::types::Creator;
@@ -57,6 +57,9 @@ pub fn deserialize_collection_asset(
 ) -> Result<Option<IndexableAsset>, Error> {
     if collection_account.key == &Pubkey::default() {
         return Ok(None);
+    }
+    if *collection_account.owner != ID {
+        return Err(MMMErrorCode::InvalidAssetCollection.into());
     }
     let data = &collection_account.try_borrow_data()?;
     if let Ok(collection_asset) =

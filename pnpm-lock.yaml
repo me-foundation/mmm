@@ -21,7 +21,7 @@ dependencies:
     specifier: ^3.1.2
     version: 3.1.2(@metaplex-foundation/umi@0.8.10)
   '@metaplex-foundation/umi':
-    specifier: ^0.8.2
+    specifier: ^0.8.10
     version: 0.8.10
   '@metaplex-foundation/umi-bundle-tests':
     specifier: ^0.8.2

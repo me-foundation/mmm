@@ -10,7 +10,7 @@
     "@metaplex-foundation/mpl-core": "^0.4.5",
     "@metaplex-foundation/mpl-token-auth-rules": "^2.0.0",
     "@metaplex-foundation/mpl-token-metadata": "^3.1.2",
-    "@metaplex-foundation/umi": "^0.8.2",
+    "@metaplex-foundation/umi": "^0.8.10",
     "@metaplex-foundation/umi-bundle-tests": "^0.8.2",
     "@metaplex-foundation/umi-web3js-adapters": "^0.8.2",
     "@project-serum/anchor": "^0.26.0",

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use mpl_core::{instructions::TransferV1Builder, types::UpdateAuthority};
-use solana_program::program::{invoke, invoke_signed};
+use solana_program::program::invoke_signed;
 
 use crate::{
     constants::*,
@@ -9,6 +9,11 @@ use crate::{
     util::{log_pool, try_close_pool, try_close_sell_state},
     AssetInterface, IndexableAsset,
 };
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct MplCoreWithdrawSellArgs {
+    pub compression_proof: Option<Vec<u8>>,
+}
 
 #[derive(Accounts)]
 pub struct MplCoreWithdrawSell<'info> {
@@ -51,7 +56,7 @@ pub struct MplCoreWithdrawSell<'info> {
     pub asset_program: Interface<'info, AssetInterface>,
 }
 
-pub fn handler(ctx: Context<MplCoreWithdrawSell>) -> Result<()> {
+pub fn handler(ctx: Context<MplCoreWithdrawSell>, args: MplCoreWithdrawSellArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let asset = &ctx.accounts.asset;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;

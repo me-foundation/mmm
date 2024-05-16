@@ -15,6 +15,7 @@ use crate::{
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct MplCoreDepositSellArgs {
     pub allowlist_aux: Option<String>,
+    pub compression_proof: Option<Vec<u8>>,
 }
 
 #[derive(Accounts)]

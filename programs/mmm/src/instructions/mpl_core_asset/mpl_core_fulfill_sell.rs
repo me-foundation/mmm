@@ -18,11 +18,21 @@ use crate::{
         get_metadata_royalty_bp, log_pool, pay_creator_fees_in_sol, try_close_pool,
         try_close_sell_state,
     },
-    AssetInterface, IndexableAsset, SolFulfillSellArgs,
+    AssetInterface, IndexableAsset,
 };
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct MplCoreFulfillSellArgs {
+    pub max_payment_amount: u64,
+    pub buyside_creator_royalty_bp: u16,
+    pub allowlist_aux: Option<String>,
+    pub maker_fee_bp: i16,
+    pub taker_fee_bp: i16,
+    pub compression_proof: Option<Vec<u8>>,
+}
+
 #[derive(Accounts)]
-#[instruction(args:SolFulfillSellArgs)]
+#[instruction(args:MplCoreFulfillSellArgs)]
 pub struct MplCoreFulfillSell<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -76,7 +86,7 @@ pub struct MplCoreFulfillSell<'info> {
 
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, MplCoreFulfillSell<'info>>,
-    args: SolFulfillSellArgs,
+    args: MplCoreFulfillSellArgs,
 ) -> Result<()> {
     let system_program = &ctx.accounts.system_program;
     let owner = &ctx.accounts.owner;
@@ -110,7 +120,7 @@ pub fn handler<'info>(
         pool,
         owner,
         buyside_sol_escrow_account,
-        args.asset_amount,
+        1,
         args.maker_fee_bp,
         args.taker_fee_bp,
     )?;
@@ -190,7 +200,7 @@ pub fn handler<'info>(
     pool.spot_price = next_price;
     pool.sellside_asset_amount = pool
         .sellside_asset_amount
-        .checked_sub(args.asset_amount)
+        .checked_sub(1)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     pool.lp_fee_earned = pool
         .lp_fee_earned
@@ -230,7 +240,7 @@ pub fn handler<'info>(
 
     sell_state.asset_amount = sell_state
         .asset_amount
-        .checked_sub(args.asset_amount)
+        .checked_sub(1)
         .ok_or(MMMErrorCode::NumericOverflow)?;
     try_close_sell_state(sell_state, owner.to_account_info())?;
 

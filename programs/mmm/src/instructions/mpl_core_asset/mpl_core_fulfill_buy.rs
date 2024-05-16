@@ -19,11 +19,20 @@ use crate::{
         get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool,
         pay_creator_fees_in_sol, try_close_escrow, try_close_pool, try_close_sell_state,
     },
-    AssetInterface, IndexableAsset, SolFulfillBuyArgs,
+    AssetInterface, IndexableAsset,
 };
 
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct MplCoreFulfillBuyArgs {
+    pub min_payment_amount: u64,
+    pub allowlist_aux: Option<String>,
+    pub maker_fee_bp: i16,
+    pub taker_fee_bp: i16,
+    pub compression_proof: Option<Vec<u8>>,
+}
+
 #[derive(Accounts)]
-#[instruction(args:SolFulfillBuyArgs)]
+#[instruction(args:MplCoreFulfillBuyArgs)]
 pub struct MplCoreFulfillBuy<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -52,10 +61,7 @@ pub struct MplCoreFulfillBuy<'info> {
         bump,
     )]
     pub buyside_sol_escrow_account: UncheckedAccount<'info>,
-    #[account(
-        mut,
-        constraint = asset.to_account_info().owner == asset_program.key,
-    )]
+    #[account(mut)]
     pub asset: Box<Account<'info, IndexableAsset>>,
     #[account(
         init_if_needed,
@@ -85,7 +91,7 @@ pub struct MplCoreFulfillBuy<'info> {
 
 pub fn handler<'info>(
     ctx: Context<'_, '_, '_, 'info, MplCoreFulfillBuy<'info>>,
-    args: SolFulfillBuyArgs,
+    args: MplCoreFulfillBuyArgs,
 ) -> Result<()> {
     let system_program = &ctx.accounts.system_program;
     let pool = &mut ctx.accounts.pool;
@@ -107,8 +113,7 @@ pub fn handler<'info>(
     assert_valid_core_plugins(asset)?;
     let _ = check_allowlists_for_mpl_core(&pool.allowlists, asset, args.allowlist_aux)?;
 
-    let (total_price, next_price) =
-        get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
+    let (total_price, next_price) = get_sol_total_price_and_next_price(pool, 1, true)?;
 
     let collection_asset = deserialize_collection_asset(collection)?;
     let (royalty_bp, metadata) =
@@ -162,7 +167,7 @@ pub fn handler<'info>(
         )?;
         pool.shared_escrow_count = pool
             .shared_escrow_count
-            .checked_sub(args.asset_amount)
+            .checked_sub(1)
             .ok_or(MMMErrorCode::NumericOverflow)?;
 
         &remaining_accounts[2..]
@@ -204,7 +209,7 @@ pub fn handler<'info>(
 
         pool.sellside_asset_amount = pool
             .sellside_asset_amount
-            .checked_add(args.asset_amount)
+            .checked_add(1)
             .ok_or(MMMErrorCode::NumericOverflow)?;
         sell_state.pool = pool.key();
         sell_state.pool_owner = owner.key();
@@ -212,7 +217,7 @@ pub fn handler<'info>(
         sell_state.cosigner_annotation = pool.cosigner_annotation;
         sell_state.asset_amount = sell_state
             .asset_amount
-            .checked_add(args.asset_amount)
+            .checked_add(1)
             .ok_or(MMMErrorCode::NumericOverflow)?;
     } else {
         let transfer_asset_builder = TransferV1Builder::new()
@@ -297,7 +302,6 @@ pub fn handler<'info>(
             &[
                 buyside_sol_escrow_account.to_account_info(),
                 owner.to_account_info(),
-                system_program.to_account_info(),
             ],
             buyside_sol_escrow_account_seeds,
         )?;
@@ -312,7 +316,6 @@ pub fn handler<'info>(
             &[
                 buyside_sol_escrow_account.to_account_info(),
                 referral.to_account_info(),
-                system_program.to_account_info(),
             ],
             buyside_sol_escrow_account_seeds,
         )?;

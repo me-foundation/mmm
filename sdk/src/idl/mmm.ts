@@ -2011,7 +2011,14 @@ export type Mmm = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreWithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
       "name": "mplCoreFulfillSell",
@@ -2076,7 +2083,7 @@ export type Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "SolFulfillSellArgs"
+            "defined": "MplCoreFulfillSellArgs"
           }
         }
       ]
@@ -2144,7 +2151,7 @@ export type Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "SolFulfillBuyArgs"
+            "defined": "MplCoreFulfillBuyArgs"
           }
         }
       ]
@@ -2485,6 +2492,94 @@ export type Mmm = {
             "name": "allowlistAux",
             "type": {
               "option": "string"
+            }
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "minPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreWithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
             }
           }
         ]
@@ -4853,7 +4948,14 @@ export const IDL: Mmm = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreWithdrawSellArgs"
+          }
+        }
+      ]
     },
     {
       "name": "mplCoreFulfillSell",
@@ -4918,7 +5020,7 @@ export const IDL: Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "SolFulfillSellArgs"
+            "defined": "MplCoreFulfillSellArgs"
           }
         }
       ]
@@ -4986,7 +5088,7 @@ export const IDL: Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "SolFulfillBuyArgs"
+            "defined": "MplCoreFulfillBuyArgs"
           }
         }
       ]
@@ -5327,6 +5429,94 @@ export const IDL: Mmm = {
             "name": "allowlistAux",
             "type": {
               "option": "string"
+            }
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "minPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreWithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
             }
           }
         ]

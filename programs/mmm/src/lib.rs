@@ -160,20 +160,23 @@ pub mod mmm {
         instructions::mpl_core_deposit_sell::handler(ctx, args)
     }
 
-    pub fn mpl_core_withdraw_sell(ctx: Context<MplCoreWithdrawSell>) -> Result<()> {
-        instructions::mpl_core_withdraw_sell::handler(ctx)
+    pub fn mpl_core_withdraw_sell(
+        ctx: Context<MplCoreWithdrawSell>,
+        args: MplCoreWithdrawSellArgs,
+    ) -> Result<()> {
+        instructions::mpl_core_withdraw_sell::handler(ctx, args)
     }
 
     pub fn mpl_core_fulfill_sell<'info>(
         ctx: Context<'_, '_, '_, 'info, MplCoreFulfillSell<'info>>,
-        args: SolFulfillSellArgs,
+        args: MplCoreFulfillSellArgs,
     ) -> Result<()> {
         instructions::mpl_core_fulfill_sell::handler(ctx, args)
     }
 
     pub fn mpl_core_fulfill_buy<'info>(
         ctx: Context<'_, '_, '_, 'info, MplCoreFulfillBuy<'info>>,
-        args: SolFulfillBuyArgs,
+        args: MplCoreFulfillBuyArgs,
     ) -> Result<()> {
         instructions::mpl_core_fulfill_buy::handler(ctx, args)
     }

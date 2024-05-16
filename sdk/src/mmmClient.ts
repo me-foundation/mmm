@@ -322,14 +322,14 @@ export class MMMClient {
         convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
       );
       const creators = asset.royalties?.creators ?? [];
+      const mplCoreArgs = {
+        minPaymentAmount: args.minPaymentAmount,
+        allowlistAux: args.allowlistAux,
+        takerFeeBp: args.takerFeeBp,
+        makerFeeBp: args.makerFeeBp,
+      } as anchor.IdlTypes<Mmm>['MplCoreFulfillBuyArgs'];
       builder = this.program.methods
-        .mplCoreFulfillBuy({
-          assetAmount: args.assetAmount,
-          minPaymentAmount: args.minPaymentAmount,
-          allowlistAux: args.allowlistAux,
-          takerFeeBp: args.takerFeeBp,
-          makerFeeBp: args.makerFeeBp,
-        })
+        .mplCoreFulfillBuy(mplCoreArgs)
         .accountsStrict({
           payer: payer,
           owner: this.poolData.owner,
@@ -580,15 +580,15 @@ export class MMMClient {
         convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
       );
       const creators = asset.royalties?.creators ?? [];
+      const mplCoreArgs = {
+        maxPaymentAmount: args.maxPaymentAmount,
+        allowlistAux: args.allowlistAux,
+        buysideCreatorRoyaltyBp: args.buysideCreatorRoyaltyBp,
+        makerFeeBp: args.makerFeeBp,
+        takerFeeBp: args.takerFeeBp,
+      } as anchor.IdlTypes<Mmm>['MplCoreFulfillSellArgs'];
       builder = this.program.methods
-        .mplCoreFulfillSell({
-          assetAmount: args.assetAmount,
-          maxPaymentAmount: args.maxPaymentAmount,
-          buysideCreatorRoyaltyBp: args.buysideCreatorRoyaltyBp,
-          allowlistAux: args.allowlistAux,
-          makerFeeBp: args.makerFeeBp,
-          takerFeeBp: args.takerFeeBp,
-        })
+        .mplCoreFulfillSell(mplCoreArgs)
         .accountsStrict({
           payer,
           owner: this.poolData.owner,
@@ -967,21 +967,26 @@ export class MMMClient {
       const asset = deserializeAssetV1(
         convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
       );
-      builder = this.program.methods.mplCoreWithdrawSell().accountsStrict({
-        owner: this.poolData.owner,
-        cosigner: this.poolData.cosigner,
-        pool: this.poolData.pool,
-        asset: assetMint,
-        buysideSolEscrowAccount,
-        sellState: getMMMSellStatePDA(
-          MMMProgramID,
-          this.poolData.pool,
-          assetMint,
-        ).key,
-        collection: collectionAddress(asset) || PublicKey.default,
-        systemProgram: SystemProgram.programId,
-        assetProgram: MPL_CORE_PROGRAM_ID,
-      });
+      const mplCoreArgs = {
+        compressionProof: null,
+      } as anchor.IdlTypes<Mmm>['MplCoreWithdrawSellArgs'];
+      builder = this.program.methods
+        .mplCoreWithdrawSell(mplCoreArgs)
+        .accountsStrict({
+          owner: this.poolData.owner,
+          cosigner: this.poolData.cosigner,
+          pool: this.poolData.pool,
+          asset: assetMint,
+          buysideSolEscrowAccount,
+          sellState: getMMMSellStatePDA(
+            MMMProgramID,
+            this.poolData.pool,
+            assetMint,
+          ).key,
+          collection: collectionAddress(asset) || PublicKey.default,
+          systemProgram: SystemProgram.programId,
+          assetProgram: MPL_CORE_PROGRAM_ID,
+        });
 
       return await builder.instruction();
     }
