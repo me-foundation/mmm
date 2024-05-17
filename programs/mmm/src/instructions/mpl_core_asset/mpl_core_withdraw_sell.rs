@@ -1,26 +1,22 @@
 use anchor_lang::prelude::*;
-use mpl_core::instructions::TransferV1Builder;
-use mpl_core::types::UpdateAuthority;
-use solana_program::program::invoke;
+use mpl_core::{instructions::TransferV1Builder, types::UpdateAuthority};
+use solana_program::program::invoke_signed;
 
 use crate::{
-    assert_valid_core_plugins,
     constants::*,
     errors::MMMErrorCode,
     state::{Pool, SellState},
-    util::{check_allowlists_for_mpl_core, log_pool},
+    util::{log_pool, try_close_pool, try_close_sell_state},
     AssetInterface, IndexableAsset,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct MplCoreDepositSellArgs {
-    pub allowlist_aux: Option<String>,
+pub struct MplCoreWithdrawSellArgs {
     pub compression_proof: Option<Vec<u8>>,
 }
 
 #[derive(Accounts)]
-#[instruction(args:MplCoreDepositSellArgs)]
-pub struct MplCoreDepositSell<'info> {
+pub struct MplCoreWithdrawSell<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     pub cosigner: Signer<'info>,
@@ -37,42 +33,41 @@ pub struct MplCoreDepositSell<'info> {
         constraint = asset.to_account_info().owner == asset_program.key,
     )]
     pub asset: Box<Account<'info, IndexableAsset>>,
+    /// CHECK: it's a pda, and the private key is owned by the seeds
     #[account(
-        init_if_needed,
-        payer = owner,
+        mut,
+        seeds = [BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(), pool.key().as_ref()],
+        bump,
+    )]
+    pub buyside_sol_escrow_account: UncheckedAccount<'info>,
+    #[account(
+        mut,
         seeds = [
             SELL_STATE_PREFIX.as_bytes(),
             pool.key().as_ref(),
             asset.key().as_ref(),
         ],
-        space = SellState::LEN,
         bump
     )]
     pub sell_state: Account<'info, SellState>,
     /// CHECK: check collection later
     collection: UncheckedAccount<'info>,
-
     pub system_program: Program<'info, System>,
     pub asset_program: Interface<'info, AssetInterface>,
 }
 
-pub fn handler(ctx: Context<MplCoreDepositSell>, args: MplCoreDepositSellArgs) -> Result<()> {
+pub fn handler(ctx: Context<MplCoreWithdrawSell>, args: MplCoreWithdrawSellArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let asset = &ctx.accounts.asset;
+    let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
     let collection = &ctx.accounts.collection;
 
-    if pool.using_shared_escrow() {
-        return Err(MMMErrorCode::InvalidAccountState.into());
-    }
-
-    assert_valid_core_plugins(asset)?;
-    let _ = check_allowlists_for_mpl_core(&pool.allowlists, asset, args.allowlist_aux)?;
-
     let transfer_asset_builder = TransferV1Builder::new()
         .asset(asset.key())
         .payer(owner.key())
+        .authority(Some(pool.key()))
         .collection(
             if let UpdateAuthority::Collection(collection_address) = asset.update_authority {
                 Some(collection_address)
@@ -80,7 +75,7 @@ pub fn handler(ctx: Context<MplCoreDepositSell>, args: MplCoreDepositSellArgs) -
                 None
             },
         )
-        .new_owner(pool.key())
+        .new_owner(owner.key())
         .instruction();
 
     let mut account_infos = vec![
@@ -95,22 +90,32 @@ pub fn handler(ctx: Context<MplCoreDepositSell>, args: MplCoreDepositSellArgs) -
         account_infos.push(collection.to_account_info());
     }
 
-    invoke(&transfer_asset_builder, account_infos.as_slice())?;
+    let pool_seeds: &[&[&[u8]]] = &[&[
+        POOL_PREFIX.as_bytes(),
+        pool.owner.as_ref(),
+        pool.uuid.as_ref(),
+        &[ctx.bumps.pool],
+    ]];
+
+    invoke_signed(
+        &transfer_asset_builder,
+        account_infos.as_slice(),
+        pool_seeds,
+    )?;
 
     pool.sellside_asset_amount = pool
         .sellside_asset_amount
-        .checked_add(1)
+        .checked_sub(1)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-
-    sell_state.pool = pool.key();
-    sell_state.pool_owner = owner.key();
-    sell_state.asset_mint = asset.key();
-    sell_state.cosigner_annotation = pool.cosigner_annotation;
     sell_state.asset_amount = sell_state
         .asset_amount
-        .checked_add(1)
+        .checked_sub(1)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    log_pool("post_mpl_core_deposit_sell", pool)?;
+    try_close_sell_state(sell_state, owner.to_account_info())?;
+
+    pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
+    log_pool("mpl_core_post_withdraw_sell", pool)?;
+    try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())
 }

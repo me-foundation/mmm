@@ -159,4 +159,25 @@ pub mod mmm {
     ) -> Result<()> {
         instructions::mpl_core_deposit_sell::handler(ctx, args)
     }
+
+    pub fn mpl_core_withdraw_sell(
+        ctx: Context<MplCoreWithdrawSell>,
+        args: MplCoreWithdrawSellArgs,
+    ) -> Result<()> {
+        instructions::mpl_core_withdraw_sell::handler(ctx, args)
+    }
+
+    pub fn mpl_core_fulfill_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, MplCoreFulfillSell<'info>>,
+        args: MplCoreFulfillSellArgs,
+    ) -> Result<()> {
+        instructions::mpl_core_fulfill_sell::handler(ctx, args)
+    }
+
+    pub fn mpl_core_fulfill_buy<'info>(
+        ctx: Context<'_, '_, '_, 'info, MplCoreFulfillBuy<'info>>,
+        args: MplCoreFulfillBuyArgs,
+    ) -> Result<()> {
+        instructions::mpl_core_fulfill_buy::handler(ctx, args)
+    }
 }

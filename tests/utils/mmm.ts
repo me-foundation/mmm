@@ -69,6 +69,7 @@ import {
 } from './nfts';
 import { umiMintNfts, Nft, umiMintCollection } from './umiNfts';
 import { createTestMintAndTokenOCP } from './ocp';
+import { CreateCoreAssetArgs, createTestMplCoreAsset } from './mpl_core';
 
 const TOKEN_METADATA_PROGRAM_ID = new PublicKey(
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
@@ -1209,5 +1210,82 @@ export const createPoolWithExampleMip1Deposits = async (
     poolPaymentEscrow: solEscrowKey,
     nftCreator,
     ...poolData,
+  };
+};
+
+export const createPoolWithExampleMplCoreDeposits = async (
+  program: Program<Mmm>,
+  poolArgs: Parameters<typeof createPool>[1],
+  side: 'buy' | 'sell' | 'both',
+  nftOwnerAddress: PublicKey,
+  assetArgs: CreateCoreAssetArgs,
+  sharedEscrow?: boolean,
+  sharedEscrowCount?: number,
+) => {
+  const { asset, collection } = await createTestMplCoreAsset(
+    publicKey(nftOwnerAddress),
+    assetArgs,
+  );
+
+  const allowlists = poolArgs.allowlists ?? [
+    {
+      value: toWeb3JsPublicKey(collection!.publicKey),
+      kind: AllowlistKind.mpl_core_collection,
+    },
+    ...getEmptyAllowLists(5),
+  ];
+  const poolData = await createPool(program, {
+    ...poolArgs,
+    allowlists,
+  });
+
+  const poolKey = poolData.poolKey;
+  const { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+    program.programId,
+    poolData.poolKey,
+  );
+
+  const { key: sellState } = getMMMSellStatePDA(
+    program.programId,
+    poolData.poolKey,
+    toWeb3JsPublicKey(asset.publicKey),
+  );
+
+  if (!sharedEscrow && (side === 'both' || side === 'buy')) {
+    await program.methods
+      .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        buysideSolEscrowAccount,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
+  }
+
+  if (sharedEscrow) {
+    const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
+    await program.methods
+      .setSharedEscrow({
+        sharedEscrowCount: new anchor.BN(sharedEscrowCount || 2),
+      })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        sharedEscrowAccount,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc();
+  }
+
+  return {
+    asset,
+    collection,
+    buysideSolEscrowAccount,
+    poolData,
+    sellState,
   };
 };

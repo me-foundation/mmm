@@ -1961,6 +1961,200 @@ export type Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "mplCoreWithdrawSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreWithdrawSellArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "mplCoreFulfillSell",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreFulfillSellArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "mplCoreFulfillBuy",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreFulfillBuyArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -2298,6 +2492,94 @@ export type Mmm = {
             "name": "allowlistAux",
             "type": {
               "option": "string"
+            }
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "minPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreWithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
             }
           }
         ]
@@ -2639,6 +2921,16 @@ export type Mmm = {
       "code": 6032,
       "name": "InvalidAssetCollection",
       "msg": "Invalid asset collection"
+    },
+    {
+      "code": 6033,
+      "name": "InvalidTokenExtension",
+      "msg": "Invalid token extension"
+    },
+    {
+      "code": 6034,
+      "name": "UnsupportedAssetPlugin",
+      "msg": "Unsupported asset plugin"
     }
   ]
 };
@@ -4606,6 +4898,200 @@ export const IDL: Mmm = {
           }
         }
       ]
+    },
+    {
+      "name": "mplCoreWithdrawSell",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreWithdrawSellArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "mplCoreFulfillSell",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreFulfillSellArgs"
+          }
+        }
+      ]
+    },
+    {
+      "name": "mplCoreFulfillBuy",
+      "accounts": [
+        {
+          "name": "payer",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cosigner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "referral",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pool",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "buysideSolEscrowAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asset",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "sellState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collection",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "assetProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": "MplCoreFulfillBuyArgs"
+          }
+        }
+      ]
     }
   ],
   "accounts": [
@@ -4943,6 +5429,94 @@ export const IDL: Mmm = {
             "name": "allowlistAux",
             "type": {
               "option": "string"
+            }
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillBuyArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "minPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreFulfillSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "maxPaymentAmount",
+            "type": "u64"
+          },
+          {
+            "name": "buysideCreatorRoyaltyBp",
+            "type": "u16"
+          },
+          {
+            "name": "allowlistAux",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "makerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "takerFeeBp",
+            "type": "i16"
+          },
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "MplCoreWithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
             }
           }
         ]
@@ -5284,6 +5858,16 @@ export const IDL: Mmm = {
       "code": 6032,
       "name": "InvalidAssetCollection",
       "msg": "Invalid asset collection"
+    },
+    {
+      "code": 6033,
+      "name": "InvalidTokenExtension",
+      "msg": "Invalid token extension"
+    },
+    {
+      "code": 6034,
+      "name": "UnsupportedAssetPlugin",
+      "msg": "Unsupported asset plugin"
     }
   ]
 };

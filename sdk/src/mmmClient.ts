@@ -300,6 +300,74 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let builder:
+      | ReturnType<MmmMethodsNamespace['solOcpFulfillBuy']>
+      | ReturnType<MmmMethodsNamespace['solFulfillBuy']>
+      | ReturnType<MmmMethodsNamespace['solMip1FulfillBuy']>
+      | ReturnType<MmmMethodsNamespace['solExtFulfillBuy']>
+      | ReturnType<MmmMethodsNamespace['mplCoreFulfillBuy']>;
+
+    const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      this.poolData.pool,
+    );
+    const { key: sellState } = getMMMSellStatePDA(
+      MMMProgramID,
+      this.poolData.pool,
+      assetMint,
+    );
+    if (!!mintOrCoreAsset && isMplCoreAsset(mintOrCoreAsset)) {
+      const asset = deserializeAssetV1(
+        convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
+      );
+      const creators = asset.royalties?.creators ?? [];
+      const mplCoreArgs = {
+        minPaymentAmount: args.minPaymentAmount,
+        allowlistAux: args.allowlistAux,
+        takerFeeBp: args.takerFeeBp,
+        makerFeeBp: args.makerFeeBp,
+      } as anchor.IdlTypes<Mmm>['MplCoreFulfillBuyArgs'];
+      builder = this.program.methods
+        .mplCoreFulfillBuy(mplCoreArgs)
+        .accountsStrict({
+          payer: payer,
+          owner: this.poolData.owner,
+          cosigner: this.poolData.cosigner,
+          referral: this.poolData.referral,
+          pool: this.poolData.pool,
+          buysideSolEscrowAccount,
+          asset: asset.publicKey,
+          sellState,
+          collection: collectionAddress(asset) || PublicKey.default,
+          systemProgram: SystemProgram.programId,
+          assetProgram: MPL_CORE_PROGRAM_ID,
+        });
+
+      if (!this.poolData.sharedEscrowAccount.equals(PublicKey.default)) {
+        builder = builder.remainingAccounts([
+          {
+            pubkey: M2_PROGRAM,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: this.poolData.sharedEscrowAccount,
+            isWritable: true,
+            isSigner: false,
+          },
+        ]);
+      }
+      builder = builder.remainingAccounts(
+        creators.map((v) => ({
+          pubkey: new PublicKey(v.address),
+          isSigner: false,
+          isWritable: true,
+        })),
+      );
+
+      return await builder.instruction();
+    }
     const mintContext =
       metadataProvider ??
       (await this.metadataProviderGenerator(assetMint, this.conn));
@@ -310,21 +378,12 @@ export class MMMClient {
         this.conn,
       ));
 
-    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
-      MMMProgramID,
-      this.poolData.pool,
-    );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
     const ownerTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.owner,
       true,
       mintContext.tokenProgram,
-    );
-    const { key: sellState } = getMMMSellStatePDA(
-      MMMProgramID,
-      this.poolData.pool,
-      assetMint,
     );
     const sellsideEscrowTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
@@ -335,11 +394,6 @@ export class MMMClient {
 
     const ocpMintState = mintContext.mintState;
     const tokenStandard = mintContext.tokenStandard;
-    let builder:
-      | ReturnType<MmmMethodsNamespace['solOcpFulfillBuy']>
-      | ReturnType<MmmMethodsNamespace['solFulfillBuy']>
-      | ReturnType<MmmMethodsNamespace['solMip1FulfillBuy']>
-      | ReturnType<MmmMethodsNamespace['solExtFulfillBuy']>;
 
     if (doesTokenExtensionExist(mintContext)) {
       builder = this.program.methods.solExtFulfillBuy(args).accountsStrict({
@@ -508,6 +562,57 @@ export class MMMClient {
       MMMProgramID,
       this.poolData.pool,
     );
+    let builder:
+      | ReturnType<MmmMethodsNamespace['solOcpFulfillSell']>
+      | ReturnType<MmmMethodsNamespace['solFulfillSell']>
+      | ReturnType<MmmMethodsNamespace['solMip1FulfillSell']>
+      | ReturnType<MmmMethodsNamespace['solExtFulfillSell']>
+      | ReturnType<MmmMethodsNamespace['mplCoreFulfillSell']>;
+
+    const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
+    const { key: sellState } = getMMMSellStatePDA(
+      MMMProgramID,
+      this.poolData.pool,
+      assetMint,
+    );
+    if (!!mintOrCoreAsset && isMplCoreAsset(mintOrCoreAsset)) {
+      const asset = deserializeAssetV1(
+        convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
+      );
+      const creators = asset.royalties?.creators ?? [];
+      const mplCoreArgs = {
+        maxPaymentAmount: args.maxPaymentAmount,
+        allowlistAux: args.allowlistAux,
+        buysideCreatorRoyaltyBp: args.buysideCreatorRoyaltyBp,
+        makerFeeBp: args.makerFeeBp,
+        takerFeeBp: args.takerFeeBp,
+      } as anchor.IdlTypes<Mmm>['MplCoreFulfillSellArgs'];
+      builder = this.program.methods
+        .mplCoreFulfillSell(mplCoreArgs)
+        .accountsStrict({
+          payer,
+          owner: this.poolData.owner,
+          cosigner: this.poolData.cosigner,
+          referral: this.poolData.referral,
+          buysideSolEscrowAccount,
+          pool: this.poolData.pool,
+          asset: asset.publicKey,
+          sellState,
+          assetProgram: MPL_CORE_PROGRAM_ID,
+          collection: collectionAddress(asset) || PublicKey.default,
+          systemProgram: SystemProgram.programId,
+        });
+
+      builder = builder.remainingAccounts(
+        creators.map((v) => ({
+          pubkey: new PublicKey(v.address),
+          isSigner: false,
+          isWritable: true,
+        })),
+      );
+
+      return await builder.instruction();
+    }
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
     const mintContext =
       metadataProvider ??
@@ -518,12 +623,6 @@ export class MMMClient {
         mintContext.mintAccount,
         this.conn,
       ));
-
-    const { key: sellState } = getMMMSellStatePDA(
-      MMMProgramID,
-      this.poolData.pool,
-      assetMint,
-    );
     const sellsideEscrowTokenAccount = getAssociatedTokenAddressSync(
       assetMint,
       this.poolData.pool,
@@ -538,11 +637,6 @@ export class MMMClient {
     );
     const ocpMintState = mintContext.mintState;
     const tokenStandard = mintContext.tokenStandard;
-    let builder:
-      | ReturnType<MmmMethodsNamespace['solOcpFulfillSell']>
-      | ReturnType<MmmMethodsNamespace['solFulfillSell']>
-      | ReturnType<MmmMethodsNamespace['solMip1FulfillSell']>
-      | ReturnType<MmmMethodsNamespace['solExtFulfillSell']>;
 
     if (doesTokenExtensionExist(mintContext)) {
       builder = this.program.methods.solExtFulfillSell(args).accountsStrict({
@@ -856,6 +950,46 @@ export class MMMClient {
     transferHookProvider?: TransferHookProvider,
   ): Promise<TransactionInstruction> {
     if (!this.poolData) throw MMMClient.ErrPoolDataEmpty;
+    let builder:
+      | ReturnType<MmmMethodsNamespace['ocpWithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['withdrawSell']>
+      | ReturnType<MmmMethodsNamespace['mip1WithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['extWithdrawSell']>
+      | ReturnType<MmmMethodsNamespace['mplCoreWithdrawSell']>;
+
+    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+      MMMProgramID,
+      this.poolData.pool,
+    );
+
+    const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
+    if (mintOrCoreAsset && isMplCoreAsset(mintOrCoreAsset)) {
+      const asset = deserializeAssetV1(
+        convertAccountInfoToRpcAccount(assetMint, mintOrCoreAsset),
+      );
+      const mplCoreArgs = {
+        compressionProof: null,
+      } as anchor.IdlTypes<Mmm>['MplCoreWithdrawSellArgs'];
+      builder = this.program.methods
+        .mplCoreWithdrawSell(mplCoreArgs)
+        .accountsStrict({
+          owner: this.poolData.owner,
+          cosigner: this.poolData.cosigner,
+          pool: this.poolData.pool,
+          asset: assetMint,
+          buysideSolEscrowAccount,
+          sellState: getMMMSellStatePDA(
+            MMMProgramID,
+            this.poolData.pool,
+            assetMint,
+          ).key,
+          collection: collectionAddress(asset) || PublicKey.default,
+          systemProgram: SystemProgram.programId,
+          assetProgram: MPL_CORE_PROGRAM_ID,
+        });
+
+      return await builder.instruction();
+    }
     const mintContext =
       metadataProvider ??
       (await this.metadataProviderGenerator(assetMint, this.conn));
@@ -884,18 +1018,9 @@ export class MMMClient {
       mintContext.tokenProgram,
     );
 
-    let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
-      MMMProgramID,
-      this.poolData.pool,
-    );
     const assetMetadata = this.mpl.nfts().pdas().metadata({ mint: assetMint });
 
     const ocpMintState = mintContext.mintState;
-    let builder:
-      | ReturnType<MmmMethodsNamespace['ocpWithdrawSell']>
-      | ReturnType<MmmMethodsNamespace['withdrawSell']>
-      | ReturnType<MmmMethodsNamespace['mip1WithdrawSell']>
-      | ReturnType<MmmMethodsNamespace['extWithdrawSell']>;
 
     if (doesTokenExtensionExist(mintContext)) {
       builder = this.program.methods.extWithdrawSell(args).accountsStrict({
