@@ -3,6 +3,7 @@ import {
   ComputeBudgetProgram,
   Keypair,
   LAMPORTS_PER_SOL,
+  PublicKey,
   SystemProgram,
 } from '@solana/web3.js';
 import {
@@ -55,7 +56,28 @@ describe('mmm-mpl-core', () => {
   ) as anchor.Program<Mmm>;
   const cosigner = Keypair.generate();
 
-  async function executeDepositSell(asset: AssetV1, collection?: CollectionV1) {
+  async function executeDepositSell(
+    asset: AssetV1,
+    collection?: CollectionV1,
+    poolArgs?: {
+      owner?: PublicKey;
+      cosigner?: Keypair;
+      allowlists?: ReturnType<typeof getEmptyAllowLists>;
+      spotPrice?: anchor.BN;
+      curveType?: CurveKind;
+      curveDelta?: anchor.BN;
+      reinvestFulfillBuy?: boolean;
+      reinvestFulfillSell?: boolean;
+      expiry?: anchor.BN;
+      lpFeeBp?: number;
+      referral?: PublicKey;
+      referralBp?: number;
+      cosignerAnnotation?: number[];
+      uuid?: PublicKey;
+      paymentMint?: PublicKey;
+      buysideCreatorRoyaltyBp?: number;
+    },
+  ) {
     const allowlists = [
       {
         value: toWeb3JsPublicKey(collection!.publicKey),
@@ -67,6 +89,7 @@ describe('mmm-mpl-core', () => {
       owner: wallet.publicKey,
       cosigner,
       allowlists,
+      ...poolArgs,
     });
 
     const { key: sellState } = getMMMSellStatePDA(
@@ -452,7 +475,7 @@ describe('mmm-mpl-core', () => {
   });
 
   describe('fulfill sell', () => {
-    it('can fulfill sell - asset level royalty', async () => {
+    it('can fulfill sell - asset level royalty & reinvest', async () => {
       const { asset, collection } = await createTestMplCoreAsset(
         publicKey(wallet.publicKey),
         {
@@ -633,6 +656,178 @@ describe('mmm-mpl-core', () => {
       // Check pool state
       const poolAccount = await program.account.pool.fetch(poolData.poolKey);
       assert.equal(poolAccount.sellsideAssetAmount.toNumber(), 0);
+    });
+
+    it('can fulfill sell - asset level royalty & not reinvest', async () => {
+      const { asset, collection } = await createTestMplCoreAsset(
+        publicKey(wallet.publicKey),
+        {
+          collectionConfig: {
+            plugins: [],
+          },
+          assetConfig: {
+            plugins: [
+              pluginAuthorityPair({
+                type: 'Royalties',
+                data: {
+                  basisPoints: 200,
+                  creators: [
+                    {
+                      address: publicKey(creator1.publicKey),
+                      percentage: 30,
+                    },
+                    {
+                      address: publicKey(creator2.publicKey),
+                      percentage: 70,
+                    },
+                  ],
+                  ruleSet: ruleSet('None'),
+                },
+              }),
+            ],
+          },
+        },
+      );
+
+      const { poolData, sellState } = await executeDepositSell(
+        asset,
+        collection,
+        {
+          reinvestFulfillSell: false,
+        },
+      );
+
+      // Fulfill sell
+      const buyer = Keypair.generate();
+      await airdrop(connection, buyer.publicKey, 10);
+      const { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+        MMMProgramID,
+        poolData.poolKey,
+      );
+
+      const [
+        initSellerBalance,
+        initBuyerBalance,
+        initCreator1Balance,
+        initCreator2Balance,
+        initBuyerSolEscrowAccountBalance,
+        poolAccountRent,
+      ] = await Promise.all([
+        connection.getBalance(wallet.publicKey),
+        connection.getBalance(buyer.publicKey),
+        connection.getBalance(creator1.publicKey),
+        connection.getBalance(creator2.publicKey),
+        connection.getBalance(buysideSolEscrowAccount),
+        connection.getBalance(poolData.poolKey),
+      ]);
+
+      let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
+      const tx = await program.methods
+        .mplCoreFulfillSell({
+          maxPaymentAmount: new anchor.BN(
+            1.02 * LAMPORTS_PER_SOL + expectedTakerFees,
+          ),
+          buysideCreatorRoyaltyBp: 10000,
+          allowlistAux: '',
+          takerFeeBp: 100,
+          makerFeeBp: 0,
+          compressionProof: null,
+        })
+        .accountsStrict({
+          payer: buyer.publicKey,
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          asset: asset.publicKey,
+          collection: collection!.publicKey,
+          sellState,
+          buysideSolEscrowAccount,
+          systemProgram: SystemProgram.programId,
+          assetProgram: MPL_CORE_PROGRAM_ID,
+        })
+        .remainingAccounts([
+          {
+            pubkey: creator1.publicKey,
+            isSigner: false,
+            isWritable: true,
+          },
+          {
+            pubkey: creator2.publicKey,
+            isSigner: false,
+            isWritable: true,
+          },
+        ])
+        .preInstructions([
+          ComputeBudgetProgram.setComputeUnitLimit({
+            units: 1_000_000,
+          }),
+        ])
+        .transaction();
+
+      const blockhashData = await connection.getLatestBlockhash();
+      tx.feePayer = buyer.publicKey;
+      tx.recentBlockhash = blockhashData.blockhash;
+      tx.partialSign(cosigner, buyer);
+
+      await sendAndAssertTx(connection, tx, blockhashData, false);
+
+      const refreshedAssetAfterFulfill = await getTestMplCoreAsset(
+        asset.publicKey,
+      );
+
+      // Verify asset account.
+      assert.equal(
+        refreshedAssetAfterFulfill.owner.toString(),
+        buyer.publicKey.toString(),
+      );
+
+      // verify post balances
+      const [
+        buyerBalance,
+        sellerBalance,
+        creator1Balance,
+        creator2Balance,
+        buyerSolEscrowAccountBalance,
+      ] = await Promise.all([
+        connection.getBalance(buyer.publicKey),
+        connection.getBalance(wallet.publicKey),
+        connection.getBalance(creator1.publicKey),
+        connection.getBalance(creator2.publicKey),
+        connection.getBalance(buysideSolEscrowAccount),
+      ]);
+
+      const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 2; // cosigner + payer
+      const sellStatePDARent = await getSellStatePDARent(connection);
+
+      assert.equal(
+        creator1Balance,
+        initCreator1Balance + 1 * LAMPORTS_PER_SOL * 0.02 * 0.3, // 30% of the royalty
+      );
+      assert.equal(
+        creator2Balance,
+        initCreator2Balance + 1 * LAMPORTS_PER_SOL * 0.02 * 0.7, // 70% of the royalty
+      );
+
+      assert.equal(
+        buyerBalance,
+        initBuyerBalance -
+          1.02 * LAMPORTS_PER_SOL -
+          expectedTxFees -
+          expectedTakerFees,
+      );
+      assert.equal(
+        sellerBalance,
+        initSellerBalance +
+          sellStatePDARent +
+          1 * LAMPORTS_PER_SOL +
+          poolAccountRent,
+      );
+
+      assert.equal(
+        buyerSolEscrowAccountBalance,
+        initBuyerSolEscrowAccountBalance,
+      );
     });
 
     it('can fulfill sell - collection level royalty & allowlist', async () => {
