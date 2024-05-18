@@ -305,7 +305,7 @@ export class MMMClient {
       | ReturnType<MmmMethodsNamespace['solFulfillBuy']>
       | ReturnType<MmmMethodsNamespace['solMip1FulfillBuy']>
       | ReturnType<MmmMethodsNamespace['solExtFulfillBuy']>
-      | ReturnType<MmmMethodsNamespace['mplCoreFulfillBuy']>;
+      | ReturnType<MmmMethodsNamespace['solMplCoreFulfillBuy']>;
 
     const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
@@ -327,9 +327,9 @@ export class MMMClient {
         allowlistAux: args.allowlistAux,
         takerFeeBp: args.takerFeeBp,
         makerFeeBp: args.makerFeeBp,
-      } as anchor.IdlTypes<Mmm>['MplCoreFulfillBuyArgs'];
+      } as anchor.IdlTypes<Mmm>['SolMplCoreFulfillBuyArgs'];
       builder = this.program.methods
-        .mplCoreFulfillBuy(mplCoreArgs)
+        .solMplCoreFulfillBuy(mplCoreArgs)
         .accountsStrict({
           payer: payer,
           owner: this.poolData.owner,
@@ -567,7 +567,7 @@ export class MMMClient {
       | ReturnType<MmmMethodsNamespace['solFulfillSell']>
       | ReturnType<MmmMethodsNamespace['solMip1FulfillSell']>
       | ReturnType<MmmMethodsNamespace['solExtFulfillSell']>
-      | ReturnType<MmmMethodsNamespace['mplCoreFulfillSell']>;
+      | ReturnType<MmmMethodsNamespace['solMplCoreFulfillSell']>;
 
     const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
     const { key: sellState } = getMMMSellStatePDA(
@@ -586,9 +586,9 @@ export class MMMClient {
         buysideCreatorRoyaltyBp: args.buysideCreatorRoyaltyBp,
         makerFeeBp: args.makerFeeBp,
         takerFeeBp: args.takerFeeBp,
-      } as anchor.IdlTypes<Mmm>['MplCoreFulfillSellArgs'];
+      } as anchor.IdlTypes<Mmm>['SolMplCoreFulfillSellArgs'];
       builder = this.program.methods
-        .mplCoreFulfillSell(mplCoreArgs)
+        .solMplCoreFulfillSell(mplCoreArgs)
         .accountsStrict({
           payer,
           owner: this.poolData.owner,

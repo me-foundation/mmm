@@ -553,7 +553,7 @@ describe('mmm-mpl-core', () => {
 
       let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
       const tx = await program.methods
-        .mplCoreFulfillSell({
+        .solMplCoreFulfillSell({
           maxPaymentAmount: new anchor.BN(
             1.02 * LAMPORTS_PER_SOL + expectedTakerFees,
           ),
@@ -723,7 +723,7 @@ describe('mmm-mpl-core', () => {
 
       let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
       const tx = await program.methods
-        .mplCoreFulfillSell({
+        .solMplCoreFulfillSell({
           maxPaymentAmount: new anchor.BN(
             1.02 * LAMPORTS_PER_SOL + expectedTakerFees,
           ),
@@ -895,7 +895,7 @@ describe('mmm-mpl-core', () => {
 
       let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
       const tx = await program.methods
-        .mplCoreFulfillSell({
+        .solMplCoreFulfillSell({
           maxPaymentAmount: new anchor.BN(
             1.05 * LAMPORTS_PER_SOL + expectedTakerFees,
           ),
@@ -1039,7 +1039,7 @@ describe('mmm-mpl-core', () => {
 
       let expectedTakerFees = 1 * LAMPORTS_PER_SOL * 0.01;
       const tx = await program.methods
-        .mplCoreFulfillSell({
+        .solMplCoreFulfillSell({
           maxPaymentAmount: new anchor.BN(
             1.01 * LAMPORTS_PER_SOL + expectedTakerFees,
           ),
@@ -1197,7 +1197,7 @@ describe('mmm-mpl-core', () => {
         makerFeeBp: 100,
       });
       const tx = await program.methods
-        .mplCoreFulfillBuy({
+        .solMplCoreFulfillBuy({
           minPaymentAmount: new anchor.BN(expectedBuyPrices.sellerReceives),
           allowlistAux: '',
           takerFeeBp: 100,
@@ -1384,7 +1384,7 @@ describe('mmm-mpl-core', () => {
         makerFeeBp: 0,
       });
       const tx = await program.methods
-        .mplCoreFulfillBuy({
+        .solMplCoreFulfillBuy({
           minPaymentAmount: new anchor.BN(expectedBuyPrices.sellerReceives),
           allowlistAux: '',
           takerFeeBp: 100,
@@ -1558,7 +1558,7 @@ describe('mmm-mpl-core', () => {
       await airdrop(connection, buyer.publicKey, 10);
       try {
         await program.methods
-          .mplCoreFulfillBuy({
+          .solMplCoreFulfillBuy({
             minPaymentAmount: new anchor.BN(0),
             allowlistAux: '',
             takerFeeBp: 100,
