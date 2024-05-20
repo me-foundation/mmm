@@ -167,17 +167,17 @@ pub mod mmm {
         instructions::mpl_core_withdraw_sell::handler(ctx, args)
     }
 
-    pub fn mpl_core_fulfill_sell<'info>(
-        ctx: Context<'_, '_, '_, 'info, MplCoreFulfillSell<'info>>,
-        args: MplCoreFulfillSellArgs,
+    pub fn sol_mpl_core_fulfill_sell<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolMplCoreFulfillSell<'info>>,
+        args: SolMplCoreFulfillSellArgs,
     ) -> Result<()> {
-        instructions::mpl_core_fulfill_sell::handler(ctx, args)
+        instructions::sol_mpl_core_fulfill_sell::handler(ctx, args)
     }
 
-    pub fn mpl_core_fulfill_buy<'info>(
-        ctx: Context<'_, '_, '_, 'info, MplCoreFulfillBuy<'info>>,
-        args: MplCoreFulfillBuyArgs,
+    pub fn sol_mpl_core_fulfill_buy<'info>(
+        ctx: Context<'_, '_, '_, 'info, SolMplCoreFulfillBuy<'info>>,
+        args: SolMplCoreFulfillBuyArgs,
     ) -> Result<()> {
-        instructions::mpl_core_fulfill_buy::handler(ctx, args)
+        instructions::sol_mpl_core_fulfill_buy::handler(ctx, args)
     }
 }

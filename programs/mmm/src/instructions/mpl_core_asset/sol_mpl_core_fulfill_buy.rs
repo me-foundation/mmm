@@ -23,7 +23,7 @@ use crate::{
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct MplCoreFulfillBuyArgs {
+pub struct SolMplCoreFulfillBuyArgs {
     pub min_payment_amount: u64,
     pub allowlist_aux: Option<String>,
     pub maker_fee_bp: i16,
@@ -32,8 +32,8 @@ pub struct MplCoreFulfillBuyArgs {
 }
 
 #[derive(Accounts)]
-#[instruction(args:MplCoreFulfillBuyArgs)]
-pub struct MplCoreFulfillBuy<'info> {
+#[instruction(args:SolMplCoreFulfillBuyArgs)]
+pub struct SolMplCoreFulfillBuy<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK: we will check the owner field that matches the pool owner
@@ -90,8 +90,8 @@ pub struct MplCoreFulfillBuy<'info> {
 }
 
 pub fn handler<'info>(
-    ctx: Context<'_, '_, '_, 'info, MplCoreFulfillBuy<'info>>,
-    args: MplCoreFulfillBuyArgs,
+    ctx: Context<'_, '_, '_, 'info, SolMplCoreFulfillBuy<'info>>,
+    args: SolMplCoreFulfillBuyArgs,
 ) -> Result<()> {
     let system_program = &ctx.accounts.system_program;
     let pool = &mut ctx.accounts.pool;

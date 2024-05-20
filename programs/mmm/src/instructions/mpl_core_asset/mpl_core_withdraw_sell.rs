@@ -114,7 +114,7 @@ pub fn handler(ctx: Context<MplCoreWithdrawSell>, args: MplCoreWithdrawSellArgs)
     try_close_sell_state(sell_state, owner.to_account_info())?;
 
     pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
-    log_pool("mpl_core_post_withdraw_sell", pool)?;
+    log_pool("post_mpl_core_withdraw_sell", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())

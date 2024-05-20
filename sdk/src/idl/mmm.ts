@@ -2021,7 +2021,7 @@ export type Mmm = {
       ]
     },
     {
-      "name": "mplCoreFulfillSell",
+      "name": "solMplCoreFulfillSell",
       "accounts": [
         {
           "name": "payer",
@@ -2083,13 +2083,13 @@ export type Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "MplCoreFulfillSellArgs"
+            "defined": "SolMplCoreFulfillSellArgs"
           }
         }
       ]
     },
     {
-      "name": "mplCoreFulfillBuy",
+      "name": "solMplCoreFulfillBuy",
       "accounts": [
         {
           "name": "payer",
@@ -2151,7 +2151,7 @@ export type Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "MplCoreFulfillBuyArgs"
+            "defined": "SolMplCoreFulfillBuyArgs"
           }
         }
       ]
@@ -2504,7 +2504,21 @@ export type Mmm = {
       }
     },
     {
-      "name": "MplCoreFulfillBuyArgs",
+      "name": "MplCoreWithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SolMplCoreFulfillBuyArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2536,7 +2550,7 @@ export type Mmm = {
       }
     },
     {
-      "name": "MplCoreFulfillSellArgs",
+      "name": "SolMplCoreFulfillSellArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2562,20 +2576,6 @@ export type Mmm = {
             "name": "takerFeeBp",
             "type": "i16"
           },
-          {
-            "name": "compressionProof",
-            "type": {
-              "option": "bytes"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "MplCoreWithdrawSellArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
           {
             "name": "compressionProof",
             "type": {
@@ -4958,7 +4958,7 @@ export const IDL: Mmm = {
       ]
     },
     {
-      "name": "mplCoreFulfillSell",
+      "name": "solMplCoreFulfillSell",
       "accounts": [
         {
           "name": "payer",
@@ -5020,13 +5020,13 @@ export const IDL: Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "MplCoreFulfillSellArgs"
+            "defined": "SolMplCoreFulfillSellArgs"
           }
         }
       ]
     },
     {
-      "name": "mplCoreFulfillBuy",
+      "name": "solMplCoreFulfillBuy",
       "accounts": [
         {
           "name": "payer",
@@ -5088,7 +5088,7 @@ export const IDL: Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "MplCoreFulfillBuyArgs"
+            "defined": "SolMplCoreFulfillBuyArgs"
           }
         }
       ]
@@ -5441,7 +5441,21 @@ export const IDL: Mmm = {
       }
     },
     {
-      "name": "MplCoreFulfillBuyArgs",
+      "name": "MplCoreWithdrawSellArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "compressionProof",
+            "type": {
+              "option": "bytes"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "SolMplCoreFulfillBuyArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -5473,7 +5487,7 @@ export const IDL: Mmm = {
       }
     },
     {
-      "name": "MplCoreFulfillSellArgs",
+      "name": "SolMplCoreFulfillSellArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -5499,20 +5513,6 @@ export const IDL: Mmm = {
             "name": "takerFeeBp",
             "type": "i16"
           },
-          {
-            "name": "compressionProof",
-            "type": {
-              "option": "bytes"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "MplCoreWithdrawSellArgs",
-      "type": {
-        "kind": "struct",
-        "fields": [
           {
             "name": "compressionProof",
             "type": {
