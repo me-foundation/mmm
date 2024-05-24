@@ -1,6 +1,6 @@
 use anchor_lang::{accounts::unchecked_account::UncheckedAccount, error::Error};
 use mpl_core::{
-    types::{Plugin, PluginType, Royalties, UpdateAuthority},
+    types::{Plugin, PluginType, Royalties},
     ID,
 };
 use mpl_token_metadata::types::Creator;
@@ -9,11 +9,14 @@ use std::ops::Deref;
 
 use crate::errors::MMMErrorCode;
 
-pub const CORE_ALLOW_LIST: [PluginType; 4] = [
-    PluginType::Royalties,
-    PluginType::Attributes,
-    PluginType::Edition,
-    PluginType::MasterEdition,
+pub const CORE_DENY_LIST: [PluginType; 7] = [
+    PluginType::FreezeDelegate,
+    PluginType::BurnDelegate,
+    PluginType::TransferDelegate,
+    PluginType::UpdateDelegate,
+    PluginType::PermanentFreezeDelegate,
+    PluginType::PermanentTransferDelegate,
+    PluginType::PermanentBurnDelegate,
 ];
 
 #[derive(Clone)]
@@ -111,7 +114,7 @@ pub fn get_royalties_from_plugin(
 
 pub fn assert_valid_core_plugins(asset: &IndexableAsset) -> Result<(), Error> {
     for plugin in asset.plugins.keys() {
-        if !CORE_ALLOW_LIST.contains(plugin) {
+        if CORE_DENY_LIST.contains(plugin) {
             return Err(MMMErrorCode::UnsupportedAssetPlugin.into());
         }
     }
