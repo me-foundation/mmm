@@ -7,7 +7,7 @@
   "dependencies": {
     "@magiceden-oss/open_creator_protocol": "^0.3.2",
     "@metaplex-foundation/js": "^0.19.4",
-    "@metaplex-foundation/mpl-core": "1.0.0-alpha.6",
+    "@metaplex-foundation/mpl-core": "^0.4.7",
     "@metaplex-foundation/mpl-token-auth-rules": "^2.0.0",
     "@metaplex-foundation/mpl-token-metadata": "^3.1.2",
     "@metaplex-foundation/umi": "^0.8.10",

@@ -9,11 +9,10 @@ use std::ops::Deref;
 
 use crate::errors::MMMErrorCode;
 
-pub const CORE_DENY_LIST: [PluginType; 7] = [
+pub const CORE_DENY_LIST: [PluginType; 6] = [
     PluginType::FreezeDelegate,
     PluginType::BurnDelegate,
     PluginType::TransferDelegate,
-    PluginType::UpdateDelegate,
     PluginType::PermanentFreezeDelegate,
     PluginType::PermanentTransferDelegate,
     PluginType::PermanentBurnDelegate,
