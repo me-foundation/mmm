@@ -5,7 +5,6 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
-  getAccount as getTokenAccount,
 } from '@solana/spl-token';
 import {
   ComputeBudgetProgram,
@@ -428,21 +427,34 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     };
     const seller = Keypair.generate();
     const nftCreator = Keypair.generate();
-    await airdrop(connection, nftCreator.publicKey, 10);
+    // generate new wallet and keypair to simuluate closing behavior when not enough rent
+    // and when cap is reached
+    const newWallet = new anchor.Wallet(Keypair.generate());
+    const newProgram = new anchor.Program(
+      IDL,
+      MMMProgramID,
+      new anchor.AnchorProvider(connection, newWallet, {
+        commitment: 'processed',
+      }),
+    ) as anchor.Program<Mmm>;
+    await Promise.all([
+      airdrop(connection, newWallet.publicKey, 10),
+      airdrop(connection, nftCreator.publicKey, 10),
+    ]);
     const rulesRes = await createDefaultTokenAuthorizationRules(
       connection,
       nftCreator,
       'test',
     );
     const defaultRules = rulesRes.ruleSetAddress;
-    const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey).key;
-    await airdrop(connection, buyerSharedEscrow, 10);
+    const buyerSharedEscrow = getM2BuyerSharedEscrow(newWallet.publicKey).key;
+    const extraLamports = 10;
 
     const [poolData] = await Promise.all([
       createPoolWithExampleMip1Deposits(
-        program,
+        newProgram,
         {
-          owner: wallet.publicKey,
+          owner: newWallet.publicKey,
           cosigner,
           spotPrice: new anchor.BN(2.2 * LAMPORTS_PER_SOL),
           curveDelta: new anchor.BN(1 * LAMPORTS_PER_SOL),
@@ -459,21 +471,22 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         1, // just enough sol to cover the first fulfilment
       ),
       airdrop(connection, seller.publicKey, 10),
+      airdrop(connection, buyerSharedEscrow, 2.2 + extraLamports * 1e-9),
     ]);
 
     const [
+      initPoolOwnerBalance,
+      poolRent,
       initSellerBalance,
-      initPaymentEscrowBalance,
       initCreatorBalance,
       initReferralBalance,
-      sellStateAccountRent,
       initBuyerSharedEscrowBalance,
     ] = await Promise.all([
+      connection.getBalance(newWallet.publicKey),
+      connection.getBalance(poolData.poolKey),
       connection.getBalance(seller.publicKey),
-      connection.getBalance(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.nftCreator.publicKey),
       connection.getBalance(poolData.referral.publicKey),
-      getSellStatePDARent(connection),
       connection.getBalance(buyerSharedEscrow),
     ]);
 
@@ -485,7 +498,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
 
     const ownerExtraNftAtaAddress = await getAssociatedTokenAddress(
       poolData.extraNft.mintAddress,
-      wallet.publicKey,
+      newWallet.publicKey,
     );
 
     // sale price should be 2.2 SOL
@@ -496,20 +509,20 @@ describe('shared-escrow mmm-fulfill-linear', () => {
       metadataRoyaltyBp: 150,
       buysideCreatorRoyaltyBp: 10000,
       lpFeeBp: 0,
-      makerFeeBp: 350,
+      makerFeeBp: 0,
     });
 
-    const tx = await program.methods
+    const tx = await newProgram.methods
       .solMip1FulfillBuy({
         assetAmount: new anchor.BN(1),
         minPaymentAmount: expectedBuyPrices.sellerReceives,
         allowlistAux: null,
-        makerFeeBp: 350,
+        makerFeeBp: 0,
         takerFeeBp: 50,
       })
       .accountsStrict({
         payer: seller.publicKey,
-        owner: wallet.publicKey,
+        owner: newWallet.publicKey,
         cosigner: cosigner.publicKey,
         referral: poolData.referral.publicKey,
         pool: poolData.poolKey,
@@ -569,6 +582,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
       expectedBuyPrices.makerFeePaid.toNumber() +
       expectedBuyPrices.takerFeePaid.toNumber();
     const [
+      poolOwnerBalance,
       sellerBalance,
       paymentEscrowAccount,
       paymentEscrowBalance,
@@ -576,6 +590,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
       referralBalance,
       afterBuyerSharedEscrowBalance,
     ] = await Promise.all([
+      connection.getBalance(newWallet.publicKey),
       connection.getBalance(seller.publicKey),
       connection.getAccountInfo(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.poolPaymentEscrow),
@@ -585,6 +600,11 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     ]);
 
     assert.equal(
+      poolOwnerBalance,
+      // pool rent + extra lamports that would cause rent error
+      initPoolOwnerBalance + poolRent + extraLamports,
+    );
+    assert.equal(
       sellerBalance,
       initSellerBalance +
         expectedBuyPrices.sellerReceives.toNumber() -
@@ -592,8 +612,11 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     );
     assert.equal(
       initBuyerSharedEscrowBalance - afterBuyerSharedEscrowBalance,
-      2.2 * LAMPORTS_PER_SOL + expectedBuyPrices.makerFeePaid.toNumber(),
+      2.2 * LAMPORTS_PER_SOL +
+        expectedBuyPrices.makerFeePaid.toNumber() +
+        extraLamports,
     );
+    assert.equal(afterBuyerSharedEscrowBalance, 0);
     assert.equal(paymentEscrowBalance, 0);
     assert.isNull(paymentEscrowAccount);
     assert.equal(

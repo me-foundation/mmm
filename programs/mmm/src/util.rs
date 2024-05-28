@@ -647,6 +647,18 @@ pub fn withdraw_m2<'info>(
         &[pool_bump],
     ]];
 
+    let no_data_rent = Rent::get()?.minimum_balance(0);
+    let withdraw_amount = if m2_buyer_escrow.lamports().saturating_sub(
+        no_data_rent
+            .checked_add(amount)
+            .ok_or(MMMErrorCode::NumericOverflow)?,
+    ) > 0
+    {
+        amount
+    } else {
+        m2_buyer_escrow.lamports()
+    };
+
     let ix = withdraw_by_mmm_ix_with_program_id(
         M2_PROGRAM,
         WithdrawByMmmKeys {
@@ -659,7 +671,7 @@ pub fn withdraw_m2<'info>(
             args: WithdrawByMMMArgs {
                 wallet,
                 auction_house: M2_AUCTION_HOUSE,
-                amount,
+                amount: withdraw_amount,
                 mmm_pool_uuid: pool.uuid,
             },
         },
