@@ -427,12 +427,6 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     };
     const seller = Keypair.generate();
     const nftCreator = Keypair.generate();
-    await airdrop(connection, nftCreator.publicKey, 10);
-    const rulesRes = await createDefaultTokenAuthorizationRules(
-      connection,
-      nftCreator,
-      'test',
-    );
     // generate new wallet and keypair to simuluate closing behavior when not enough rent
     // and when cap is reached
     const newWallet = new anchor.Wallet(Keypair.generate());
@@ -443,6 +437,15 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         commitment: 'processed',
       }),
     ) as anchor.Program<Mmm>;
+    await Promise.all([
+      airdrop(connection, newWallet.publicKey, 10),
+      airdrop(connection, nftCreator.publicKey, 10),
+    ]);
+    const rulesRes = await createDefaultTokenAuthorizationRules(
+      connection,
+      nftCreator,
+      'test',
+    );
     const defaultRules = rulesRes.ruleSetAddress;
     const buyerSharedEscrow = getM2BuyerSharedEscrow(newWallet.publicKey).key;
     const extraLamports = 10;
