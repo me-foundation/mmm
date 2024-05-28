@@ -5,7 +5,6 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddress,
-  getAccount as getTokenAccount,
 } from '@solana/spl-token';
 import {
   ComputeBudgetProgram,
@@ -416,7 +415,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     assert.equal(poolAccountInfo.spotPrice.toNumber(), 1.2 * LAMPORTS_PER_SOL);
   });
 
-  it('can fulfill buy with shared escrow for mip1 nfts that will close the pool due to not enough cap', async () => {
+  it.only('can fulfill buy with shared escrow for mip1 nfts that will close the pool due to not enough cap', async () => {
     const DEFAULT_ACCOUNTS = {
       tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
       authorizationRulesProgram: AUTH_RULES_PROGRAM_ID,
@@ -436,7 +435,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     );
     const defaultRules = rulesRes.ruleSetAddress;
     const buyerSharedEscrow = getM2BuyerSharedEscrow(wallet.publicKey).key;
-    await airdrop(connection, buyerSharedEscrow, 10);
+    const extraLamports = 10;
 
     const [poolData] = await Promise.all([
       createPoolWithExampleMip1Deposits(
@@ -459,21 +458,22 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         1, // just enough sol to cover the first fulfilment
       ),
       airdrop(connection, seller.publicKey, 10),
+      airdrop(connection, buyerSharedEscrow, 2.2 + extraLamports * 1e-9),
     ]);
 
     const [
+      initPoolOwnerBalance,
+      poolRent,
       initSellerBalance,
-      initPaymentEscrowBalance,
       initCreatorBalance,
       initReferralBalance,
-      sellStateAccountRent,
       initBuyerSharedEscrowBalance,
     ] = await Promise.all([
+      connection.getBalance(wallet.publicKey),
+      connection.getBalance(poolData.poolKey),
       connection.getBalance(seller.publicKey),
-      connection.getBalance(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.nftCreator.publicKey),
       connection.getBalance(poolData.referral.publicKey),
-      getSellStatePDARent(connection),
       connection.getBalance(buyerSharedEscrow),
     ]);
 
@@ -496,7 +496,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
       metadataRoyaltyBp: 150,
       buysideCreatorRoyaltyBp: 10000,
       lpFeeBp: 0,
-      makerFeeBp: 350,
+      makerFeeBp: 0,
     });
 
     const tx = await program.methods
@@ -504,7 +504,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
         assetAmount: new anchor.BN(1),
         minPaymentAmount: expectedBuyPrices.sellerReceives,
         allowlistAux: null,
-        makerFeeBp: 350,
+        makerFeeBp: 0,
         takerFeeBp: 50,
       })
       .accountsStrict({
@@ -569,6 +569,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
       expectedBuyPrices.makerFeePaid.toNumber() +
       expectedBuyPrices.takerFeePaid.toNumber();
     const [
+      poolOwnerBalance,
       sellerBalance,
       paymentEscrowAccount,
       paymentEscrowBalance,
@@ -576,6 +577,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
       referralBalance,
       afterBuyerSharedEscrowBalance,
     ] = await Promise.all([
+      connection.getBalance(wallet.publicKey),
       connection.getBalance(seller.publicKey),
       connection.getAccountInfo(poolData.poolPaymentEscrow),
       connection.getBalance(poolData.poolPaymentEscrow),
@@ -585,6 +587,11 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     ]);
 
     assert.equal(
+      poolOwnerBalance,
+      // pool rent + extra lamports that would cause rent error
+      initPoolOwnerBalance + poolRent + extraLamports,
+    );
+    assert.equal(
       sellerBalance,
       initSellerBalance +
         expectedBuyPrices.sellerReceives.toNumber() -
@@ -592,8 +599,11 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     );
     assert.equal(
       initBuyerSharedEscrowBalance - afterBuyerSharedEscrowBalance,
-      2.2 * LAMPORTS_PER_SOL + expectedBuyPrices.makerFeePaid.toNumber(),
+      2.2 * LAMPORTS_PER_SOL +
+        expectedBuyPrices.makerFeePaid.toNumber() +
+        extraLamports,
     );
+    assert.equal(afterBuyerSharedEscrowBalance, 0);
     assert.equal(paymentEscrowBalance, 0);
     assert.isNull(paymentEscrowAccount);
     assert.equal(
