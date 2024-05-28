@@ -415,7 +415,7 @@ describe('shared-escrow mmm-fulfill-linear', () => {
     assert.equal(poolAccountInfo.spotPrice.toNumber(), 1.2 * LAMPORTS_PER_SOL);
   });
 
-  it.only('can fulfill buy with shared escrow for mip1 nfts that will close the pool due to not enough cap', async () => {
+  it('can fulfill buy with shared escrow for mip1 nfts that will close the pool due to not enough cap', async () => {
     const DEFAULT_ACCOUNTS = {
       tokenMetadataProgram: TOKEN_METADATA_PROGRAM_ID,
       authorizationRulesProgram: AUTH_RULES_PROGRAM_ID,
