@@ -4,7 +4,6 @@ use solana_program::program::invoke_signed;
 use std::convert::TryFrom;
 
 use crate::{
-    assert_valid_core_plugins,
     constants::*,
     deserialize_collection_asset,
     errors::MMMErrorCode,
@@ -105,7 +104,6 @@ pub fn handler<'info>(
     ]];
     let collection = &ctx.accounts.collection;
 
-    assert_valid_core_plugins(asset)?;
     let _ = check_allowlists_for_mpl_core(&pool.allowlists, asset, args.allowlist_aux)?;
 
     let PoolPriceInfo {
