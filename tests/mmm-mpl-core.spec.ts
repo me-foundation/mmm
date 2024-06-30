@@ -413,7 +413,13 @@ describe('mmm-mpl-core', () => {
             ],
           },
           assetConfig: {
-            plugins: [],
+            plugins: [
+              pluginAuthorityPair({
+                type: 'FreezeDelegate',
+                data: { frozen: false },
+                authority: { __kind: 'Owner' },
+              }),
+            ],
           },
         },
       );
