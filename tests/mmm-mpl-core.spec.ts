@@ -41,7 +41,7 @@ import {
 import { assert, expect } from 'chai';
 import { ProgramError } from '@project-serum/anchor';
 
-describe('mmm-mpl-core', () => {
+describe.only('mmm-mpl-core', () => {
   const { connection } = anchor.AnchorProvider.env();
   const wallet = new anchor.Wallet(Keypair.generate());
   const creator1 = Keypair.generate();
@@ -413,7 +413,13 @@ describe('mmm-mpl-core', () => {
             ],
           },
           assetConfig: {
-            plugins: [],
+            plugins: [
+              pluginAuthorityPair({
+                type: 'FreezeDelegate',
+                data: { frozen: false },
+                authority: { __kind: 'Owner' },
+              }),
+            ],
           },
         },
       );

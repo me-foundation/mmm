@@ -1,6 +1,6 @@
 use anchor_lang::{accounts::unchecked_account::UncheckedAccount, error::Error};
 use mpl_core::{
-    types::{Plugin, PluginType, Royalties},
+    types::{Plugin, PluginAuthority, PluginType, Royalties},
     ID,
 };
 use mpl_token_metadata::types::Creator;
@@ -112,7 +112,20 @@ pub fn get_royalties_from_plugin(
 pub fn assert_valid_core_plugins(asset: &IndexableAsset) -> Result<(), Error> {
     for plugin in asset.plugins.keys() {
         if CORE_DENY_LIST.contains(plugin) {
-            return Err(MMMErrorCode::UnsupportedAssetPlugin.into());
+            if plugin == &PluginType::FreezeDelegate {
+                match asset.plugins.get(plugin) {
+                    Some(d) => {
+                        if d.authority != PluginAuthority::Owner {
+                            return Err(MMMErrorCode::UnsupportedAssetPlugin.into());
+                        }
+                    }
+                    None => {
+                        return Err(MMMErrorCode::UnsupportedAssetPlugin.into());
+                    }
+                }
+            } else {
+                return Err(MMMErrorCode::UnsupportedAssetPlugin.into());
+            }
         }
     }
     Ok(())
