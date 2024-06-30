@@ -41,7 +41,7 @@ import {
 import { assert, expect } from 'chai';
 import { ProgramError } from '@project-serum/anchor';
 
-describe.only('mmm-mpl-core', () => {
+describe('mmm-mpl-core', () => {
   const { connection } = anchor.AnchorProvider.env();
   const wallet = new anchor.Wallet(Keypair.generate());
   const creator1 = Keypair.generate();
