@@ -55,16 +55,16 @@ describe('mmm-fulfill-exp', () => {
   ) as anchor.Program<Mmm>;
   const cosigner = Keypair.generate();
 
-  beforeEach(async () => {
+  before(async () => {
     await airdrop(connection, wallet.publicKey, 50);
   });
 
   // Run our tests for both Tokenkeg and Token2022.
   TOKEN_PROGRAM_IDS.forEach((tokenProgramId) => {
     it(`Sellside only ${tokenProgramId}`, async () => {
-      const umi = (await createUmi('http://127.0.0.1:8899')).use(
-        mplTokenMetadata(),
-      );
+      const umi = (
+        await createUmi('http://127.0.0.1:8899', { commitment: 'processed' })
+      ).use(mplTokenMetadata());
 
       const token2022Program: UmiProgram = {
         name: 'splToken2022',
@@ -977,7 +977,7 @@ describe('mmm-fulfill-exp', () => {
       );
     });
 
-    it('Two sides', async () => {
+    it(`Two sides ${tokenProgramId}`, async () => {
       const seller = Keypair.generate();
       const buyer = Keypair.generate();
       const [poolData] = await Promise.all([

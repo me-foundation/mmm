@@ -761,9 +761,9 @@ export async function createPoolWithExampleDepositsUmi(
   tokenProgramId: PublicKey,
   nftRecipient: PublicKey,
 ): Promise<PoolData> {
-  const umi = (await createUmi('http://127.0.0.1:8899')).use(
-    mplTokenMetadata(),
-  );
+  const umi = (
+    await createUmi('http://127.0.0.1:8899', { commitment: 'processed' })
+  ).use(mplTokenMetadata());
 
   const creator = generateSigner(umi);
 

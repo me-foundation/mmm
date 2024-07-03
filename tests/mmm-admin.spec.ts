@@ -13,6 +13,7 @@ import {
   AllowlistKind,
   getMMMPoolPDA,
   MMMProgramID,
+  getMMMBuysideSolEscrowPDA,
 } from '../sdk/src';
 import { airdrop, getEmptyAllowLists } from './utils';
 
@@ -232,6 +233,87 @@ describe('mmm-admin', () => {
       expect(poolAccountInfo.uuid).toEqual(uuid.publicKey);
       expect(poolAccountInfo.paymentMint).toEqual(PublicKey.default);
       expect(poolAccountInfo.allowlists).toEqual(allowlists);
+    });
+  });
+
+  describe('Can close pool', () => {
+    it('happy path', async () => {
+      const referral = Keypair.generate();
+      const uuid = Keypair.generate();
+      const { key: poolKey } = getMMMPoolPDA(
+        program.programId,
+        wallet.publicKey,
+        uuid.publicKey,
+      );
+
+      const createPoolArgs = {
+        spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
+        curveType: CurveKind.linear,
+        curveDelta: new anchor.BN(0),
+        reinvestFulfillBuy: true,
+        reinvestFulfillSell: true,
+        expiry: new anchor.BN(42),
+        lpFeeBp: 200,
+        referral: referral.publicKey,
+        cosignerAnnotation: new Array(32).fill(0),
+        buysideCreatorRoyaltyBp: 0,
+
+        uuid: uuid.publicKey,
+        paymentMint: PublicKey.default,
+        allowlists: getEmptyAllowLists(6),
+      };
+
+      const closeAndCheckPool = async () => {
+        assert.isNotNull(await program.account.pool.fetchNullable(poolKey));
+        const { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
+          MMMProgramID,
+          poolKey,
+        );
+        await program.methods
+          .solClosePool()
+          .accountsStrict({
+            pool: poolKey,
+            owner: wallet.publicKey,
+            systemProgram: SystemProgram.programId,
+            buysideSolEscrowAccount,
+            cosigner: cosigner.publicKey,
+          })
+          .signers([cosigner])
+          .rpc();
+        assert.isNull(await program.account.pool.fetchNullable(poolKey));
+      };
+
+      await program.methods
+        .createPool({
+          ...createPoolArgs,
+        })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([cosigner])
+        .rpc();
+
+      await closeAndCheckPool();
+
+      // create pool again, but payment mint is not default
+      await program.methods
+        .createPool({
+          ...createPoolArgs,
+          paymentMint: Keypair.generate().publicKey,
+        })
+        .accountsStrict({
+          owner: wallet.publicKey,
+          cosigner: cosigner.publicKey,
+          pool: poolKey,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([cosigner])
+        .rpc();
+
+      await closeAndCheckPool();
     });
   });
 
