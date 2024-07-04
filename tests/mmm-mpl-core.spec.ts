@@ -38,7 +38,7 @@ import {
   pluginAuthorityPair,
   ruleSet,
 } from '@metaplex-foundation/mpl-core';
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { ProgramError } from '@project-serum/anchor';
 
 describe('mmm-mpl-core', () => {
@@ -306,7 +306,7 @@ describe('mmm-mpl-core', () => {
           .signers([cosigner])
           .rpc({ skipPreflight: true });
       } catch (e) {
-        expect(e).to.be.instanceOf(ProgramError);
+        expect(e).toBeInstanceOf(ProgramError);
         const err = e as ProgramError;
 
         assert.strictEqual(err.msg, 'invalid allowlists');
@@ -366,7 +366,7 @@ describe('mmm-mpl-core', () => {
           .signers([cosigner])
           .rpc({ skipPreflight: true });
       } catch (e) {
-        expect(e).to.be.instanceOf(ProgramError);
+        expect(e).toBeInstanceOf(ProgramError);
         const err = e as ProgramError;
 
         assert.strictEqual(err.msg, 'invalid allowlists');
@@ -1604,7 +1604,7 @@ describe('mmm-mpl-core', () => {
           .signers([cosigner, seller])
           .rpc({ skipPreflight: true });
       } catch (e) {
-        expect(e).to.be.instanceOf(ProgramError);
+        expect(e).toBeInstanceOf(ProgramError);
         const err = e as ProgramError;
 
         assert.strictEqual(err.msg, 'invalid allowlists');
