@@ -51,7 +51,6 @@ import {
 } from './utils';
 import { PROGRAM_ID as AUTH_RULES_PROGRAM_ID } from '@metaplex-foundation/mpl-token-auth-rules';
 import { MPL_TOKEN_METADATA_PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
-import { before } from 'mocha';
 import {
   fromWeb3JsPublicKey,
   toWeb3JsPublicKey,
@@ -83,7 +82,7 @@ describe('mmm-mip1', () => {
     rent: SYSVAR_RENT_PUBKEY,
   };
 
-  before(async () => {
+  beforeAll(async () => {
     await airdrop(connection, nftCreator.publicKey, 10);
     const rulesRes = await createDefaultTokenAuthorizationRules(
       connection,

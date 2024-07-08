@@ -38,7 +38,7 @@ import {
   pluginAuthorityPair,
   ruleSet,
 } from '@metaplex-foundation/mpl-core';
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import { ProgramError } from '@project-serum/anchor';
 
 describe('mmm-mpl-core', () => {
@@ -306,7 +306,7 @@ describe('mmm-mpl-core', () => {
           .signers([cosigner])
           .rpc({ skipPreflight: true });
       } catch (e) {
-        expect(e).to.be.instanceOf(ProgramError);
+        expect(e).toBeInstanceOf(ProgramError);
         const err = e as ProgramError;
 
         assert.strictEqual(err.msg, 'invalid allowlists');
@@ -366,7 +366,7 @@ describe('mmm-mpl-core', () => {
           .signers([cosigner])
           .rpc({ skipPreflight: true });
       } catch (e) {
-        expect(e).to.be.instanceOf(ProgramError);
+        expect(e).toBeInstanceOf(ProgramError);
         const err = e as ProgramError;
 
         assert.strictEqual(err.msg, 'invalid allowlists');
@@ -1280,13 +1280,13 @@ describe('mmm-mpl-core', () => {
 
       assertIsBetween(
         creator1Balance,
-        initCreator1Balance + expectedBuyPrices.royaltyPaid * 0.2, // 20% of the royalty
+        initCreator1Balance + expectedBuyPrices.royaltyPaid.toNumber() * 0.2, // 20% of the royalty
         PRICE_ERROR_RANGE,
       );
 
       assertIsBetween(
         creator2Balance,
-        initCreator2Balance + expectedBuyPrices.royaltyPaid * 0.8, // 80% of the royalty
+        initCreator2Balance + expectedBuyPrices.royaltyPaid.toNumber() * 0.8, // 80% of the royalty
         PRICE_ERROR_RANGE,
       );
 
@@ -1297,9 +1297,9 @@ describe('mmm-mpl-core', () => {
         initSellerBalance +
           spotPrice * LAMPORTS_PER_SOL -
           expectedTxFees -
-          expectedBuyPrices.takerFeePaid -
+          expectedBuyPrices.takerFeePaid.toNumber() -
           sellStatePDARent -
-          expectedBuyPrices.royaltyPaid,
+          expectedBuyPrices.royaltyPaid.toNumber(),
       );
 
       assert.equal(
@@ -1467,13 +1467,13 @@ describe('mmm-mpl-core', () => {
 
       assertIsBetween(
         creator1Balance,
-        initCreator1Balance + expectedBuyPrices.royaltyPaid * 0.2, // 20% of the royalty
+        initCreator1Balance + expectedBuyPrices.royaltyPaid.toNumber() * 0.2, // 20% of the royalty
         PRICE_ERROR_RANGE,
       );
 
       assertIsBetween(
         creator2Balance,
-        initCreator2Balance + expectedBuyPrices.royaltyPaid * 0.8, // 80% of the royalty
+        initCreator2Balance + expectedBuyPrices.royaltyPaid.toNumber() * 0.8, // 80% of the royalty
         PRICE_ERROR_RANGE,
       );
 
@@ -1484,8 +1484,8 @@ describe('mmm-mpl-core', () => {
         initSellerBalance +
           spotPrice * LAMPORTS_PER_SOL -
           expectedTxFees -
-          expectedBuyPrices.takerFeePaid -
-          expectedBuyPrices.royaltyPaid,
+          expectedBuyPrices.takerFeePaid.toNumber() -
+          expectedBuyPrices.royaltyPaid.toNumber(),
       );
 
       assert.equal(
@@ -1604,7 +1604,7 @@ describe('mmm-mpl-core', () => {
           .signers([cosigner, seller])
           .rpc({ skipPreflight: true });
       } catch (e) {
-        expect(e).to.be.instanceOf(ProgramError);
+        expect(e).toBeInstanceOf(ProgramError);
         const err = e as ProgramError;
 
         assert.strictEqual(err.msg, 'invalid allowlists');

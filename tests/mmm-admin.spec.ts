@@ -6,7 +6,6 @@ import {
   PublicKey,
   SystemProgram,
 } from '@solana/web3.js';
-import { assert, expect } from 'chai';
 import {
   IDL,
   Mmm,
@@ -77,29 +76,25 @@ describe('mmm-admin', () => {
         .rpc();
 
       const poolAccountInfo = await program.account.pool.fetch(poolKey);
-      assert.equal(poolAccountInfo.spotPrice.toNumber(), 1 * LAMPORTS_PER_SOL);
-      assert.equal(poolAccountInfo.curveType, CurveKind.linear);
-      assert.equal(poolAccountInfo.curveDelta.toNumber(), 0);
-      assert.isTrue(poolAccountInfo.reinvestFulfillBuy);
-      assert.isTrue(poolAccountInfo.reinvestFulfillSell);
-      assert.equal(poolAccountInfo.expiry.toNumber(), 42);
-      assert.equal(poolAccountInfo.lpFeeBp, 200);
-      assert.equal(
-        poolAccountInfo.referral.toBase58(),
+      expect(poolAccountInfo.spotPrice.toNumber()).toBe(1 * LAMPORTS_PER_SOL);
+      expect(poolAccountInfo.curveType).toBe(CurveKind.linear);
+      expect(poolAccountInfo.curveDelta.toNumber()).toBe(0);
+      expect(poolAccountInfo.reinvestFulfillBuy).toBe(true);
+      expect(poolAccountInfo.reinvestFulfillSell).toBe(true);
+      expect(poolAccountInfo.expiry.toNumber()).toBe(42);
+      expect(poolAccountInfo.lpFeeBp).toBe(200);
+      expect(poolAccountInfo.referral.toBase58()).toBe(
         referral.publicKey.toBase58(),
       );
-      assert.equal(poolAccountInfo.referralBp, 0);
-      assert.deepEqual(
-        poolAccountInfo.cosignerAnnotation,
-        new Array(32).fill(0),
-      );
-      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
-      assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
-      assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
-      assert.deepEqual(poolAccountInfo.cosigner, cosigner.publicKey);
-      assert.deepEqual(poolAccountInfo.uuid, uuid.publicKey);
-      assert.deepEqual(poolAccountInfo.paymentMint, PublicKey.default);
-      assert.deepEqual(poolAccountInfo.allowlists, allowlists);
+      expect(poolAccountInfo.referralBp).toBe(0);
+      expect(poolAccountInfo.cosignerAnnotation).toEqual(new Array(32).fill(0));
+      expect(poolAccountInfo.sellsideAssetAmount.toNumber()).toBe(0);
+      expect(poolAccountInfo.lpFeeEarned.toNumber()).toBe(0);
+      expect(poolAccountInfo.owner).toEqual(wallet.publicKey);
+      expect(poolAccountInfo.cosigner).toEqual(cosigner.publicKey);
+      expect(poolAccountInfo.uuid).toEqual(uuid.publicKey);
+      expect(poolAccountInfo.paymentMint).toEqual(PublicKey.default);
+      expect(poolAccountInfo.allowlists).toEqual(allowlists);
     });
 
     it('lp fee cannot be too large', async () => {
@@ -118,7 +113,7 @@ describe('mmm-admin', () => {
       ];
 
       try {
-        await program.methods
+        const txId = await program.methods
           .createPool({
             spotPrice: new anchor.BN(1 * LAMPORTS_PER_SOL),
             curveType: CurveKind.linear,
@@ -144,12 +139,12 @@ describe('mmm-admin', () => {
           .signers([cosigner])
           .rpc();
 
-        assert.ok(false, 'Should have thrown error');
+        expect(txId).toBeNull();
       } catch (e) {
         // Should be an AnchorError and force convert the type.
-        expect(e).to.be.instanceOf(AnchorError);
+        expect(e).toBeInstanceOf(AnchorError);
         const err = e as AnchorError;
-        assert.strictEqual(err.error.errorCode.number, 6000);
+        expect(err.error.errorCode.number).toBe(6000);
       }
     });
   });
@@ -218,26 +213,25 @@ describe('mmm-admin', () => {
         .rpc();
 
       const poolAccountInfo = await program.account.pool.fetch(poolKey);
-      assert.equal(poolAccountInfo.spotPrice.toNumber(), 2 * LAMPORTS_PER_SOL);
-      assert.equal(poolAccountInfo.curveType, CurveKind.exp);
-      assert.equal(poolAccountInfo.curveDelta.toNumber(), 888);
-      assert.isTrue(poolAccountInfo.reinvestFulfillBuy);
-      assert.isTrue(poolAccountInfo.reinvestFulfillSell);
-      assert.equal(poolAccountInfo.expiry.toNumber(), 0);
-      assert.equal(poolAccountInfo.lpFeeBp, 150);
-      assert.deepEqual(poolAccountInfo.referral, PublicKey.default);
-      assert.equal(poolAccountInfo.referralBp, 0);
-      assert.deepEqual(
-        poolAccountInfo.cosignerAnnotation,
+      expect(poolAccountInfo.spotPrice.toNumber()).toBe(2 * LAMPORTS_PER_SOL);
+      expect(poolAccountInfo.curveType).toBe(CurveKind.exp);
+      expect(poolAccountInfo.curveDelta.toNumber()).toBe(888);
+      expect(poolAccountInfo.reinvestFulfillBuy).toBe(true);
+      expect(poolAccountInfo.reinvestFulfillSell).toBe(true);
+      expect(poolAccountInfo.expiry.toNumber()).toBe(0);
+      expect(poolAccountInfo.lpFeeBp).toBe(150);
+      expect(poolAccountInfo.referral).toEqual(PublicKey.default);
+      expect(poolAccountInfo.referralBp).toEqual(0);
+      expect(poolAccountInfo.cosignerAnnotation).toEqual(
         new Array(32).fill(0).map((_, index) => index),
       );
-      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
-      assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
-      assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
-      assert.deepEqual(poolAccountInfo.cosigner, cosigner.publicKey);
-      assert.deepEqual(poolAccountInfo.uuid, uuid.publicKey);
-      assert.deepEqual(poolAccountInfo.paymentMint, PublicKey.default);
-      assert.deepEqual(poolAccountInfo.allowlists, allowlists);
+      expect(poolAccountInfo.sellsideAssetAmount.toNumber()).toBe(0);
+      expect(poolAccountInfo.lpFeeEarned.toNumber()).toBe(0);
+      expect(poolAccountInfo.owner).toEqual(wallet.publicKey);
+      expect(poolAccountInfo.cosigner).toEqual(cosigner.publicKey);
+      expect(poolAccountInfo.uuid).toEqual(uuid.publicKey);
+      expect(poolAccountInfo.paymentMint).toEqual(PublicKey.default);
+      expect(poolAccountInfo.allowlists).toEqual(allowlists);
     });
   });
 
@@ -322,31 +316,27 @@ describe('mmm-admin', () => {
       const poolAccountInfo = await program.account.pool.fetch(poolKey);
 
       // All pool values should be the same...
-      assert.equal(poolAccountInfo.spotPrice.toNumber(), 1 * LAMPORTS_PER_SOL);
-      assert.equal(poolAccountInfo.curveType, CurveKind.linear);
-      assert.equal(poolAccountInfo.curveDelta.toNumber(), 0);
-      assert.isTrue(poolAccountInfo.reinvestFulfillBuy);
-      assert.isTrue(poolAccountInfo.reinvestFulfillSell);
-      assert.equal(poolAccountInfo.expiry.toNumber(), 42);
-      assert.equal(poolAccountInfo.lpFeeBp, 200);
-      assert.equal(
-        poolAccountInfo.referral.toBase58(),
+      expect(poolAccountInfo.spotPrice.toNumber()).toBe(1 * LAMPORTS_PER_SOL);
+      expect(poolAccountInfo.curveType).toBe(CurveKind.linear);
+      expect(poolAccountInfo.curveDelta.toNumber()).toBe(0);
+      expect(poolAccountInfo.reinvestFulfillBuy).toBe(true);
+      expect(poolAccountInfo.reinvestFulfillSell).toBe(true);
+      expect(poolAccountInfo.expiry.toNumber()).toBe(42);
+      expect(poolAccountInfo.lpFeeBp).toBe(200);
+      expect(poolAccountInfo.referral.toBase58()).toBe(
         referral.publicKey.toBase58(),
       );
-      assert.equal(poolAccountInfo.referralBp, 0);
-      assert.deepEqual(
-        poolAccountInfo.cosignerAnnotation,
-        new Array(32).fill(0),
-      );
-      assert.equal(poolAccountInfo.sellsideAssetAmount.toNumber(), 0);
-      assert.equal(poolAccountInfo.lpFeeEarned.toNumber(), 0);
-      assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
-      assert.deepEqual(poolAccountInfo.cosigner, cosigner.publicKey);
-      assert.deepEqual(poolAccountInfo.uuid, uuid.publicKey);
-      assert.deepEqual(poolAccountInfo.paymentMint, PublicKey.default);
+      expect(poolAccountInfo.referralBp).toBe(0);
+      expect(poolAccountInfo.cosignerAnnotation).toEqual(new Array(32).fill(0));
+      expect(poolAccountInfo.sellsideAssetAmount.toNumber()).toBe(0);
+      expect(poolAccountInfo.lpFeeEarned.toNumber()).toBe(0);
+      expect(poolAccountInfo.owner).toEqual(wallet.publicKey);
+      expect(poolAccountInfo.cosigner).toEqual(cosigner.publicKey);
+      expect(poolAccountInfo.uuid).toEqual(uuid.publicKey);
+      expect(poolAccountInfo.paymentMint).toEqual(PublicKey.default);
 
       // ...except for the allowlists.
-      assert.deepEqual(poolAccountInfo.allowlists, newAllowlists);
+      expect(poolAccountInfo.allowlists).toEqual(newAllowlists);
     });
 
     it('invalid authority cannot update', async () => {
@@ -405,7 +395,7 @@ describe('mmm-admin', () => {
         .rpc();
 
       try {
-        await program.methods
+        const txId = await program.methods
           .updateAllowlists({
             allowlists: newAllowlists,
           })
@@ -417,17 +407,17 @@ describe('mmm-admin', () => {
           .signers([inavlidAuthorityKeypair])
           .rpc();
 
-        assert.ok(false, 'Should have thrown error');
+        expect(txId).toBeNull();
       } catch (_err) {
         // Should be an AnchorError and force convert the type.
-        expect(_err).to.be.instanceOf(AnchorError);
+        expect(_err).toBeInstanceOf(AnchorError);
         const err = _err as AnchorError;
 
-        assert.strictEqual(err.error.errorMessage, 'invalid cosigner');
-        assert.strictEqual(err.error.errorCode.number, 6005);
+        expect(err.error.errorMessage).toBe('invalid cosigner');
+        expect(err.error.errorCode.number).toBe(6005);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
-        assert.deepEqual(poolAccountInfo.allowlists, allowlists);
+        expect(poolAccountInfo.allowlists).toEqual(allowlists);
       }
     });
 
@@ -485,7 +475,7 @@ describe('mmm-admin', () => {
         .rpc();
 
       try {
-        await program.methods
+        const txId = await program.methods
           .updateAllowlists({
             allowlists: newAllowlists,
           })
@@ -496,17 +486,17 @@ describe('mmm-admin', () => {
           })
           .rpc();
 
-        assert.ok(false, 'Should have thrown error');
+        expect(txId).toBeNull();
       } catch (_err) {
         // Should be an AnchorError and force convert the type.
-        expect(_err).to.be.instanceOf(AnchorError);
+        expect(_err).toBeInstanceOf(AnchorError);
         const err = _err as AnchorError;
 
-        assert.strictEqual(err.error.errorMessage, 'invalid cosigner');
-        assert.strictEqual(err.error.errorCode.number, 6005);
+        expect(err.error.errorMessage).toBe('invalid cosigner');
+        expect(err.error.errorCode.number).toBe(6005);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
-        assert.deepEqual(poolAccountInfo.allowlists, allowlists);
+        expect(poolAccountInfo.allowlists).toEqual(allowlists);
       }
     });
 
@@ -563,8 +553,8 @@ describe('mmm-admin', () => {
         .rpc();
 
       let poolAccountInfo = await program.account.pool.fetch(poolKey);
-      assert.deepEqual(poolAccountInfo.owner, wallet.publicKey);
-      assert.deepEqual(poolAccountInfo.cosigner, wallet.publicKey);
+      expect(poolAccountInfo.owner).toEqual(wallet.publicKey);
+      expect(poolAccountInfo.cosigner).toEqual(wallet.publicKey);
 
       await program.methods
         .updateAllowlists({
@@ -578,7 +568,7 @@ describe('mmm-admin', () => {
         .rpc();
 
       poolAccountInfo = await program.account.pool.fetch(poolKey);
-      assert.deepEqual(poolAccountInfo.allowlists, newAllowlists);
+      expect(poolAccountInfo.allowlists).toEqual(newAllowlists);
     });
 
     it('cosigner cannot update pool they are not owner on', async () => {
@@ -676,7 +666,7 @@ describe('mmm-admin', () => {
         .rpc();
 
       try {
-        await program.methods
+        const txId = await program.methods
           .updateAllowlists({
             allowlists: newAllowlists,
           })
@@ -688,19 +678,19 @@ describe('mmm-admin', () => {
           .signers([cosigner])
           .rpc();
 
-        assert.ok(false, 'Should have thrown error');
+        expect(txId).toBeNull();
       } catch (_err) {
         // Should be an AnchorError and force convert the type.
-        expect(_err).to.be.instanceOf(AnchorError);
+        expect(_err).toBeInstanceOf(AnchorError);
         const err = _err as AnchorError;
 
         // Seeds constraint will pass but the has_one constraint will fail with the
         // custom "InvalidOwner" error.
-        assert.strictEqual(err.error.errorMessage, 'invalid cosigner');
-        assert.strictEqual(err.error.errorCode.number, 6005);
+        expect(err.error.errorMessage).toBe('invalid cosigner');
+        expect(err.error.errorCode.number).toBe(6005);
 
         const poolAccountInfo = await program.account.pool.fetch(poolKey);
-        assert.deepEqual(poolAccountInfo.allowlists, allowlists);
+        expect(poolAccountInfo.allowlists).toEqual(allowlists);
       }
     });
   });

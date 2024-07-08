@@ -10,7 +10,7 @@ import {
   PublicKey,
   SystemProgram,
 } from '@solana/web3.js';
-import { assert, expect } from 'chai';
+import { assert } from 'chai';
 import {
   Mmm,
   AllowlistKind,
@@ -755,7 +755,7 @@ describe('mmm-ext-deposit', () => {
 });
 
 function assertProgramError(_err: unknown, message: string) {
-  expect(_err).to.be.instanceOf(anchor.ProgramError);
+  expect(_err).toBeInstanceOf(anchor.ProgramError);
   const err = _err as anchor.ProgramError;
 
   assert.strictEqual(err.msg, message);
