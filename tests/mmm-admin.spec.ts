@@ -264,7 +264,9 @@ describe('mmm-admin', () => {
       };
 
       const closeAndCheckPool = async () => {
-        assert.isNotNull(await program.account.pool.fetchNullable(poolKey));
+        await expect(
+          program.account.pool.fetchNullable(poolKey),
+        ).resolves.not.toBeNull();
         const { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(
           MMMProgramID,
           poolKey,
@@ -280,7 +282,9 @@ describe('mmm-admin', () => {
           })
           .signers([cosigner])
           .rpc();
-        assert.isNull(await program.account.pool.fetchNullable(poolKey));
+        await expect(
+          program.account.pool.fetchNullable(poolKey),
+        ).resolves.toBeNull();
       };
 
       await program.methods

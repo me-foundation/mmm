@@ -55,7 +55,7 @@ describe('mmm-fulfill-exp', () => {
   ) as anchor.Program<Mmm>;
   const cosigner = Keypair.generate();
 
-  before(async () => {
+  beforeAll(async () => {
     await airdrop(connection, wallet.publicKey, 50);
   });
 
