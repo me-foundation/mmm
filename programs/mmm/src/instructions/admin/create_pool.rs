@@ -26,6 +26,7 @@ pub struct CreatePool<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     /// CHECK: the cosigner can be set as owner if you want optional cosigner
+    #[account(constraint = owner.key() != cosigner.key() @ MMMErrorCode::InvalidCosigner)]
     pub cosigner: Signer<'info>,
     #[account(
         init,

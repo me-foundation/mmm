@@ -9,6 +9,7 @@ pub struct UpdateAllowlistsArgs {
 #[instruction(args:UpdateAllowlistsArgs)]
 pub struct UpdateAllowlists<'info> {
     #[account(mut)]
+    #[account(constraint = owner.key() != cosigner.key() @ MMMErrorCode::InvalidCosigner)]
     pub cosigner: Signer<'info>,
     /// CHECK: Owner is only used for seed derivation. Cosigner has_one constraint is checked in the pool account.
     pub owner: UncheckedAccount<'info>,
