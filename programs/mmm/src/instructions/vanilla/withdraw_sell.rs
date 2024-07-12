@@ -22,6 +22,7 @@ pub struct WithdrawSellArgs {
 pub struct WithdrawSell<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
+    #[account(constraint = owner.key() != cosigner.key() @ MMMErrorCode::InvalidCosigner)]
     pub cosigner: Signer<'info>,
     #[account(
         mut,

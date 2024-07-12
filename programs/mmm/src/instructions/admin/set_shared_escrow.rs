@@ -10,6 +10,7 @@ pub struct SetSharedEscrowArgs {
 pub struct SetSharedEscrow<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
+    #[account(constraint = owner.key() != cosigner.key() @ MMMErrorCode::InvalidCosigner)]
     pub cosigner: Signer<'info>,
     #[account(
         mut,
