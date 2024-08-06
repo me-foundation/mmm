@@ -324,7 +324,6 @@ describe('mmm-admin', () => {
   describe('Can update allowlists', () => {
     it('happy path', async () => {
       // Ensure cosigner is the only signer of the transaction.
-      const wallet = new anchor.Wallet(cosigner);
       const provider = new anchor.AnchorProvider(connection, wallet, {
         commitment: 'processed',
       });
@@ -334,8 +333,6 @@ describe('mmm-admin', () => {
         MMMProgramID,
         provider,
       ) as anchor.Program<Mmm>;
-
-      await airdrop(connection, cosigner.publicKey, 50);
 
       const fvca = Keypair.generate();
       const newFcva = Keypair.generate();
@@ -386,6 +383,7 @@ describe('mmm-admin', () => {
           pool: poolKey,
           systemProgram: SystemProgram.programId,
         })
+        .signers([cosigner])
         .rpc();
 
       await program.methods
@@ -397,6 +395,7 @@ describe('mmm-admin', () => {
           owner: wallet.publicKey,
           pool: poolKey,
         })
+        .signers([cosigner])
         .rpc();
 
       const poolAccountInfo = await program.account.pool.fetch(poolKey);
@@ -586,7 +585,8 @@ describe('mmm-admin', () => {
       }
     });
 
-    it('owner can update when no cosigner', async () => {
+    // Skipping this because we now enforce owner !== cosigner
+    it.skip('owner can update when no cosigner', async () => {
       const fvca = Keypair.generate();
       const newFcva = Keypair.generate();
 

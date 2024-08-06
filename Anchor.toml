@@ -39,6 +39,14 @@ address = "CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV" # libreplex royalty enf
 [[test.validator.clone]]
 address = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d" # metaplex core program
 
+[[test.validator.account]]
+address = "9V5HWD1ap6mCDMhBoXU5SVcZZn9ihqJtoMQZsw5MTnoD" # example payment proxy
+filename = './tests/deps/proxy.json'
+
+[[test.validator.account]]
+address = "AJtUEMcZv9DDG4EVd8ugG3duAnCmmmVa6xCEUV7FqFFd" # bad payment proxy, owned by invalid program
+filename = "./tests/deps/invalid_proxy.json"
+
 [[test.genesis]]
 address = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
 program = "./tests/deps/spl_token_2022.so"
