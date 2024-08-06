@@ -17,6 +17,7 @@ use crate::{
         get_sol_lp_fee, get_sol_total_price_and_next_price, log_pool, pay_creator_fees_in_sol,
         try_close_pool, try_close_sell_state,
     },
+    verify_referral::verify_referral,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -42,14 +43,16 @@ pub struct SolOcpFulfillSell<'info> {
     pub owner: UncheckedAccount<'info>,
     #[account(constraint = owner.key() != cosigner.key() @ MMMErrorCode::InvalidCosigner)]
     pub cosigner: Signer<'info>,
-    /// CHECK: we will check that the referral matches the pool's referral
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = verify_referral(&pool, &referral) @ MMMErrorCode::InvalidReferral,
+    )]
+    /// CHECK: use verify_referral to check the referral account
     pub referral: UncheckedAccount<'info>,
     #[account(
         mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
-        has_one = referral @ MMMErrorCode::InvalidReferral,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
         constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
         constraint = pool.expiry == 0 || pool.expiry > Clock::get().unwrap().unix_timestamp @ MMMErrorCode::Expired,
