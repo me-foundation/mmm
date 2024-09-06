@@ -120,7 +120,7 @@ pub struct SellState {
 
 ## Build and Test
 ```bash
-npm i
+yarn install
 anchor build
 anchor test
 ```

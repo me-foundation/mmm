@@ -168,7 +168,7 @@ export class MintExtTransferHookProvider implements TransferHookProvider {
   }
 
   static getLibreplexRoyaltyInfo(
-    additionalMetadata: [string, string][],
+    additionalMetadata: (readonly [string, string])[],
   ): [string, string] | undefined {
     const royaltyInfo = additionalMetadata.find(
       (v) =>
@@ -186,7 +186,7 @@ export class MintExtTransferHookProvider implements TransferHookProvider {
   }
 
   static getLibreplexRoyaltyInfoLegacy(
-    additionalMetadata: [string, string][],
+    additionalMetadata: (readonly [string, string])[],
   ): [string, string] | undefined {
     const creatorInfo = additionalMetadata.find(
       (v) =>
