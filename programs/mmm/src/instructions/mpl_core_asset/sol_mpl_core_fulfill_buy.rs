@@ -131,12 +131,7 @@ pub fn handler<'info>(
     // TODO: update lp_fee_bp when shared escrow for both side is enabled
     let seller_receives = {
         let lp_fee_bp = get_lp_fee_bp(pool, buyside_sol_escrow_account.lamports());
-        get_buyside_seller_receives(
-            total_price,
-            lp_fee_bp,
-            royalty_bp,
-            pool.buyside_creator_royalty_bp,
-        )
+        get_buyside_seller_receives(total_price, lp_fee_bp, royalty_bp, 10000)
     }?;
 
     // TODO: update lp_fee when shared escrow for both side is enabled
