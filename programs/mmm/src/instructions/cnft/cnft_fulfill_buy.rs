@@ -1,14 +1,16 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
+use mpl_bubblegum::utils::get_asset_id;
+use spl_account_compression::{program::SplAccountCompression, Noop};
 
 use crate::{
     constants::*,
     errors::MMMErrorCode,
-    state::{Pool, SellState},
-    util::{check_allowlists_for_mint, log_pool},
+    state::{BubblegumProgram, Pool, SellState, TreeConfigAnchor},
+    util::{check_allowlists_for_mint, log_pool, transfer_compressed_nft},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct CnftDepositSellArgs {
+pub struct CnftFulfillBuyArgs {
     // === cNFT transfer args === //
     // The Merkle root for the tree. Can be retrieved from off-chain data store.
     root: [u8; 32],
@@ -35,8 +37,8 @@ pub struct CnftDepositSellArgs {
 }
 
 #[derive(Accounts)]
-#[instruction(args:CnftDepositSellArgs)]
-pub struct CnftDepositSell<'info> {
+#[instruction(args:CnftFulfillBuyArgs)]
+pub struct CnftFulfillBuy<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,
     #[account(constraint = owner.key() != cosigner.key() @ MMMErrorCode::InvalidCosigner)]
@@ -81,11 +83,11 @@ pub struct CnftDepositSell<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<CnftDepositSell>, args: CnftDepositSellArgs) -> Result<()> {
+pub fn handler(ctx: Context<CnftFulfillBuy>, args: CnftFulfillBuyArgs) -> Result<()> {
     let owner = &ctx.accounts.owner;
     let pool = &mut ctx.accounts.pool;
     let sell_state = &mut ctx.accounts.sell_state;
-    let merkle_tree = &ctx.accounts.merkle_tree.clone();
+    let merkle_tree = &ctx.accounts.merkle_tree;
 
     if pool.using_shared_escrow() {
         return Err(MMMErrorCode::InvalidAccountState.into());
@@ -103,19 +105,15 @@ pub fn handler(ctx: Context<CnftDepositSell>, args: CnftDepositSellArgs) -> Resu
     // )?;
 
     // Do Cnft transfer logic here
-    msg!(
-        "Transferring asset to: {}",
-        ctx.accounts.program_as_signer.key
-    );
     transfer_compressed_nft(
         &ctx.accounts.tree_authority.to_account_info(),
-        &wallet.to_account_info(),
-        &ctx.accounts.leaf_delegate.to_account_info(), // delegate
-        &ctx.accounts.program_as_signer.to_account_info(),
+        &ctx.accounts.owner.to_account_info(),
+        &ctx.accounts.leaf_delegate.to_account_info(),
+        &ctx.accounts.pool.to_account_info(),
         &ctx.accounts.merkle_tree,
         &ctx.accounts.log_wrapper,
         &ctx.accounts.compression_program,
-        &ctx.accounts.system_program,
+        &ctx.accounts.system_program, // Pass as Program<System> without calling to_account_info()
         ctx.remaining_accounts,
         ctx.accounts.bubblegum_program.key(),
         args.root,
