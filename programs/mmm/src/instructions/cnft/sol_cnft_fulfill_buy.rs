@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct CnftFulfillBuyArgs {
+pub struct SolCnftFulfillBuyArgs {
     // === cNFT transfer args === //
     // The Merkle root for the tree. Can be retrieved from off-chain data store.
     root: [u8; 32],
@@ -41,8 +41,8 @@ pub struct CnftFulfillBuyArgs {
 }
 
 #[derive(Accounts)]
-#[instruction(args:CnftFulfillBuyArgs)]
-pub struct CnftFulfillBuy<'info> {
+#[instruction(args:SolCnftFulfillBuyArgs)]
+pub struct SolCnftFulfillBuy<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     /// CHECK: we will check the owner field that matches the pool owner
@@ -83,9 +83,7 @@ pub struct CnftFulfillBuy<'info> {
           )]
     /// CHECK: This account is neither written to nor read from.
     pub tree_authority: Account<'info, TreeConfigAnchor>,
-    // The NFT delegate. Transfers must be signed by either the NFT owner or NFT delegate.
-    /// CHECK: This account is checked in the Bubblegum transfer instruction
-    leaf_delegate: UncheckedAccount<'info>,
+
     // The account that contains the Merkle tree, initialized by create_tree.
     /// CHECK: This account is modified in the downstream Bubblegum program
     #[account(mut)]
@@ -124,7 +122,10 @@ pub struct CnftFulfillBuy<'info> {
     //   0+: creator accounts
 }
 
-pub fn handler(ctx: Context<CnftFulfillBuy>, args: CnftFulfillBuyArgs) -> Result<()> {
+pub fn handler<'info>(
+    ctx: Context<'_, '_, '_, 'info, SolCnftFulfillBuy<'info>>,
+    args: SolCnftFulfillBuyArgs,
+) -> Result<()> {
     // let payer = &ctx.accounts.payer;
     let owner = &ctx.accounts.owner;
     let pool = &mut ctx.accounts.pool;
@@ -144,25 +145,25 @@ pub fn handler(ctx: Context<CnftFulfillBuy>, args: CnftFulfillBuyArgs) -> Result
     //     args.allowlist_aux,
     // )?;
 
-    // Do Cnft transfer logic here
-    // transfer_compressed_nft(
-    //     &ctx.accounts.tree_authority.to_account_info(),
-    //     &ctx.accounts.payer.to_account_info(),
-    //     &ctx.accounts.leaf_delegate.to_account_info(),
-    //     &ctx.accounts.pool.to_account_info(),
-    //     &ctx.accounts.merkle_tree,
-    //     &ctx.accounts.log_wrapper,
-    //     &ctx.accounts.compression_program,
-    //     &ctx.accounts.system_program, // Pass as Program<System> without calling to_account_info()
-    //     ctx.remaining_accounts,
-    //     ctx.accounts.bubblegum_program.key(),
-    //     args.root,
-    //     args.metadata_hash,
-    //     args.creator_hash,
-    //     args.nonce,
-    //     args.index,
-    //     None, // signer passed through from ctx
-    // )?;
+    // Transfer CNFT from seller(payer) to buyer (pool owner)
+    transfer_compressed_nft(
+        &ctx.accounts.tree_authority.to_account_info(),
+        &ctx.accounts.payer.to_account_info(),
+        &ctx.accounts.payer.to_account_info(),
+        &ctx.accounts.owner.to_account_info(),
+        &ctx.accounts.merkle_tree,
+        &ctx.accounts.log_wrapper,
+        &ctx.accounts.compression_program,
+        &ctx.accounts.system_program, // Pass as Program<System> without calling to_account_info()
+        &ctx.remaining_accounts, // TODO: need to extract the the proofs from the remaining accounts
+        ctx.accounts.bubblegum_program.key(),
+        args.root,
+        args.metadata_hash,
+        args.creator_hash,
+        args.nonce,
+        args.index,
+        None, // signer passed through from ctx
+    )?;
 
     log_pool("post_sol_cnft_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;

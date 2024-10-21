@@ -2195,11 +2195,6 @@ export type Mmm = {
           "isSigner": false
         },
         {
-          "name": "leafDelegate",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "merkleTree",
           "isMut": true,
           "isSigner": false
@@ -2244,7 +2239,7 @@ export type Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "CnftFulfillBuyArgs"
+            "defined": "SolCnftFulfillBuyArgs"
           }
         }
       ]
@@ -2547,7 +2542,7 @@ export type Mmm = {
       }
     },
     {
-      "name": "CnftFulfillBuyArgs",
+      "name": "SolCnftFulfillBuyArgs",
       "type": {
         "kind": "struct",
         "fields": [
@@ -5298,11 +5293,6 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
-          "name": "leafDelegate",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "merkleTree",
           "isMut": true,
           "isSigner": false
@@ -5347,7 +5337,7 @@ export const IDL: Mmm = {
         {
           "name": "args",
           "type": {
-            "defined": "CnftFulfillBuyArgs"
+            "defined": "SolCnftFulfillBuyArgs"
           }
         }
       ]
@@ -5650,7 +5640,7 @@ export const IDL: Mmm = {
       }
     },
     {
-      "name": "CnftFulfillBuyArgs",
+      "name": "SolCnftFulfillBuyArgs",
       "type": {
         "kind": "struct",
         "fields": [

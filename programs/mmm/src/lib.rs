@@ -183,8 +183,8 @@ pub mod mmm {
     }
 
     pub fn cnft_fulfill_buy<'info>(
-        ctx: Context<'_, '_, '_, 'info, CnftFulfillBuy<'info>>,
-        args: CnftFulfillBuyArgs,
+        ctx: Context<'_, '_, '_, 'info, SolCnftFulfillBuy<'info>>,
+        args: SolCnftFulfillBuyArgs,
     ) -> Result<()> {
         instructions::sol_cnft_fulfill_buy::handler(ctx, args)
     }
