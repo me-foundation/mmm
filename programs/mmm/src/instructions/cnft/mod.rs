@@ -1,3 +1,3 @@
-pub mod cnft_deposit_sell;
+pub mod sol_cnft_fulfill_buy;
 
-pub use cnft_deposit_sell::*;
+pub use sol_cnft_fulfill_buy::*;

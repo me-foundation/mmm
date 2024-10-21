@@ -182,10 +182,10 @@ pub mod mmm {
         instructions::sol_mpl_core_fulfill_buy::handler(ctx, args)
     }
 
-    pub fn cnft_deposit_sell<'info>(
-        ctx: Context<'_, '_, '_, 'info, CnftDepositSell<'info>>,
-        args: CnftDepositSellArgs,
+    pub fn cnft_fulfill_buy<'info>(
+        ctx: Context<'_, '_, '_, 'info, CnftFulfillBuy<'info>>,
+        args: CnftFulfillBuyArgs,
     ) -> Result<()> {
-        instructions::cnft_deposit_sell::handler(ctx, args)
+        instructions::sol_cnft_fulfill_buy::handler(ctx, args)
     }
 }

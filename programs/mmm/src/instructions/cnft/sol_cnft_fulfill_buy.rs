@@ -6,7 +6,8 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     state::{BubblegumProgram, Pool, SellState, TreeConfigAnchor},
-    util::{check_allowlists_for_mint, log_pool, transfer_compressed_nft},
+    util::{check_allowlists_for_mint, log_pool, transfer_compressed_nft, try_close_pool},
+    verify_referral::verify_referral,
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -16,7 +17,7 @@ pub struct CnftFulfillBuyArgs {
     root: [u8; 32],
     // The Keccak256 hash of the NFTs existing metadata (without the verified flag for the creator changed).
     // The metadata is retrieved from off-chain data store.
-    data_hash: [u8; 32],
+    metadata_hash: [u8; 32],
     // The Keccak256 hash of the NFTs existing creators array (without the verified flag for the creator changed).
     // The creators array is retrieved from off-chain data store.
     creator_hash: [u8; 32],
@@ -33,24 +34,45 @@ pub struct CnftFulfillBuyArgs {
     payment_mint: Pubkey,
     // The asset amount to deposit, default to 1.
     pub asset_amount: u64,
+    pub min_payment_amount: u64,
     pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
+    pub maker_fee_bp: i16,             // will be checked by cosigner
+    pub taker_fee_bp: i16,             // will be checked by cosigner
 }
 
 #[derive(Accounts)]
 #[instruction(args:CnftFulfillBuyArgs)]
 pub struct CnftFulfillBuy<'info> {
     #[account(mut)]
-    pub owner: Signer<'info>,
+    pub payer: Signer<'info>,
+    /// CHECK: we will check the owner field that matches the pool owner
+    #[account(mut)]
+    pub owner: UncheckedAccount<'info>,
     #[account(constraint = owner.key() != cosigner.key() @ MMMErrorCode::InvalidCosigner)]
     pub cosigner: Signer<'info>,
+    #[account(
+        mut,
+        constraint = verify_referral(&pool, &referral) @ MMMErrorCode::InvalidReferral,
+    )]
+    /// CHECK: use verify_referral to check the referral account
+    pub referral: UncheckedAccount<'info>,
     #[account(
         mut,
         seeds = [POOL_PREFIX.as_bytes(), owner.key().as_ref(), pool.uuid.as_ref()],
         has_one = owner @ MMMErrorCode::InvalidOwner,
         has_one = cosigner @ MMMErrorCode::InvalidCosigner,
+        constraint = pool.payment_mint.eq(&Pubkey::default()) @ MMMErrorCode::InvalidPaymentMint,
+        constraint = pool.expiry == 0 || pool.expiry > Clock::get().unwrap().unix_timestamp @ MMMErrorCode::Expired,
         bump
     )]
     pub pool: Box<Account<'info, Pool>>,
+    /// CHECK: it's a pda, and the private key is owned by the seeds
+    #[account(
+        mut,
+        seeds = [BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(), pool.key().as_ref()],
+        bump,
+    )]
+    pub buyside_sol_escrow_account: UncheckedAccount<'info>,
 
     // ==== cNFT transfer args ==== //
     #[account(
@@ -76,24 +98,42 @@ pub struct CnftFulfillBuy<'info> {
     // The Solana Program Library spl-account-compression program ID.
     compression_program: Program<'info, SplAccountCompression>,
 
+    #[account(
+        init_if_needed,
+        payer = payer,
+        seeds = [
+            SELL_STATE_PREFIX.as_bytes(),
+            pool.key().as_ref(),
+            merkle_tree.key().as_ref(),
+            args.index.to_le_bytes().as_ref(),
+        ],
+        space = SellState::LEN,
+        bump
+    )]
     pub sell_state: Account<'info, SellState>,
     /// CHECK: will be used for allowlist checks
     pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
     pub rent: Sysvar<'info, Rent>,
+    // Remaining accounts
+    // Branch: using shared escrow accounts
+    //   0: m2_program
+    //   1: shared_escrow_account
+    //   2+: creator accounts
+    // Branch: not using shared escrow accounts
+    //   0+: creator accounts
 }
 
 pub fn handler(ctx: Context<CnftFulfillBuy>, args: CnftFulfillBuyArgs) -> Result<()> {
+    // let payer = &ctx.accounts.payer;
     let owner = &ctx.accounts.owner;
     let pool = &mut ctx.accounts.pool;
-    let sell_state = &mut ctx.accounts.sell_state;
-    let merkle_tree = &ctx.accounts.merkle_tree;
+    // let sell_state = &mut ctx.accounts.sell_state;
+    // let merkle_tree = &ctx.accounts.merkle_tree;
 
     if pool.using_shared_escrow() {
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
-
-    let asset_id = get_asset_id(&merkle_tree.key(), args.nonce);
 
     // Need to do check allowlist against cnft metadata args
     // check_allowlists_for_mint(
@@ -105,40 +145,27 @@ pub fn handler(ctx: Context<CnftFulfillBuy>, args: CnftFulfillBuyArgs) -> Result
     // )?;
 
     // Do Cnft transfer logic here
-    transfer_compressed_nft(
-        &ctx.accounts.tree_authority.to_account_info(),
-        &ctx.accounts.owner.to_account_info(),
-        &ctx.accounts.leaf_delegate.to_account_info(),
-        &ctx.accounts.pool.to_account_info(),
-        &ctx.accounts.merkle_tree,
-        &ctx.accounts.log_wrapper,
-        &ctx.accounts.compression_program,
-        &ctx.accounts.system_program, // Pass as Program<System> without calling to_account_info()
-        ctx.remaining_accounts,
-        ctx.accounts.bubblegum_program.key(),
-        args.root,
-        args.data_hash,
-        args.creator_hash,
-        args.nonce,
-        args.index,
-        None, // signer passed through from ctx
-    )?;
+    // transfer_compressed_nft(
+    //     &ctx.accounts.tree_authority.to_account_info(),
+    //     &ctx.accounts.payer.to_account_info(),
+    //     &ctx.accounts.leaf_delegate.to_account_info(),
+    //     &ctx.accounts.pool.to_account_info(),
+    //     &ctx.accounts.merkle_tree,
+    //     &ctx.accounts.log_wrapper,
+    //     &ctx.accounts.compression_program,
+    //     &ctx.accounts.system_program, // Pass as Program<System> without calling to_account_info()
+    //     ctx.remaining_accounts,
+    //     ctx.accounts.bubblegum_program.key(),
+    //     args.root,
+    //     args.metadata_hash,
+    //     args.creator_hash,
+    //     args.nonce,
+    //     args.index,
+    //     None, // signer passed through from ctx
+    // )?;
 
-    pool.sellside_asset_amount = pool
-        .sellside_asset_amount
-        .checked_add(args.asset_amount)
-        .ok_or(MMMErrorCode::NumericOverflow)?;
-
-    sell_state.pool = pool.key();
-    sell_state.pool_owner = owner.key();
-    // TODO: asset_mint can be get from tree.
-    sell_state.asset_mint = asset_id;
-    sell_state.cosigner_annotation = pool.cosigner_annotation;
-    sell_state.asset_amount = sell_state
-        .asset_amount
-        .checked_add(args.asset_amount)
-        .ok_or(MMMErrorCode::NumericOverflow)?;
-    log_pool("post_cnft_deposit_sell", pool)?;
+    log_pool("post_sol_cnft_fulfill_buy", pool)?;
+    try_close_pool(pool, owner.to_account_info())?;
 
     Ok(())
 }
