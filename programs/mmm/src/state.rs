@@ -1,4 +1,7 @@
+use std::ops::Deref;
+
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
+use mpl_bubblegum::accounts::TreeConfig;
 
 use crate::constants::*;
 
@@ -133,4 +136,43 @@ impl SellState {
         32 * 3 + // Pubkey
         32 + // [u8; 32]
         200; // padding
+}
+
+
+// Wrapper structs to replace the Anchor program types until the Metaplex libs have
+// better Anchor support.
+pub struct BubblegumProgram;
+
+impl Id for BubblegumProgram {
+    fn id() -> Pubkey {
+        mpl_bubblegum::ID
+    }
+}
+
+
+#[derive(Clone)]
+pub struct TreeConfigAnchor(pub TreeConfig);
+
+impl AccountDeserialize for TreeConfigAnchor {
+    fn try_deserialize_unchecked(buf: &mut &[u8]) -> Result<Self> {
+        Ok(Self(TreeConfig::from_bytes(buf)?))
+    }
+}
+
+impl anchor_lang::Owner for TreeConfigAnchor {
+    fn owner() -> Pubkey {
+        // pub use spl_token::ID is used at the top of the file
+        mpl_bubblegum::ID
+    }
+}
+
+// No-op since we can't write data to a foreign program's account.
+impl AccountSerialize for TreeConfigAnchor {}
+
+impl Deref for TreeConfigAnchor {
+    type Target = TreeConfig;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
