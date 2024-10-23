@@ -39,6 +39,15 @@ address = "CZ1rQoAHSqWBoAEfqGsiLhgbM59dDrCWk3rnG5FXaoRV" # libreplex royalty enf
 [[test.validator.clone]]
 address = "CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d" # metaplex core program
 
+[[test.validator.clone]]
+address = "BGUMAp9Gq7iTEuizy4pqaxsTyUCBK68MDfK752saRPUY" # bubblegum
+
+[[test.validator.clone]]
+address = "noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV" # Noop logger for bubblegum
+
+[[test.validator.clone]]
+address = "cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK" # compression program
+
 [[test.validator.account]]
 address = "9V5HWD1ap6mCDMhBoXU5SVcZZn9ihqJtoMQZsw5MTnoD" # example payment proxy
 filename = './tests/deps/proxy.json'
