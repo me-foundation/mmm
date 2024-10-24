@@ -20,7 +20,7 @@ use mpl_token_metadata::{
     types::{Creator, TokenStandard},
 };
 use open_creator_protocol::state::Policy;
-use solana_program::program::invoke_signed;
+use solana_program::{keccak, program::invoke_signed};
 use spl_token_2022::{
     extension::{
         group_member_pointer::GroupMemberPointer, metadata_pointer::MetadataPointer,
@@ -1122,6 +1122,105 @@ pub fn create_core_metadata_core(royalties: &Royalties) -> MplCoreMetadata {
         seller_fee_basis_points: royalties.basis_points,
         creators: Some(get_creators_from_royalties(royalties)),
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn transfer_compressed_nft<'info>(
+    tree_authority: &AccountInfo<'info>,
+    leaf_owner: &AccountInfo<'info>,
+    leaf_delegate: &AccountInfo<'info>,
+    new_leaf_owner: &AccountInfo<'info>,
+    merkle_tree: &AccountInfo<'info>,
+    log_wrapper: &AccountInfo<'info>,
+    compression_program: &AccountInfo<'info>,
+    system_program: &Program<'info, System>,
+    proof_path: &[AccountInfo<'info>],
+    bubblegum_program_key: Pubkey,
+    root: [u8; 32],
+    data_hash: [u8; 32],
+    creator_hash: [u8; 32],
+    nonce: u64,
+    index: u32,
+    signer_seeds: Option<&[&[u8]]>,
+) -> Result<()> {
+    // proof_path are the accounts that make up the required proof
+    let proof_path_len = proof_path.len();
+    let mut accounts = Vec::with_capacity(
+        8 // space for the 8 AccountMetas that are always included  (below)
+    + proof_path_len,
+    );
+    accounts.extend(vec![
+        AccountMeta::new_readonly(tree_authority.key(), false),
+        AccountMeta::new_readonly(leaf_owner.key(), true),
+        AccountMeta::new_readonly(leaf_delegate.key(), false),
+        AccountMeta::new_readonly(new_leaf_owner.key(), false),
+        AccountMeta::new(merkle_tree.key(), false),
+        AccountMeta::new_readonly(log_wrapper.key(), false),
+        AccountMeta::new_readonly(compression_program.key(), false),
+        AccountMeta::new_readonly(system_program.key(), false),
+    ]);
+
+    let transfer_discriminator: [u8; 8] = [163, 52, 200, 231, 140, 3, 69, 186];
+
+    let mut data = Vec::with_capacity(
+        8 // The length of transfer_discriminator,
+    + root.len()
+    + data_hash.len()
+    + creator_hash.len()
+    + 8 // The length of the nonce
+    + 8, // The length of the index
+    );
+    data.extend(transfer_discriminator);
+    data.extend(root);
+    data.extend(data_hash);
+    data.extend(creator_hash);
+    data.extend(nonce.to_le_bytes());
+    data.extend(index.to_le_bytes());
+
+    let mut account_infos = Vec::with_capacity(
+        8 // space for the 8 AccountInfos that are always included (below)
+    + proof_path_len,
+    );
+    account_infos.extend(vec![
+        tree_authority.to_account_info(),
+        leaf_owner.to_account_info(),
+        leaf_delegate.to_account_info(),
+        new_leaf_owner.to_account_info(),
+        merkle_tree.to_account_info(),
+        log_wrapper.to_account_info(),
+        compression_program.to_account_info(),
+        system_program.to_account_info(),
+    ]);
+
+    // Add "accounts" (hashes) that make up the merkle proof from the remaining accounts.
+    for acc in proof_path.iter() {
+        accounts.push(AccountMeta::new_readonly(acc.key(), false));
+        account_infos.push(acc.to_account_info());
+    }
+
+    let instruction = solana_program::instruction::Instruction {
+        program_id: bubblegum_program_key,
+        accounts,
+        data,
+    };
+
+    match signer_seeds {
+        Some(seeds) => {
+            let seeds_array: &[&[&[u8]]] = &[seeds];
+            solana_program::program::invoke_signed(&instruction, &account_infos[..], seeds_array)
+        }
+        None => solana_program::program::invoke(&instruction, &account_infos[..]),
+    }?;
+    Ok(())
+}
+
+// Taken from Bubblegum's hash_metadata: hashes seller_fee_basis_points to the final data_hash that Bubblegum expects.
+// This way we can use the seller_fee_basis_points while still guaranteeing validity.
+pub fn hash_metadata_data(
+    metadata_args_hash: [u8; 32],
+    seller_fee_basis_points: u16,
+) -> Result<[u8; 32]> {
+    Ok(keccak::hashv(&[&metadata_args_hash, &seller_fee_basis_points.to_le_bytes()]).to_bytes())
 }
 
 #[cfg(test)]

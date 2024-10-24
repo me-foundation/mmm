@@ -6,7 +6,7 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     state::{BubblegumProgram, Pool, SellState, TreeConfigAnchor},
-    util::{log_pool, try_close_pool},
+    util::{log_pool, transfer_compressed_nft, try_close_pool},
     verify_referral::verify_referral,
 };
 
@@ -88,15 +88,15 @@ pub struct SolCnftFulfillBuy<'info> {
     /// CHECK: This account is modified in the downstream Bubblegum program
     #[account(mut)]
     merkle_tree: UncheckedAccount<'info>,
-    // Used by bubblegum for logging (CPI)
+    /// CHECK: Used by bubblegum for logging (CPI)
     #[account(address = Pubkey::from_str("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV").unwrap())]
-    log_wrapper: Option<UncheckedAccount<'info>>,
+    log_wrapper: UncheckedAccount<'info>,
 
     bubblegum_program: Program<'info, BubblegumProgram>,
 
-    // The Solana Program Library spl-account-compression program ID.
+    /// CHECK: The Solana Program Library spl-account-compression program ID.
     #[account(address = Pubkey::from_str("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK").unwrap())]
-    compression_program: Option<UncheckedAccount<'info>>,
+    compression_program: UncheckedAccount<'info>,
 
     #[account(
         init_if_needed,
@@ -137,6 +137,26 @@ pub fn handler<'info>(
     if pool.using_shared_escrow() {
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
+
+    // Transfer CNFT from seller(payer) to buyer (pool owner)
+    transfer_compressed_nft(
+        &ctx.accounts.tree_authority.to_account_info(),
+        &ctx.accounts.payer.to_account_info(),
+        &ctx.accounts.payer.to_account_info(),
+        &ctx.accounts.owner.to_account_info(),
+        &ctx.accounts.merkle_tree,
+        &ctx.accounts.log_wrapper,
+        &ctx.accounts.compression_program,
+        &ctx.accounts.system_program, // Pass as Program<System> without calling to_account_info()
+        &ctx.remaining_accounts, // TODO: need to extract the the proofs from the remaining accounts
+        ctx.accounts.bubblegum_program.key(),
+        args.root,
+        args.metadata_hash,
+        args.creator_hash,
+        args.nonce,
+        args.index,
+        None, // signer passed through from ctx
+    )?;
 
     log_pool("post_sol_cnft_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
