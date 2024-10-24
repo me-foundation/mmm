@@ -2202,8 +2202,7 @@ export type Mmm = {
         {
           "name": "logWrapper",
           "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "isSigner": false
         },
         {
           "name": "bubblegumProgram",
@@ -2213,8 +2212,7 @@ export type Mmm = {
         {
           "name": "compressionProgram",
           "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "isSigner": false
         },
         {
           "name": "sellState",
@@ -5302,8 +5300,7 @@ export const IDL: Mmm = {
         {
           "name": "logWrapper",
           "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "isSigner": false
         },
         {
           "name": "bubblegumProgram",
@@ -5313,8 +5310,7 @@ export const IDL: Mmm = {
         {
           "name": "compressionProgram",
           "isMut": false,
-          "isSigner": false,
-          "isOptional": true
+          "isSigner": false
         },
         {
           "name": "sellState",

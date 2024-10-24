@@ -29,10 +29,3 @@ export interface BubblegumNftArgs {
   tree: BubblegumTreeRef;
   nft: CNFT;
 }
-
-export interface CnftDepositSellArgs {
-  nft: BubblegumNftArgs;
-  seller: PublicKey;
-  nftDelegate: PublicKey; // delegate for the NFT, required to be correctly for cNFT transfers
-  price: number;
-}
