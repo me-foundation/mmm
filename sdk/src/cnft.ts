@@ -1,4 +1,7 @@
+import { MPL_BUBBLEGUM_PROGRAM_ID } from '@metaplex-foundation/mpl-bubblegum';
 import { PublicKey } from '@solana/web3.js';
+import { PREFIXES } from './constants';
+import { BN } from '@project-serum/anchor';
 
 export interface CNFT {
   nftIndex: number;
@@ -29,3 +32,34 @@ export interface BubblegumNftArgs {
   tree: BubblegumTreeRef;
   nft: CNFT;
 }
+
+export function getBubblegumAuthorityPDA(
+  merkleRollPubKey: PublicKey,
+): [PublicKey, number] {
+  return PublicKey.findProgramAddressSync(
+    [merkleRollPubKey.toBuffer()],
+    new PublicKey(MPL_BUBBLEGUM_PROGRAM_ID),
+  );
+}
+
+export function getByteArray(key: PublicKey): Array<number> {
+  return Array.from(key.toBuffer());
+}
+
+export const getMMMCnftSellStatePDA = (
+  programId: PublicKey,
+  pool: PublicKey,
+  merkleTree: PublicKey,
+  index: number,
+) => {
+  const [key, bump] = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(PREFIXES.SELL_STATE),
+      pool.toBuffer(),
+      merkleTree.toBuffer(),
+      new BN(index).toBuffer('le', 4),
+    ],
+    programId,
+  );
+  return { key, bump };
+};

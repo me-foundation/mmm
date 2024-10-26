@@ -111,10 +111,7 @@ pub struct SolCnftFulfillBuy<'info> {
         bump
     )]
     pub sell_state: Account<'info, SellState>,
-    /// CHECK: will be used for allowlist checks
-    pub allowlist_aux_account: UncheckedAccount<'info>,
     pub system_program: Program<'info, System>,
-    pub rent: Sysvar<'info, Rent>,
     // Remaining accounts
     // Branch: using shared escrow accounts
     //   0: m2_program
@@ -133,6 +130,8 @@ pub fn handler<'info>(
     let pool = &mut ctx.accounts.pool;
     // let sell_state = &mut ctx.accounts.sell_state;
     // let merkle_tree = &ctx.accounts.merkle_tree;
+    let (creator_accounts, proof_path) = ctx.remaining_accounts.split_at(creator_shares_length);
+
 
     if pool.using_shared_escrow() {
         return Err(MMMErrorCode::InvalidAccountState.into());

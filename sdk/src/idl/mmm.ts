@@ -2220,17 +2220,7 @@ export type Mmm = {
           "isSigner": false
         },
         {
-          "name": "allowlistAuxAccount",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
           "isMut": false,
           "isSigner": false
         }
@@ -5318,17 +5308,7 @@ export const IDL: Mmm = {
           "isSigner": false
         },
         {
-          "name": "allowlistAuxAccount",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
           "isMut": false,
           "isSigner": false
         }

@@ -192,21 +192,7 @@ export async function verifyOwnership(
   return { currentProof };
 }
 
-export async function setupTree(
-  umi: Umi,
-  seller: KeypairSigner,
-): Promise<{
-  merkleTree: UmiPublicKey;
-  leaf: UmiPublicKey;
-  escrowedProof: UmiPublicKey[];
-  creators: Creator[];
-  leafIndex: number;
-  metadata: MetadataArgsArgs;
-  creatorsHash: UmiPublicKey;
-  getBubblegumTreeRef: () => Promise<BubblegumTreeRef>;
-  getCnftRef: (proof: UmiPublicKey[]) => CNFT;
-  baseFulfillBuyArgs: (seller: KeypairSigner, price?: number) => any;
-}> {
+export async function setupTree(umi: Umi, seller: PublicKey) {
   const maxDepth = 5;
   const merkleTree = await createTree(umi, {
     maxDepth,
@@ -218,13 +204,13 @@ export async function setupTree(
 
   const { metadata, leaf, leafIndex, creatorsHash } = await mint(umi, {
     merkleTree,
-    leafOwner: seller.publicKey,
+    leafOwner: seller,
     creators: unverifiedCreators,
   });
 
   // Verify creator A
   await verifyCreator(umi, {
-    leafOwner: seller.publicKey,
+    leafOwner: seller,
     creator: creatorSigners[0],
     merkleTree,
     root: getCurrentRoot((await fetchMerkleTree(umi, merkleTree)).tree),
@@ -243,7 +229,7 @@ export async function setupTree(
   };
   const leafDataPostVerification = hashLeaf(umi, {
     merkleTree,
-    owner: seller.publicKey,
+    owner: seller,
     leafIndex,
     metadata: updatedMetadata,
   });
@@ -272,32 +258,11 @@ export async function setupTree(
 
   const proof = getMerkleProof([updatedLeaf], maxDepth, updatedLeaf);
 
-  const baseFulfillBuyArgs = async (
-    seller: KeypairSigner,
-    price: number = 100,
-  ) => ({
-    nft: {
-      tree: await getBubblegumTreeRef(),
-      nft: getCnftRef(escrowedProof),
-    },
-    seller: getPubKey(seller.publicKey),
-    price,
-    makerFeeBasisPoints: 0,
-    takerFeeBasisPoints: 0,
-    creatorRoyalties: {
-      creators: updatedMetadata.creators.map((c) => ({
-        ...c,
-        address: getPubKey(c.address),
-      })),
-      sellerFeeBasisPoints: 500, // 5% royalty
-    },
-  });
-
   // Verify that seller owns the cNFT.
   const { currentProof: escrowedProof } = await verifyOwnership(
     umi,
     merkleTree,
-    seller.publicKey,
+    seller,
     leafIndex,
     updatedMetadata,
     [],
@@ -313,6 +278,16 @@ export async function setupTree(
     creators: updatedMetadata.creators,
     getBubblegumTreeRef,
     getCnftRef,
-    baseFulfillBuyArgs,
+    nft: {
+      tree: await getBubblegumTreeRef(),
+      nft: getCnftRef(escrowedProof),
+    },
+    creatorRoyalties: {
+      creators: updatedMetadata.creators.map((c) => ({
+        ...c,
+        address: getPubKey(c.address),
+      })),
+      sellerFeeBasisPoints: 500, // 5% royalty
+    },
   };
 }
