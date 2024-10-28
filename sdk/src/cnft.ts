@@ -1,5 +1,5 @@
 import { MPL_BUBBLEGUM_PROGRAM_ID } from '@metaplex-foundation/mpl-bubblegum';
-import { PublicKey } from '@solana/web3.js';
+import { AccountMeta, PublicKey } from '@solana/web3.js';
 import { PREFIXES } from './constants';
 import { BN } from '@project-serum/anchor';
 
@@ -63,3 +63,18 @@ export const getMMMCnftSellStatePDA = (
   );
   return { key, bump };
 };
+
+// get "proof path" from asset proof, these are the accounts that need to be passed to the program as remaining accounts
+// may also be empty if tree is small enough, and canopy depth is large enough
+export function getProofPath(
+  proofs: PublicKey[],
+  canopyDepth?: number,
+): AccountMeta[] {
+  return proofs
+    .map((pubkey: PublicKey) => ({
+      pubkey,
+      isSigner: false,
+      isWritable: false,
+    }))
+    .slice(0, proofs.length - (!!canopyDepth ? canopyDepth : 0));
+}

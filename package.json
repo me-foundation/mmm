@@ -19,7 +19,8 @@
     "@solana/web3.js": "^1.65.0",
     "borsh": "^0.7.0",
     "old-mpl-token-metadata": "npm:@metaplex-foundation/mpl-token-metadata@2.12.0",
-    "@metaplex-foundation/mpl-bubblegum": "^4.2.1"
+    "@metaplex-foundation/mpl-bubblegum": "^4.2.1",
+    "@solana/spl-account-compression": "0.1.8"
   },
   "devDependencies": {
     "@magiceden-oss/mmm": "file:sdk",

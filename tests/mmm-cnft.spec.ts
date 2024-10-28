@@ -14,12 +14,14 @@ import {
   getM2BuyerSharedEscrow,
   getMMMBuysideSolEscrowPDA,
   getMMMCnftSellStatePDA,
+  getProofPath,
   getSolFulfillBuyPrices,
   IDL,
   Mmm,
   MMMProgramID,
 } from '../sdk/src';
 import {
+  AccountMeta,
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
@@ -32,6 +34,7 @@ import {
   SPL_NOOP_PROGRAM_ID,
 } from '@metaplex-foundation/mpl-bubblegum';
 import { BN } from '@project-serum/anchor';
+import { ConcurrentMerkleTreeAccount } from '@solana/spl-account-compression';
 
 async function createCNftCollectionOffer(
   program: anchor.Program<Mmm>,
@@ -158,19 +161,20 @@ describe('cnft tests', () => {
       makerFeeBp: 100,
     });
 
-    // TODO: need to add the proof path inputs, current error:
-    /**
-     *   Message: Transaction simulation failed: Error processing Instruction 0: Program failed to complete. 
-    Logs: 
-    [
-      "Program cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK invoke [1]",
-      "Program log: Instruction: VerifyLeaf",
-      "Program log: Error using concurrent merkle tree: Invalid root recomputed from proof",
-      "Program cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK consumed 5737 of 200000 compute units",
-      "Program cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK failed: Access violation in stack frame 7 at address 0x200007eb0 of size 8"
-    ]. 
-    Catch the `SendTransactionError` and call `getLogs()` on it for full details.
-     */
+    const treeAccount = await ConcurrentMerkleTreeAccount.fromAccountAddress(
+      connection,
+      nft.tree.merkleTree,
+    );
+
+    console.log(`merkleTree: ${nft.tree.merkleTree}`);
+    console.log(`proofs: ${nft.nft.proofs}`);
+    console.log(`canopyDepth: ${treeAccount.getCanopyDepth()}`);
+
+    const proofPath: AccountMeta[] = getProofPath(
+      nft.nft.proofs,
+      treeAccount.getCanopyDepth(),
+    );
+
     await program.methods
       .cnftFulfillBuy({
         root: getByteArray(nft.tree.root),
@@ -201,9 +205,13 @@ describe('cnft tests', () => {
         sellState,
         systemProgram: SystemProgram.programId,
       })
+      .remainingAccounts([...proofPath])
       .signers([cosigner, seller.payer])
       .rpc();
 
+    console.log(`seller: ${seller.publicKey}`);
+    console.log(`buyer: ${buyer.publicKey}`);
+    console.log(`nft: ${JSON.stringify(nft)}`);
     // Verify that buyer now owns the cNFT.
     await verifyOwnership(
       umi,

@@ -27,6 +27,7 @@ pub struct SolCnftFulfillBuyArgs {
     nonce: u64,
     // The index of the leaf in the merkle tree. Can be retrieved from off-chain store.
     index: u32,
+
     // === Contract args === //
     // Price of the NFT in the payment_mint.
     buyer_price: u64,
@@ -130,8 +131,7 @@ pub fn handler<'info>(
     let pool = &mut ctx.accounts.pool;
     // let sell_state = &mut ctx.accounts.sell_state;
     // let merkle_tree = &ctx.accounts.merkle_tree;
-    let (creator_accounts, proof_path) = ctx.remaining_accounts.split_at(creator_shares_length);
-
+    // let (creator_accounts, proof_path) = ctx.remaining_accounts.split_at(creator_shares_length);
 
     if pool.using_shared_escrow() {
         return Err(MMMErrorCode::InvalidAccountState.into());
