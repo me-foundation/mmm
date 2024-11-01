@@ -39,6 +39,12 @@ pub struct SolCnftFulfillBuyArgs {
     pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
     pub maker_fee_bp: i16,             // will be checked by cosigner
     pub taker_fee_bp: i16,             // will be checked by cosigner
+
+    // === Creator args === //
+    creator_shares: Vec<u16>,
+    creator_verified: Vec<bool>,
+    // Creator royalties. Validated against the metadata_hash by Bubblegum after hashing with metadata_hash.
+    seller_fee_basis_points: u16,
 }
 
 #[derive(Accounts)]
@@ -131,13 +137,21 @@ pub fn handler<'info>(
     let pool = &mut ctx.accounts.pool;
     // let sell_state = &mut ctx.accounts.sell_state;
     // let merkle_tree = &ctx.accounts.merkle_tree;
-    // let (creator_accounts, proof_path) = ctx.remaining_accounts.split_at(creator_shares_length);
+    // Remaining accounts are 1. (Optional) creator addresses and 2. Merkle proof path.
+    let creator_shares_length = args.creator_shares.len();
+    let creator_shares_clone = args.creator_shares.clone();
+    let (creator_accounts, proof_path) = ctx.remaining_accounts.split_at(creator_shares_length);
 
     if pool.using_shared_escrow() {
         return Err(MMMErrorCode::InvalidAccountState.into());
     }
 
+    msg!("seller fee basis points: {}", args.seller_fee_basis_points);
+    // Create data_hash from metadata_hash + seller_fee_basis_points (secures creator royalties)
+    // let data_hash = hash_metadata_data(args.metadata_hash, args.seller_fee_basis_points)?;
+
     // Transfer CNFT from seller(payer) to buyer (pool owner)
+    // TODO: do I need to send to pool instead?
     transfer_compressed_nft(
         &ctx.accounts.tree_authority.to_account_info(),
         &ctx.accounts.payer.to_account_info(),
@@ -147,7 +161,7 @@ pub fn handler<'info>(
         &ctx.accounts.log_wrapper,
         &ctx.accounts.compression_program,
         &ctx.accounts.system_program, // Pass as Program<System> without calling to_account_info()
-        &ctx.remaining_accounts, // TODO: need to extract the the proofs from the remaining accounts
+        proof_path,
         ctx.accounts.bubblegum_program.key(),
         args.root,
         args.metadata_hash,

@@ -4,6 +4,7 @@ import {
   airdrop,
   createPool,
   createUmi,
+  getCreatorRoyaltiesArgs,
   getPubKey,
   setupTree,
   verifyOwnership,
@@ -29,6 +30,7 @@ import {
 } from '@solana/web3.js';
 import {
   findLeafAssetIdPda,
+  getAssetWithProof,
   MPL_BUBBLEGUM_PROGRAM_ID,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
@@ -92,9 +94,9 @@ describe('cnft tests', () => {
   const endpoint = 'http://localhost:8899';
   const buyer = new anchor.Wallet(Keypair.generate());
   const seller = new anchor.Wallet(Keypair.generate());
-  const connection = new anchor.web3.Connection(endpoint, 'processed');
+  const connection = new anchor.web3.Connection(endpoint, 'confirmed');
   const provider = new anchor.AnchorProvider(connection, buyer, {
-    commitment: 'processed',
+    commitment: 'confirmed',
   });
 
   let umi: Umi;
@@ -114,10 +116,13 @@ describe('cnft tests', () => {
 
   it.only('cnft fulfill buy', async () => {
     const umi = await createUmi(endpoint, sol(3));
+
+    console.log(`buyer: ${buyer.publicKey}`);
+    console.log(`seller: ${seller.publicKey}`);
     // 1. Create a tree.
     const {
       merkleTree,
-      escrowedProof,
+      sellerProof,
       leafIndex,
       metadata,
       getBubblegumTreeRef,
@@ -143,6 +148,11 @@ describe('cnft tests', () => {
       merkleTree,
       leafIndex,
     });
+
+    // const asset = await umi.rpc.getAsset(assetId);
+    // console.log(`asset: ${JSON.stringify(asset)}`);
+    // const assetWithProof = await getAssetWithProof(umi, assetId);
+    // console.log(`assetWithProof: ${JSON.stringify(assetWithProof)}`);
 
     const { key: sellState } = getMMMCnftSellStatePDA(
       program.programId,
@@ -175,6 +185,15 @@ describe('cnft tests', () => {
       treeAccount.getCanopyDepth(),
     );
 
+    console.log(`proofPath: ${JSON.stringify(proofPath)}`);
+
+    const {
+      accounts: creatorAccounts,
+      creatorShares,
+      creatorVerified,
+      sellerFeeBasisPoints,
+    } = getCreatorRoyaltiesArgs(creatorRoyalties);
+
     await program.methods
       .cnftFulfillBuy({
         root: getByteArray(nft.tree.root),
@@ -189,6 +208,9 @@ describe('cnft tests', () => {
         allowlistAux: '',
         makerFeeBp: 0,
         takerFeeBp: 0,
+        creatorShares,
+        creatorVerified,
+        sellerFeeBasisPoints,
       })
       .accountsStrict({
         payer: new PublicKey(seller.publicKey),
@@ -205,9 +227,9 @@ describe('cnft tests', () => {
         sellState,
         systemProgram: SystemProgram.programId,
       })
-      .remainingAccounts([...proofPath])
+      .remainingAccounts([...creatorAccounts, ...proofPath])
       .signers([cosigner, seller.payer])
-      .rpc();
+      .rpc({ skipPreflight: true });
 
     console.log(`seller: ${seller.publicKey}`);
     console.log(`buyer: ${buyer.publicKey}`);

@@ -31,8 +31,9 @@ import {
   PublicKey as UmiPublicKey,
 } from '@metaplex-foundation/umi';
 import { createUmi as baseCreateUmi } from '@metaplex-foundation/umi-bundle-tests';
-import { BubblegumTreeRef, CNFT } from '../../sdk/src';
-import { PublicKey as Web3PubKey } from '@solana/web3.js';
+import { BubblegumTreeRef, CNFT, CreatorRoyaltyConfig } from '../../sdk/src';
+import { AccountMeta, PublicKey as Web3PubKey } from '@solana/web3.js';
+import { dasApi } from '@metaplex-foundation/digital-asset-standard-api';
 
 export const ME_TREASURY = new Web3PubKey(
   'rFqFJ9g7TGBD8Ed7TPDnvGKZ5pWLPDyxLcvcH2eRCtt',
@@ -41,9 +42,10 @@ export const ME_TREASURY = new Web3PubKey(
 export const treasury = publicKey(ME_TREASURY.toBase58());
 
 export const createUmi = async (endpoint?: string, airdropAmount?: SolAmount) =>
-  (await baseCreateUmi(endpoint, undefined, airdropAmount))
+  (await baseCreateUmi(endpoint, { commitment: 'confirmed' }, airdropAmount))
     .use(mplTokenMetadata())
-    .use(mplBubblegum());
+    .use(mplBubblegum())
+    .use(dasApi());
 
 export const createTree = async (
   context: Context,
@@ -54,6 +56,7 @@ export const createTree = async (
     merkleTree,
     maxDepth: 14,
     maxBufferSize: 64,
+    canopyDepth: 3,
     ...input,
   });
   await builder.sendAndConfirm(context);
@@ -202,11 +205,16 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
   const creatorSigners = await getCreatorPair(umi);
   const unverifiedCreators = await initUnverifiedCreatorsArray(creatorSigners);
 
-  const { metadata, leaf, leafIndex, creatorsHash } = await mint(umi, {
+  const { metadata, leaf, leafIndex, creatorsHash, assetId } = await mint(umi, {
     merkleTree,
     leafOwner: seller,
     creators: unverifiedCreators,
   });
+
+  console.log(`merkleTree: ${merkleTree}`);
+  console.log(`leaf: ${leaf}`);
+  console.log(`leafIndex: ${leafIndex}`);
+  console.log(`assetId: ${assetId}`);
 
   // Verify creator A
   await verifyCreator(umi, {
@@ -220,6 +228,7 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
     proof: [],
   }).sendAndConfirm(umi);
 
+  console.log(`verified creator A`);
   const updatedMetadata = {
     ...metadata,
     creators: [
@@ -259,7 +268,7 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
   const proof = getMerkleProof([updatedLeaf], maxDepth, updatedLeaf);
 
   // Verify that seller owns the cNFT.
-  const { currentProof: escrowedProof } = await verifyOwnership(
+  const { currentProof: sellerProof } = await verifyOwnership(
     umi,
     merkleTree,
     seller,
@@ -268,10 +277,12 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
     [],
   );
 
+  console.log(`sellerProof: ${JSON.stringify(sellerProof)}`);
+  console.log(`proof: ${JSON.stringify(proof)}`);
   return {
     merkleTree,
     leaf,
-    escrowedProof,
+    sellerProof,
     leafIndex,
     metadata: updatedMetadata,
     creatorsHash,
@@ -280,7 +291,7 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
     getCnftRef,
     nft: {
       tree: await getBubblegumTreeRef(),
-      nft: getCnftRef(escrowedProof),
+      nft: getCnftRef(sellerProof),
     },
     creatorRoyalties: {
       creators: updatedMetadata.creators.map((c) => ({
@@ -289,5 +300,33 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
       })),
       sellerFeeBasisPoints: 500, // 5% royalty
     },
+  };
+}
+
+export function getCreatorRoyaltiesArgs(
+  royaltySelection: CreatorRoyaltyConfig,
+): {
+  accounts: AccountMeta[];
+  creatorShares: number[];
+  creatorVerified: boolean[];
+  sellerFeeBasisPoints: number;
+} {
+  const creatorShares: number[] = [];
+  const creatorVerified: boolean[] = [];
+  const accounts: AccountMeta[] = royaltySelection.creators.map((creator) => {
+    creatorShares.push(creator.share);
+    creatorVerified.push(creator.verified);
+    return {
+      pubkey: creator.address,
+      isSigner: false,
+      isWritable: true, // so that we can pay creator fees
+    };
+  });
+
+  return {
+    accounts,
+    creatorShares,
+    creatorVerified,
+    sellerFeeBasisPoints: royaltySelection.sellerFeeBasisPoints,
   };
 }
