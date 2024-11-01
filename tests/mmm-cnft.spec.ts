@@ -4,6 +4,7 @@ import {
   airdrop,
   createPool,
   createUmi,
+  DEFAULT_TEST_SETUP_TREE_PARAMS,
   getCreatorRoyaltiesArgs,
   getPubKey,
   setupTree,
@@ -26,6 +27,7 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   PublicKey,
+  SendTransactionError,
   SystemProgram,
 } from '@solana/web3.js';
 import {
@@ -122,14 +124,18 @@ describe('cnft tests', () => {
     // 1. Create a tree.
     const {
       merkleTree,
-      sellerProof,
+      sellerProof, //already truncated
       leafIndex,
       metadata,
       getBubblegumTreeRef,
       getCnftRef,
       nft,
       creatorRoyalties,
-    } = await setupTree(umi, publicKey(seller.publicKey));
+    } = await setupTree(
+      umi,
+      publicKey(seller.publicKey),
+      DEFAULT_TEST_SETUP_TREE_PARAMS,
+    );
 
     const merkleyTreePubkey = getPubKey(merkleTree);
 
@@ -177,13 +183,15 @@ describe('cnft tests', () => {
     );
 
     console.log(`merkleTree: ${nft.tree.merkleTree}`);
-    console.log(`proofs: ${nft.nft.proofs}`);
+    console.log(`proofs: ${nft.nft.fullProof}`);
     console.log(`canopyDepth: ${treeAccount.getCanopyDepth()}`);
 
     const proofPath: AccountMeta[] = getProofPath(
-      nft.nft.proofs,
+      nft.nft.fullProof,
       treeAccount.getCanopyDepth(),
     );
+    console.log(`nft.nft.proofs.length: ${nft.nft.fullProof.length}`);
+    console.log(`proofPath.length: ${proofPath.length}`);
 
     console.log(`proofPath: ${JSON.stringify(proofPath)}`);
 
@@ -193,43 +201,61 @@ describe('cnft tests', () => {
       creatorVerified,
       sellerFeeBasisPoints,
     } = getCreatorRoyaltiesArgs(creatorRoyalties);
+    console.log(`got creator royalties`);
 
-    await program.methods
-      .cnftFulfillBuy({
-        root: getByteArray(nft.tree.root),
-        metadataHash: getByteArray(nft.tree.dataHash),
-        creatorHash: getByteArray(nft.tree.creatorHash),
-        nonce: new BN(nft.tree.nonce),
-        index: nft.nft.nftIndex,
-        buyerPrice: new BN(spotPrice * LAMPORTS_PER_SOL),
-        paymentMint: SOL,
-        assetAmount: new BN(1),
-        minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
-        allowlistAux: '',
-        makerFeeBp: 0,
-        takerFeeBp: 0,
-        creatorShares,
-        creatorVerified,
-        sellerFeeBasisPoints,
-      })
-      .accountsStrict({
-        payer: new PublicKey(seller.publicKey),
-        owner: buyer.publicKey,
-        cosigner: cosigner.publicKey,
-        referral: poolData.referral.publicKey,
-        pool: poolData.poolKey,
-        buysideSolEscrowAccount,
-        treeAuthority,
-        merkleTree: nft.tree.merkleTree,
-        logWrapper: SPL_NOOP_PROGRAM_ID,
-        bubblegumProgram: MPL_BUBBLEGUM_PROGRAM_ID,
-        compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-        sellState,
-        systemProgram: SystemProgram.programId,
-      })
-      .remainingAccounts([...creatorAccounts, ...proofPath])
-      .signers([cosigner, seller.payer])
-      .rpc({ skipPreflight: true });
+    try {
+      const fulfillBuyTxnSig = await program.methods
+        .cnftFulfillBuy({
+          root: getByteArray(nft.tree.root),
+          metadataHash: getByteArray(nft.tree.dataHash),
+          creatorHash: getByteArray(nft.tree.creatorHash),
+          nonce: new BN(nft.tree.nonce),
+          index: nft.nft.nftIndex,
+          buyerPrice: new BN(spotPrice * LAMPORTS_PER_SOL),
+          paymentMint: SOL,
+          assetAmount: new BN(1),
+          minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
+          allowlistAux: '',
+          makerFeeBp: 0,
+          takerFeeBp: 0,
+          creatorShares,
+          creatorVerified,
+          sellerFeeBasisPoints,
+        })
+        .accountsStrict({
+          payer: new PublicKey(seller.publicKey),
+          owner: buyer.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          buysideSolEscrowAccount,
+          treeAuthority,
+          merkleTree: nft.tree.merkleTree,
+          logWrapper: SPL_NOOP_PROGRAM_ID,
+          bubblegumProgram: MPL_BUBBLEGUM_PROGRAM_ID,
+          compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+          sellState,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([...creatorAccounts, ...proofPath])
+        .signers([cosigner, seller.payer])
+        // note: skipPreflight causes some weird error.
+        // so just surround in this try-catch to get the logs
+        .rpc(/* { skipPreflight: true } */);
+      console.log(`fulfillBuyTxnSig: ${fulfillBuyTxnSig}`);
+    } catch (e) {
+      if (e instanceof SendTransactionError) {
+        const err = e as SendTransactionError;
+        console.log(
+          `err.logs: ${JSON.stringify(
+            await err.getLogs(provider.connection),
+            null,
+            2,
+          )}`,
+        );
+      }
+      throw e;
+    }
 
     console.log(`seller: ${seller.publicKey}`);
     console.log(`buyer: ${buyer.publicKey}`);

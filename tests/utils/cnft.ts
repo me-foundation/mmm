@@ -15,6 +15,7 @@ import {
   getMetadataArgsSerializer,
   getMerkleProof,
   verifyLeaf,
+  MerkleTree,
 } from '@metaplex-foundation/mpl-bubblegum';
 import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import {
@@ -54,10 +55,9 @@ export const createTree = async (
   const merkleTree = generateSigner(context);
   const builder = await baseCreateTree(context, {
     merkleTree,
-    maxDepth: 14,
-    maxBufferSize: 64,
-    canopyDepth: 3,
-    ...input,
+    maxDepth: input.maxDepth ?? 14,
+    maxBufferSize: input.maxBufferSize ?? 64,
+    canopyDepth: input.canopyDepth,
   });
   await builder.sendAndConfirm(context);
   return merkleTree.publicKey;
@@ -161,6 +161,16 @@ export function getPubKey(umiKey: UmiPublicKey) {
   return new Web3PubKey(umiKey.toString());
 }
 
+/**
+ * Verifies that the expectedOwner owns the leaf at the given leafIndex.
+ * @param umi
+ * @param merkleTree
+ * @param expectedOwner
+ * @param leafIndex
+ * @param metadata current metadata of the leaf
+ * @param preMints
+ * @returns the **truncated** proof used for verification.
+ */
 export async function verifyOwnership(
   umi: Umi,
   merkleTree: UmiPublicKey,
@@ -175,31 +185,50 @@ export async function verifyOwnership(
     leafIndex,
     metadata,
   });
+  const merkleTreeAccount = await fetchMerkleTree(umi, merkleTree);
 
-  const currentProof = getMerkleProof(
+  const currentProof = getTruncatedMerkleProof(
+    getCanopyDepth(merkleTreeAccount),
     [...preMints.map((m) => m.leaf), publicKey(escrowedLeaf)],
-    5,
+    merkleTreeAccount.treeHeader.maxDepth,
     publicKey(escrowedLeaf),
   );
 
-  const merkleTreeAccount = await fetchMerkleTree(umi, merkleTree);
-
-  await verifyLeaf(umi, {
+  const { result } = await verifyLeaf(umi, {
     merkleTree,
     root: getCurrentRoot(merkleTreeAccount.tree),
     leaf: escrowedLeaf,
     index: leafIndex,
     proof: currentProof,
   }).sendAndConfirm(umi);
+  console.log(
+    `verified ${expectedOwner} owns leaf at index ${leafIndex}. Result: ${JSON.stringify(
+      result,
+    )}`,
+  );
 
   return { currentProof };
 }
 
-export async function setupTree(umi: Umi, seller: PublicKey) {
-  const maxDepth = 5;
+export const DEFAULT_TEST_SETUP_TREE_PARAMS = {
+  maxDepth: 14,
+  maxBufferSize: 64,
+  canopyDepth: 9,
+};
+
+export async function setupTree(
+  umi: Umi,
+  seller: PublicKey,
+  treeParams: {
+    maxDepth: number;
+    maxBufferSize: number;
+    canopyDepth: number;
+  },
+) {
   const merkleTree = await createTree(umi, {
-    maxDepth,
-    maxBufferSize: 8,
+    maxDepth: treeParams.maxDepth,
+    maxBufferSize: treeParams.maxBufferSize,
+    canopyDepth: treeParams.canopyDepth,
   });
 
   const creatorSigners = await getCreatorPair(umi);
@@ -216,7 +245,14 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
   console.log(`leafIndex: ${leafIndex}`);
   console.log(`assetId: ${assetId}`);
 
+  const verifyCreatorProofTruncated = getTruncatedMerkleProof(
+    treeParams.canopyDepth,
+    [leaf],
+    treeParams.maxDepth,
+    leaf,
+  );
   // Verify creator A
+
   await verifyCreator(umi, {
     leafOwner: seller,
     creator: creatorSigners[0],
@@ -225,7 +261,7 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
     nonce: leafIndex,
     index: leafIndex,
     metadata,
-    proof: [],
+    proof: verifyCreatorProofTruncated,
   }).sendAndConfirm(umi);
 
   console.log(`verified creator A`);
@@ -262,10 +298,14 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
 
   const getCnftRef = (proof: UmiPublicKey[]) => ({
     nftIndex: leafIndex,
-    proofs: proof.map(getPubKey),
+    fullProof: proof.map(getPubKey),
   });
 
-  const proof = getMerkleProof([updatedLeaf], maxDepth, updatedLeaf);
+  const fullProof = getMerkleProof(
+    [updatedLeaf],
+    treeParams.maxDepth,
+    updatedLeaf,
+  );
 
   // Verify that seller owns the cNFT.
   const { currentProof: sellerProof } = await verifyOwnership(
@@ -277,8 +317,11 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
     [],
   );
 
-  console.log(`sellerProof: ${JSON.stringify(sellerProof)}`);
-  console.log(`proof: ${JSON.stringify(proof)}`);
+  console.log(`
+    [setupTree]
+      fullProof(length: ${fullProof.length}): ${JSON.stringify(fullProof)}
+      sellerProof[truncated](length: ${sellerProof.length}): ${JSON.stringify(sellerProof)}
+  `);
   return {
     merkleTree,
     leaf,
@@ -291,7 +334,7 @@ export async function setupTree(umi: Umi, seller: PublicKey) {
     getCnftRef,
     nft: {
       tree: await getBubblegumTreeRef(),
-      nft: getCnftRef(sellerProof),
+      nft: getCnftRef(fullProof),
     },
     creatorRoyalties: {
       creators: updatedMetadata.creators.map((c) => ({
@@ -329,4 +372,24 @@ export function getCreatorRoyaltiesArgs(
     creatorVerified,
     sellerFeeBasisPoints: royaltySelection.sellerFeeBasisPoints,
   };
+}
+
+export function truncateMerkleProof(proof: PublicKey[], canopyDepth: number) {
+  return proof.slice(0, canopyDepth === 0 ? undefined : -canopyDepth);
+}
+
+export function getTruncatedMerkleProof(
+  canopyDepth: number,
+  leaves: PublicKey[],
+  maxDepth: number,
+  leaf: PublicKey,
+  index?: number | undefined,
+) {
+  const proof = getMerkleProof(leaves, maxDepth, leaf, index);
+  return truncateMerkleProof(proof, canopyDepth);
+}
+
+// Utility method to calculate the canopy depth from a metaplex MerkleTree type
+export function getCanopyDepth(merkleTreeAccount: MerkleTree) {
+  return Math.log2(merkleTreeAccount.canopy.length + 2) - 1;
 }

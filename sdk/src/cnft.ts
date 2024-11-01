@@ -1,6 +1,4 @@
-import {
-  MPL_BUBBLEGUM_PROGRAM_ID,
-} from '@metaplex-foundation/mpl-bubblegum';
+import { MPL_BUBBLEGUM_PROGRAM_ID } from '@metaplex-foundation/mpl-bubblegum';
 import { AccountMeta, PublicKey } from '@solana/web3.js';
 import { PREFIXES } from './constants';
 import { BN } from '@project-serum/anchor';
