@@ -1,7 +1,10 @@
-import { MPL_BUBBLEGUM_PROGRAM_ID } from '@metaplex-foundation/mpl-bubblegum';
+import {
+  MPL_BUBBLEGUM_PROGRAM_ID,
+} from '@metaplex-foundation/mpl-bubblegum';
 import { AccountMeta, PublicKey } from '@solana/web3.js';
 import { PREFIXES } from './constants';
 import { BN } from '@project-serum/anchor';
+import { Creator } from 'old-mpl-token-metadata';
 
 export interface CNFT {
   nftIndex: number;
@@ -77,4 +80,9 @@ export function getProofPath(
       isWritable: false,
     }))
     .slice(0, proofs.length - (!!canopyDepth ? canopyDepth : 0));
+}
+
+export interface CreatorRoyaltyConfig {
+  creators: Creator[];
+  sellerFeeBasisPoints: number;
 }
