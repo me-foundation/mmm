@@ -134,7 +134,7 @@ pub fn handler<'info>(
 ) -> Result<()> {
     // let payer = &ctx.accounts.payer;
     let owner = &ctx.accounts.owner;
-    let pool = &mut ctx.accounts.pool;
+    let pool = &ctx.accounts.pool;
     // let sell_state = &mut ctx.accounts.sell_state;
     // let merkle_tree = &ctx.accounts.merkle_tree;
     // Remaining accounts are 1. (Optional) creator addresses and 2. Merkle proof path.
