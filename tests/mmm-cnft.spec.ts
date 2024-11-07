@@ -53,6 +53,7 @@ async function createCNftCollectionOffer(
 ) {
   const poolData = await createPool(program, {
     ...poolArgs,
+    reinvestFulfillBuy: false,
   });
 
   const poolKey = poolData.poolKey;
@@ -215,13 +216,12 @@ describe('cnft tests', () => {
       )[0];
 
       console.log(`metadataArgs: ${JSON.stringify(metadataArgs)}`);
-        console.log(
-          `${JSON.stringify(
-            convertToDecodeTokenProgramVersion(
-              metadataArgs.tokenProgramVersion,
-            )          )}`,
-        );
-      
+      console.log(
+        `${JSON.stringify(
+          convertToDecodeTokenProgramVersion(metadataArgs.tokenProgramVersion),
+        )}`,
+      );
+
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
           root: getByteArray(nft.tree.root),
