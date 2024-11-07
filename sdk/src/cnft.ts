@@ -1,4 +1,9 @@
-import { MPL_BUBBLEGUM_PROGRAM_ID } from '@metaplex-foundation/mpl-bubblegum';
+import {
+  MPL_BUBBLEGUM_PROGRAM_ID,
+  TokenProgramVersion,
+  TokenStandard,
+  UseMethod,
+} from '@metaplex-foundation/mpl-bubblegum';
 import { AccountMeta, PublicKey } from '@solana/web3.js';
 import { PREFIXES } from './constants';
 import { BN } from '@project-serum/anchor';
@@ -83,4 +88,48 @@ export function getProofPath(
 export interface CreatorRoyaltyConfig {
   creators: Creator[];
   sellerFeeBasisPoints: number;
+}
+
+// Function to convert a simple enum value to the IDL structure
+export function convertToDecodeTokenStandardEnum(tokenStandard: TokenStandard) {
+  TokenStandard;
+  switch (tokenStandard) {
+    case TokenStandard.NonFungible:
+      return { nonFungible: {} };
+    case TokenStandard.FungibleAsset:
+      return { fungibleAsset: {} };
+    case TokenStandard.Fungible:
+      return { fungible: {} };
+    case TokenStandard.NonFungibleEdition:
+      return { nonfungibleEdition: {} };
+    default:
+      throw new Error('Unknown TokenStandard value');
+  }
+}
+
+// Function to convert UseMethod to the DecodeEnum format
+export function convertToDecodeUseMethodEnum(useMethod: UseMethod) {
+  switch (useMethod) {
+    case UseMethod.Burn:
+      return { burn: {} };
+    case UseMethod.Multiple:
+      return { multiple: {} };
+    case UseMethod.Single:
+      return { single: {} };
+    default:
+      throw new Error('Unknown UseMethod value');
+  }
+}
+
+export function convertToDecodeTokenProgramVersion(
+  tokenProgramVersion: TokenProgramVersion,
+) {
+  switch (tokenProgramVersion) {
+    case TokenProgramVersion.Original:
+      return { original: {} };
+    case TokenProgramVersion.Token2022:
+      return { token2022: {} };
+    default:
+      throw new Error('Unknown TokenProgramVersion value');
+  }
 }

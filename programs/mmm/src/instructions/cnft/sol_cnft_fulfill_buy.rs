@@ -10,24 +10,49 @@ use crate::{
     verify_referral::verify_referral,
 };
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct CollectionArgs {
-    pub verified: bool,
-    pub key: Pubkey, // Assuming PublicKey is equivalent to Pubkey in Rust
+// Define the TokenStandard enum
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq, PartialOrd, Hash)]
+pub enum TokenStandard {
+    NonFungible,
+    FungibleAsset,
+    Fungible,
+    NonFungibleEdition,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct UsesArgs {
-    pub use_method: u8,
-    pub remaining: u64, // Use u64 for large numbers
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
+pub struct Collection {
+    pub verified: bool,
+    pub key: Pubkey,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq, PartialOrd, Hash)]
+pub enum UseMethod {
+    Burn,
+    Multiple,
+    Single,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
+pub struct Uses {
+    pub use_method: UseMethod,
+    pub remaining: u64,
     pub total: u64,
 }
 
-#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
-pub struct CreatorArgs {
-    pub address: Pubkey, // Assuming PublicKey is equivalent to Pubkey in Rust
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq, PartialOrd, Hash)]
+pub enum TokenProgramVersion {
+    Original,
+    Token2022,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
+pub struct Creator {
+    pub address: Pubkey,
     pub verified: bool,
-    pub share: u8, // Assuming share is a percentage, use u8
+    /// The percentage share.
+    ///
+    /// The value is a percentage, not basis points.
+    pub share: u8,
 }
 
 // Define the MetadataArgs struct
@@ -39,12 +64,12 @@ pub struct MetadataArgs {
     pub seller_fee_basis_points: u16,
     pub primary_sale_happened: bool, // Changed from Option<bool> to bool
     pub is_mutable: bool,            // Changed from Option<bool> to bool
-    pub edition_nonce: Option<u64>,
-    pub token_standard: Option<u8>, // Changed from Option<u8> to Option<TokenStandard>
-    pub collection: Option<CollectionArgs>,
-    pub uses: Option<UsesArgs>,
-    pub token_program_version: u8, // Assuming TokenProgramVersion is a simple u8
-    pub creators: Vec<CreatorArgs>,
+    pub edition_nonce: Option<u8>,
+    pub token_standard: Option<TokenStandard>, // Changed from Option<u8> to Option<TokenStandard>
+    pub collection: Option<Collection>,
+    pub uses: Option<Uses>,
+    pub token_program_version: TokenProgramVersion, // Assuming TokenProgramVersion is a simple u8
+    pub creators: Vec<Creator>,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]

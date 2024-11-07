@@ -11,6 +11,9 @@ import {
   verifyOwnership,
 } from './utils';
 import {
+  convertToDecodeTokenProgramVersion,
+  convertToDecodeTokenStandardEnum,
+  convertToDecodeUseMethodEnum,
   getBubblegumAuthorityPDA,
   getByteArray,
   getM2BuyerSharedEscrow,
@@ -210,6 +213,15 @@ describe('cnft tests', () => {
       const metadataArgs: MetadataArgs = metadataSerializer.deserialize(
         metadataSerializer.serialize(metadata),
       )[0];
+
+      console.log(`metadataArgs: ${JSON.stringify(metadataArgs)}`);
+        console.log(
+          `${JSON.stringify(
+            convertToDecodeTokenProgramVersion(
+              metadataArgs.tokenProgramVersion,
+            )          )}`,
+        );
+      
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
           root: getByteArray(nft.tree.root),
@@ -235,10 +247,12 @@ describe('cnft tests', () => {
             primarySaleHappened: metadataArgs.primarySaleHappened,
             isMutable: metadataArgs.isMutable,
             editionNonce: isSome(metadataArgs.editionNonce)
-              ? new BN(metadataArgs.editionNonce.value)
+              ? metadataArgs.editionNonce.value
               : null,
             tokenStandard: isSome(metadataArgs.tokenStandard)
-              ? metadataArgs.tokenStandard.value
+              ? convertToDecodeTokenStandardEnum(
+                  metadataArgs.tokenStandard.value,
+                )
               : null,
             collection: isSome(metadataArgs.collection)
               ? {
@@ -246,8 +260,18 @@ describe('cnft tests', () => {
                   key: new PublicKey(metadataArgs.collection.value.key),
                 }
               : null, // Ensure it's a struct or null
-            uses: isSome(metadataArgs.uses) ? metadataArgs.uses.value : null,
-            tokenProgramVersion: metadataArgs.tokenProgramVersion ?? null,
+            uses: isSome(metadataArgs.uses)
+              ? {
+                  useMethod: convertToDecodeUseMethodEnum(
+                    metadataArgs.uses.value.useMethod,
+                  ),
+                  remaining: metadataArgs.uses.value.remaining,
+                  total: metadataArgs.uses.value.total,
+                }
+              : null,
+            tokenProgramVersion: convertToDecodeTokenProgramVersion(
+              metadataArgs.tokenProgramVersion,
+            ),
             creators: metadataArgs.creators.map((c) => ({
               address: new PublicKey(c.address),
               verified: c.verified,

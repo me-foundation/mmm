@@ -2532,7 +2532,7 @@ export type Mmm = {
       }
     },
     {
-      "name": "CollectionArgs",
+      "name": "Collection",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2548,13 +2548,15 @@ export type Mmm = {
       }
     },
     {
-      "name": "UsesArgs",
+      "name": "Uses",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "useMethod",
-            "type": "u8"
+            "type": {
+              "defined": "UseMethod"
+            }
           },
           {
             "name": "remaining",
@@ -2568,7 +2570,7 @@ export type Mmm = {
       }
     },
     {
-      "name": "CreatorArgs",
+      "name": "Creator",
       "type": {
         "kind": "struct",
         "fields": [
@@ -2582,6 +2584,11 @@ export type Mmm = {
           },
           {
             "name": "share",
+            "docs": [
+              "The percentage share.",
+              "",
+              "The value is a percentage, not basis points."
+            ],
             "type": "u8"
           }
         ]
@@ -2619,20 +2626,22 @@ export type Mmm = {
           {
             "name": "editionNonce",
             "type": {
-              "option": "u64"
+              "option": "u8"
             }
           },
           {
             "name": "tokenStandard",
             "type": {
-              "option": "u8"
+              "option": {
+                "defined": "TokenStandard"
+              }
             }
           },
           {
             "name": "collection",
             "type": {
               "option": {
-                "defined": "CollectionArgs"
+                "defined": "Collection"
               }
             }
           },
@@ -2640,19 +2649,21 @@ export type Mmm = {
             "name": "uses",
             "type": {
               "option": {
-                "defined": "UsesArgs"
+                "defined": "Uses"
               }
             }
           },
           {
             "name": "tokenProgramVersion",
-            "type": "u8"
+            "type": {
+              "defined": "TokenProgramVersion"
+            }
           },
           {
             "name": "creators",
             "type": {
               "vec": {
-                "defined": "CreatorArgs"
+                "defined": "Creator"
               }
             }
           }
@@ -3052,6 +3063,57 @@ export type Mmm = {
           {
             "name": "value",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenStandard",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NonFungible"
+          },
+          {
+            "name": "FungibleAsset"
+          },
+          {
+            "name": "Fungible"
+          },
+          {
+            "name": "NonFungibleEdition"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UseMethod",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Burn"
+          },
+          {
+            "name": "Multiple"
+          },
+          {
+            "name": "Single"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenProgramVersion",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Original"
+          },
+          {
+            "name": "Token2022"
           }
         ]
       }
@@ -5770,7 +5832,7 @@ export const IDL: Mmm = {
       }
     },
     {
-      "name": "CollectionArgs",
+      "name": "Collection",
       "type": {
         "kind": "struct",
         "fields": [
@@ -5786,13 +5848,15 @@ export const IDL: Mmm = {
       }
     },
     {
-      "name": "UsesArgs",
+      "name": "Uses",
       "type": {
         "kind": "struct",
         "fields": [
           {
             "name": "useMethod",
-            "type": "u8"
+            "type": {
+              "defined": "UseMethod"
+            }
           },
           {
             "name": "remaining",
@@ -5806,7 +5870,7 @@ export const IDL: Mmm = {
       }
     },
     {
-      "name": "CreatorArgs",
+      "name": "Creator",
       "type": {
         "kind": "struct",
         "fields": [
@@ -5820,6 +5884,11 @@ export const IDL: Mmm = {
           },
           {
             "name": "share",
+            "docs": [
+              "The percentage share.",
+              "",
+              "The value is a percentage, not basis points."
+            ],
             "type": "u8"
           }
         ]
@@ -5857,20 +5926,22 @@ export const IDL: Mmm = {
           {
             "name": "editionNonce",
             "type": {
-              "option": "u64"
+              "option": "u8"
             }
           },
           {
             "name": "tokenStandard",
             "type": {
-              "option": "u8"
+              "option": {
+                "defined": "TokenStandard"
+              }
             }
           },
           {
             "name": "collection",
             "type": {
               "option": {
-                "defined": "CollectionArgs"
+                "defined": "Collection"
               }
             }
           },
@@ -5878,19 +5949,21 @@ export const IDL: Mmm = {
             "name": "uses",
             "type": {
               "option": {
-                "defined": "UsesArgs"
+                "defined": "Uses"
               }
             }
           },
           {
             "name": "tokenProgramVersion",
-            "type": "u8"
+            "type": {
+              "defined": "TokenProgramVersion"
+            }
           },
           {
             "name": "creators",
             "type": {
               "vec": {
-                "defined": "CreatorArgs"
+                "defined": "Creator"
               }
             }
           }
@@ -6290,6 +6363,57 @@ export const IDL: Mmm = {
           {
             "name": "value",
             "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenStandard",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NonFungible"
+          },
+          {
+            "name": "FungibleAsset"
+          },
+          {
+            "name": "Fungible"
+          },
+          {
+            "name": "NonFungibleEdition"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UseMethod",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Burn"
+          },
+          {
+            "name": "Multiple"
+          },
+          {
+            "name": "Single"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TokenProgramVersion",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Original"
+          },
+          {
+            "name": "Token2022"
           }
         ]
       }
