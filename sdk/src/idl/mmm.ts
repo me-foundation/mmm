@@ -2532,6 +2532,134 @@ export type Mmm = {
       }
     },
     {
+      "name": "CollectionArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "verified",
+            "type": "bool"
+          },
+          {
+            "name": "key",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UsesArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "useMethod",
+            "type": "u8"
+          },
+          {
+            "name": "remaining",
+            "type": "u64"
+          },
+          {
+            "name": "total",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreatorArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": "publicKey"
+          },
+          {
+            "name": "verified",
+            "type": "bool"
+          },
+          {
+            "name": "share",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MetadataArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "sellerFeeBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "primarySaleHappened",
+            "type": "bool"
+          },
+          {
+            "name": "isMutable",
+            "type": "bool"
+          },
+          {
+            "name": "editionNonce",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "tokenStandard",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "collection",
+            "type": {
+              "option": {
+                "defined": "CollectionArgs"
+              }
+            }
+          },
+          {
+            "name": "uses",
+            "type": {
+              "option": {
+                "defined": "UsesArgs"
+              }
+            }
+          },
+          {
+            "name": "tokenProgramVersion",
+            "type": "u8"
+          },
+          {
+            "name": "creators",
+            "type": {
+              "vec": {
+                "defined": "CreatorArgs"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "SolCnftFulfillBuyArgs",
       "type": {
         "kind": "struct",
@@ -2616,6 +2744,12 @@ export type Mmm = {
           {
             "name": "sellerFeeBasisPoints",
             "type": "u16"
+          },
+          {
+            "name": "metadataArgs",
+            "type": {
+              "defined": "MetadataArgs"
+            }
           }
         ]
       }
@@ -5636,6 +5770,134 @@ export const IDL: Mmm = {
       }
     },
     {
+      "name": "CollectionArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "verified",
+            "type": "bool"
+          },
+          {
+            "name": "key",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UsesArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "useMethod",
+            "type": "u8"
+          },
+          {
+            "name": "remaining",
+            "type": "u64"
+          },
+          {
+            "name": "total",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CreatorArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "address",
+            "type": "publicKey"
+          },
+          {
+            "name": "verified",
+            "type": "bool"
+          },
+          {
+            "name": "share",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MetadataArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "uri",
+            "type": "string"
+          },
+          {
+            "name": "sellerFeeBasisPoints",
+            "type": "u16"
+          },
+          {
+            "name": "primarySaleHappened",
+            "type": "bool"
+          },
+          {
+            "name": "isMutable",
+            "type": "bool"
+          },
+          {
+            "name": "editionNonce",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "tokenStandard",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "collection",
+            "type": {
+              "option": {
+                "defined": "CollectionArgs"
+              }
+            }
+          },
+          {
+            "name": "uses",
+            "type": {
+              "option": {
+                "defined": "UsesArgs"
+              }
+            }
+          },
+          {
+            "name": "tokenProgramVersion",
+            "type": "u8"
+          },
+          {
+            "name": "creators",
+            "type": {
+              "vec": {
+                "defined": "CreatorArgs"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "SolCnftFulfillBuyArgs",
       "type": {
         "kind": "struct",
@@ -5720,6 +5982,12 @@ export const IDL: Mmm = {
           {
             "name": "sellerFeeBasisPoints",
             "type": "u16"
+          },
+          {
+            "name": "metadataArgs",
+            "type": {
+              "defined": "MetadataArgs"
+            }
           }
         ]
       }

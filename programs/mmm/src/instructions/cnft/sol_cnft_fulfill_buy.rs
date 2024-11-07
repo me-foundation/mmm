@@ -10,6 +10,43 @@ use crate::{
     verify_referral::verify_referral,
 };
 
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CollectionArgs {
+    pub verified: bool,
+    pub key: Pubkey, // Assuming PublicKey is equivalent to Pubkey in Rust
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct UsesArgs {
+    pub use_method: u8,
+    pub remaining: u64, // Use u64 for large numbers
+    pub total: u64,
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct CreatorArgs {
+    pub address: Pubkey, // Assuming PublicKey is equivalent to Pubkey in Rust
+    pub verified: bool,
+    pub share: u8, // Assuming share is a percentage, use u8
+}
+
+// Define the MetadataArgs struct
+#[derive(AnchorSerialize, AnchorDeserialize, Clone)]
+pub struct MetadataArgs {
+    pub name: String,
+    pub symbol: String, // Changed from Option<String> to String
+    pub uri: String,
+    pub seller_fee_basis_points: u16,
+    pub primary_sale_happened: bool, // Changed from Option<bool> to bool
+    pub is_mutable: bool,            // Changed from Option<bool> to bool
+    pub edition_nonce: Option<u64>,
+    pub token_standard: Option<u8>, // Changed from Option<u8> to Option<TokenStandard>
+    pub collection: Option<CollectionArgs>,
+    pub uses: Option<UsesArgs>,
+    pub token_program_version: u8, // Assuming TokenProgramVersion is a simple u8
+    pub creators: Vec<CreatorArgs>,
+}
+
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolCnftFulfillBuyArgs {
     // === cNFT transfer args === //
@@ -45,6 +82,8 @@ pub struct SolCnftFulfillBuyArgs {
     creator_verified: Vec<bool>,
     // Creator royalties. Validated against the metadata_hash by Bubblegum after hashing with metadata_hash.
     seller_fee_basis_points: u16,
+
+    pub metadata_args: MetadataArgs,
 }
 
 #[derive(Accounts)]
