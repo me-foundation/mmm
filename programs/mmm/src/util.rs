@@ -7,7 +7,7 @@ use crate::{
     errors::MMMErrorCode,
     get_creators_from_royalties,
     state::*,
-    IndexableAsset,
+    IndexableAsset, MetadataArgs,
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
@@ -1214,13 +1214,18 @@ pub fn transfer_compressed_nft<'info>(
     Ok(())
 }
 
-// Taken from Bubblegum's hash_metadata: hashes seller_fee_basis_points to the final data_hash that Bubblegum expects.
-// This way we can use the seller_fee_basis_points while still guaranteeing validity.
-pub fn hash_metadata_data(
-    metadata_args_hash: [u8; 32],
-    seller_fee_basis_points: u16,
-) -> Result<[u8; 32]> {
-    Ok(keccak::hashv(&[&metadata_args_hash, &seller_fee_basis_points.to_le_bytes()]).to_bytes())
+/// Computes the hash of the metadata.
+///
+/// The hash is computed as the keccak256 hash of the metadata bytes, which is
+/// then hashed with the `seller_fee_basis_points`.
+pub fn hash_metadata(metadata: &MetadataArgs) -> Result<[u8; 32]> {
+    let hash = keccak::hashv(&[metadata.try_to_vec()?.as_slice()]);
+    // Calculate new data hash.
+    Ok(keccak::hashv(&[
+        &hash.to_bytes(),
+        &metadata.seller_fee_basis_points.to_le_bytes(),
+    ])
+    .to_bytes())
 }
 
 #[cfg(test)]
