@@ -14,6 +14,7 @@ use anchor_spl::token_interface::Mint;
 use m2_interface::{
     withdraw_by_mmm_ix_with_program_id, WithdrawByMMMArgs, WithdrawByMmmIxArgs, WithdrawByMmmKeys,
 };
+use mpl_bubblegum::hash::hash_creators;
 use mpl_core::types::{Royalties, UpdateAuthority};
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
@@ -30,7 +31,7 @@ use spl_token_2022::{
 };
 use spl_token_group_interface::state::TokenGroupMember;
 use spl_token_metadata_interface::state::TokenMetadata;
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom, slice::Iter, str::FromStr};
 
 #[macro_export]
 macro_rules! index_ra {
@@ -555,6 +556,83 @@ pub fn pay_creator_fees_in_sol<'info>(
     let creator_accounts_iter = &mut creator_accounts.iter();
     for (index, creator) in creators.iter().enumerate() {
         let creator_fee = if index == creators.len() - 1 {
+            royalty
+                .checked_sub(total_royalty)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+        } else {
+            (royalty as u128)
+                .checked_mul(creator.share as u128)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                .checked_div(100)
+                .ok_or(MMMErrorCode::NumericOverflow)? as u64
+        };
+        let current_creator_info = next_account_info(creator_accounts_iter)?;
+        if creator.address.ne(current_creator_info.key) {
+            return Err(MMMErrorCode::InvalidCreatorAddress.into());
+        }
+        let current_creator_lamports = current_creator_info.lamports();
+        if creator_fee > 0
+            && current_creator_lamports
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                > min_rent
+        {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    payer.key,
+                    current_creator_info.key,
+                    creator_fee,
+                ),
+                &[
+                    payer.to_account_info(),
+                    current_creator_info.to_account_info(),
+                    system_program.to_account_info(),
+                ],
+                payer_seeds,
+            )?;
+            total_royalty = total_royalty
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?;
+        }
+    }
+    Ok(total_royalty)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn pay_creator_fees_in_sol_cnft<'info>(
+    buyside_creator_royalty_bp: u16,
+    total_price: u64,
+    metadata_args: &MetadataArgs,
+    creator_accounts: &[AccountInfo<'info>],
+    payer: AccountInfo<'info>,
+    payer_seeds: &[&[&[u8]]],
+    system_program: AccountInfo<'info>,
+) -> Result<u64> {
+    // Calculate the total royalty to be paid
+    let royalty = ((total_price as u128)
+        .checked_mul(metadata_args.seller_fee_basis_points as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_mul(buyside_creator_royalty_bp as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?) as u64;
+
+    if royalty == 0 {
+        return Ok(0);
+    }
+
+    if payer.lamports() < royalty {
+        return Err(MMMErrorCode::NotEnoughBalance.into());
+    }
+
+    let min_rent = Rent::get()?.minimum_balance(0);
+    let mut total_royalty: u64 = 0;
+
+    let creator_accounts_iter = &mut creator_accounts.iter();
+    for (index, creator) in metadata_args.creators.iter().enumerate() {
+        let creator_fee = if index == metadata_args.creators.len() - 1 {
             royalty
                 .checked_sub(total_royalty)
                 .ok_or(MMMErrorCode::NumericOverflow)?
@@ -1226,6 +1304,48 @@ pub fn hash_metadata(metadata: &MetadataArgs) -> Result<[u8; 32]> {
         &metadata.seller_fee_basis_points.to_le_bytes(),
     ])
     .to_bytes())
+}
+
+pub fn verify_creators(
+    creator_accounts: Iter<AccountInfo>,
+    creator_shares: Vec<u16>,
+    creator_verified: Vec<bool>,
+    creator_hash: [u8; 32],
+) -> Result<()> {
+    // Check that all input arrays/vectors are of the same length
+    if creator_accounts.len() != creator_shares.len()
+        || creator_accounts.len() != creator_verified.len()
+    {
+        return Err(MMMErrorCode::MismatchedCreatorDataLengths.into());
+    }
+
+    // Convert input data to a vector of Creator structs
+    let creators: Vec<mpl_bubblegum::types::Creator> = creator_accounts
+        .zip(creator_shares.iter())
+        .zip(creator_verified.iter())
+        .map(
+            |((account, &share), &verified)| mpl_bubblegum::types::Creator {
+                address: *account.key,
+                verified,
+                share: share as u8, // Assuming the share is never more than 255. If it can be, this needs additional checks.
+            },
+        )
+        .collect();
+
+    // Compute the hash from the Creator vector
+    let computed_hash = hash_creators(&creators);
+
+    // Compare the computed hash with the provided hash
+    if computed_hash != creator_hash {
+        msg!(
+            "Computed hash does not match provided hash: {{\"computed\":{:?},\"provided\":{:?}}}",
+            computed_hash,
+            creator_hash
+        );
+        return Err(MMMErrorCode::InvalidCreators.into());
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

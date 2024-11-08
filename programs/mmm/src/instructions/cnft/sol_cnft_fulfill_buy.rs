@@ -11,7 +11,8 @@ use crate::{
     util::{
         assert_valid_fees_bp, check_remaining_accounts_for_m2, get_buyside_seller_receives,
         get_lp_fee_bp, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
-        hash_metadata, log_pool, transfer_compressed_nft, try_close_pool, withdraw_m2,
+        hash_metadata, log_pool, pay_creator_fees_in_sol_cnft, transfer_compressed_nft,
+        try_close_pool, verify_creators, withdraw_m2,
     },
     verify_referral::verify_referral,
 };
@@ -158,6 +159,12 @@ pub fn handler<'info>(
 
     let data_hash = hash_metadata(&args.metadata_args)?;
     let asset_mint = get_asset_id(&merkle_tree.key(), args.nonce);
+    let pool_key = pool.key();
+    let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
+        BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
+        pool_key.as_ref(),
+        &[ctx.bumps.buyside_sol_escrow_account],
+    ]];
 
     // 1. Cacluate seller receives
     let (total_price, next_price) =
@@ -212,6 +219,12 @@ pub fn handler<'info>(
     } else {
         remaining_accounts.split_at(creator_shares_length)
     };
+    verify_creators(
+        creator_accounts.iter(),
+        args.creator_shares,
+        args.creator_verified,
+        args.creator_hash,
+    )?;
 
     // 4. Transfer CNFT to buyer (pool or owner)
     if pool.reinvest_fulfill_buy {
@@ -270,6 +283,15 @@ pub fn handler<'info>(
     }
 
     // 5. Pool owner as buyer pay royalties to creators
+    let royalty_paid = pay_creator_fees_in_sol_cnft(
+        pool.buyside_creator_royalty_bp,
+        seller_receives,
+        &args.metadata_args,
+        creator_accounts,
+        buyside_sol_escrow_account.to_account_info(),
+        buyside_sol_escrow_account_seeds,
+        system_program.to_account_info(),
+    )?;
     // 6. Prevent frontrun by pool config changes
     // 7. Close pool if all NFTs are sold
     // 8. Pool pay the sol to the seller

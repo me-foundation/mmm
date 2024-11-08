@@ -3294,6 +3294,16 @@ export type Mmm = {
       "code": 6034,
       "name": "UnsupportedAssetPlugin",
       "msg": "Unsupported asset plugin"
+    },
+    {
+      "code": 6035,
+      "name": "MismatchedCreatorDataLengths",
+      "msg": "Mismatched ceator data lengths"
+    },
+    {
+      "code": 6036,
+      "name": "InvalidCreators",
+      "msg": "Invalid creators"
     }
   ]
 };
@@ -6594,6 +6604,16 @@ export const IDL: Mmm = {
       "code": 6034,
       "name": "UnsupportedAssetPlugin",
       "msg": "Unsupported asset plugin"
+    },
+    {
+      "code": 6035,
+      "name": "MismatchedCreatorDataLengths",
+      "msg": "Mismatched ceator data lengths"
+    },
+    {
+      "code": 6036,
+      "name": "InvalidCreators",
+      "msg": "Invalid creators"
     }
   ]
 };
