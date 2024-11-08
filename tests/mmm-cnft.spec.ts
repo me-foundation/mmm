@@ -173,14 +173,14 @@ describe('cnft tests', () => {
       nft.nft.nftIndex,
     );
 
-    const spotPrice = 10;
+    const spotPrice = 1;
     const expectedBuyPrices = getSolFulfillBuyPrices({
       totalPriceLamports: spotPrice * LAMPORTS_PER_SOL,
-      lpFeeBp: 0,
+      lpFeeBp: 200,
       takerFeeBp: 100,
       metadataRoyaltyBp: 500,
       buysideCreatorRoyaltyBp: 10_000,
-      makerFeeBp: 100,
+      makerFeeBp: 0,
     });
 
     const treeAccount = await ConcurrentMerkleTreeAccount.fromAccountAddress(
@@ -222,6 +222,14 @@ describe('cnft tests', () => {
         )}`,
       );
 
+      console.log(`expectedBuyPrices: {
+        sellerReceives: ${expectedBuyPrices.sellerReceives.toString(10)},
+        lpFeePaid: ${expectedBuyPrices.lpFeePaid.toString(10)},
+        royaltyPaid: ${expectedBuyPrices.royaltyPaid.toString(10)},
+        takerFeePaid: ${expectedBuyPrices.takerFeePaid.toString(10)},
+        makerFeePaid: ${expectedBuyPrices.makerFeePaid.toString(10)}
+      }`);
+
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
           root: getByteArray(nft.tree.root),
@@ -235,7 +243,7 @@ describe('cnft tests', () => {
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
           allowlistAux: '',
           makerFeeBp: 0,
-          takerFeeBp: 0,
+          takerFeeBp: 100,
           creatorShares,
           creatorVerified,
           sellerFeeBasisPoints,

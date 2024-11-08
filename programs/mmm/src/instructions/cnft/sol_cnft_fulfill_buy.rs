@@ -12,7 +12,7 @@ use crate::{
         assert_valid_fees_bp, check_remaining_accounts_for_m2, get_buyside_seller_receives,
         get_lp_fee_bp, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
         hash_metadata, log_pool, pay_creator_fees_in_sol_cnft, transfer_compressed_nft,
-        try_close_pool, verify_creators, withdraw_m2,
+        try_close_escrow, try_close_pool, try_close_sell_state, verify_creators, withdraw_m2,
     },
     verify_referral::verify_referral,
 };
@@ -150,6 +150,8 @@ pub fn handler<'info>(
     let pool = &mut ctx.accounts.pool;
     let buyside_sol_escrow_account = &ctx.accounts.buyside_sol_escrow_account;
     let sell_state = &mut ctx.accounts.sell_state;
+    let payer = &ctx.accounts.payer;
+    let referral: &UncheckedAccount<'info> = &ctx.accounts.referral;
     let merkle_tree = &ctx.accounts.merkle_tree;
     // Remaining accounts are 1. (Optional) creator addresses and 2. Merkle proof path.
     let creator_shares_length = args.creator_shares.len();
@@ -292,23 +294,121 @@ pub fn handler<'info>(
         buyside_sol_escrow_account_seeds,
         system_program.to_account_info(),
     )?;
-    // 6. Prevent frontrun by pool config changes
-    // 7. Close pool if all NFTs are sold
-    // 8. Pool pay the sol to the seller
-    // 9. pay lp fee
-    // 10. pay referral fee
-    // 11. update pool state
-    // 12 try close buy side escrow account
-    // 13. try close sell state account
-    // 14. return the remaining per pool escrow balance to the shared escrow account
-    // 15. update pool and log pool and try close pool
 
-    msg!("seller fee basis points: {}", args.seller_fee_basis_points);
-    // Create data_hash from metadata_hash + seller_fee_basis_points (secures creator royalties)
-    // let data_hash = hash_metadata_data(args.metadata_hash, args.seller_fee_basis_points)?;
+    // 6. Pay buyer, prevent frontrun by pool config changes
+    // the royalties are paid by the buyer, but the seller will see the price
+    // after adjusting the royalties.
+    let payment_amount = total_price
+        .checked_sub(lp_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_sub(taker_fee as u64)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_sub(royalty_paid)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    msg!("payment_amount: {}", payment_amount);
+    msg!("args.min_payment_amount: {}", args.min_payment_amount);
+    msg!("total_price: {}", total_price);
+    msg!("lp_fee: {}", lp_fee);
+    msg!("taker_fee: {}", taker_fee);
+    msg!("royalty_paid: {}", royalty_paid);
+    msg!("seller_receives {}", seller_receives);
+    if payment_amount < args.min_payment_amount {
+        return Err(MMMErrorCode::InvalidRequestedPrice.into());
+    }
 
-    // Transfer CNFT from seller(payer) to buyer (pool owner)
-    // TODO: do I need to send to pool instead?
+    anchor_lang::solana_program::program::invoke_signed(
+        &anchor_lang::solana_program::system_instruction::transfer(
+            buyside_sol_escrow_account.key,
+            &payer.key,
+            payment_amount,
+        ),
+        &[
+            buyside_sol_escrow_account.to_account_info(),
+            payer.to_account_info(),
+            system_program.to_account_info(),
+        ],
+        buyside_sol_escrow_account_seeds,
+    )?;
+
+    // 7. pay lp fee
+    if lp_fee > 0 {
+        anchor_lang::solana_program::program::invoke_signed(
+            &anchor_lang::solana_program::system_instruction::transfer(
+                buyside_sol_escrow_account.key,
+                owner.key,
+                lp_fee,
+            ),
+            &[
+                buyside_sol_escrow_account.to_account_info(),
+                owner.to_account_info(),
+                system_program.to_account_info(),
+            ],
+            buyside_sol_escrow_account_seeds,
+        )?;
+    }
+
+    // 8. pay referral fee
+    if referral_fee > 0 {
+        anchor_lang::solana_program::program::invoke_signed(
+            &anchor_lang::solana_program::system_instruction::transfer(
+                buyside_sol_escrow_account.key,
+                referral.key,
+                referral_fee,
+            ),
+            &[
+                buyside_sol_escrow_account.to_account_info(),
+                referral.to_account_info(),
+                system_program.to_account_info(),
+            ],
+            buyside_sol_escrow_account_seeds,
+        )?;
+    }
+
+    // 9. try close buy side escrow account
+    try_close_escrow(
+        &buyside_sol_escrow_account.to_account_info(),
+        pool,
+        system_program,
+        buyside_sol_escrow_account_seeds,
+    )?;
+    try_close_sell_state(sell_state, payer.to_account_info())?;
+
+    // 10. return the remaining per pool escrow balance to the shared escrow account
+    if pool.using_shared_escrow() {
+        let min_rent = Rent::get()?.minimum_balance(0);
+        let shared_escrow_account = index_ra!(remaining_accounts, 1).to_account_info();
+        if shared_escrow_account.lamports() + buyside_sol_escrow_account.lamports() > min_rent
+            && buyside_sol_escrow_account.lamports() > 0
+        {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    buyside_sol_escrow_account.key,
+                    shared_escrow_account.key,
+                    buyside_sol_escrow_account.lamports(),
+                ),
+                &[
+                    buyside_sol_escrow_account.to_account_info(),
+                    shared_escrow_account,
+                    system_program.to_account_info(),
+                ],
+                buyside_sol_escrow_account_seeds,
+            )?;
+        } else {
+            try_close_escrow(
+                buyside_sol_escrow_account,
+                pool,
+                system_program,
+                buyside_sol_escrow_account_seeds,
+            )?;
+        }
+    }
+    // 11. update pool state and log
+    pool.lp_fee_earned = pool
+        .lp_fee_earned
+        .checked_add(lp_fee)
+        .ok_or(MMMErrorCode::NumericOverflow)?;
+    pool.spot_price = next_price;
+    pool.buyside_payment_amount = buyside_sol_escrow_account.lamports();
 
     log_pool("post_sol_cnft_fulfill_buy", pool)?;
     try_close_pool(pool, owner.to_account_info())?;
