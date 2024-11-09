@@ -2,12 +2,16 @@ import * as anchor from '@project-serum/anchor';
 import { isSome, publicKey, sol, Umi } from '@metaplex-foundation/umi';
 import {
   airdrop,
+  assertIsBetween,
   createPool,
   createUmi,
   DEFAULT_TEST_SETUP_TREE_PARAMS,
   getCreatorRoyaltiesArgs,
   getPubKey,
+  getSellStatePDARent,
+  PRICE_ERROR_RANGE,
   setupTree,
+  SIGNATURE_FEE_LAMPORTS,
   verifyOwnership,
 } from './utils';
 import {
@@ -44,6 +48,7 @@ import {
 } from '@metaplex-foundation/mpl-bubblegum';
 import { BN } from '@project-serum/anchor';
 import { ConcurrentMerkleTreeAccount } from '@solana/spl-account-compression';
+import { assert } from 'chai';
 
 async function createCNftCollectionOffer(
   program: anchor.Program<Mmm>,
@@ -54,6 +59,7 @@ async function createCNftCollectionOffer(
   const poolData = await createPool(program, {
     ...poolArgs,
     reinvestFulfillBuy: false,
+    buysideCreatorRoyaltyBp: 10_000,
   });
 
   const poolKey = poolData.poolKey;
@@ -103,7 +109,7 @@ describe('cnft tests', () => {
   const buyer = new anchor.Wallet(Keypair.generate());
   const seller = new anchor.Wallet(Keypair.generate());
   const connection = new anchor.web3.Connection(endpoint, 'confirmed');
-  const provider = new anchor.AnchorProvider(connection, buyer, {
+  let provider = new anchor.AnchorProvider(connection, buyer, {
     commitment: 'confirmed',
   });
 
@@ -176,7 +182,7 @@ describe('cnft tests', () => {
     const spotPrice = 1;
     const expectedBuyPrices = getSolFulfillBuyPrices({
       totalPriceLamports: spotPrice * LAMPORTS_PER_SOL,
-      lpFeeBp: 200,
+      lpFeeBp: 0,
       takerFeeBp: 100,
       metadataRoyaltyBp: 500,
       buysideCreatorRoyaltyBp: 10_000,
@@ -208,6 +214,29 @@ describe('cnft tests', () => {
       sellerFeeBasisPoints,
     } = getCreatorRoyaltiesArgs(creatorRoyalties);
     console.log(`got creator royalties`);
+
+    // get balances before fulfill buy
+    const [
+      buyerBefore,
+      sellerBefore,
+      buyerSolEscrowAccountBalanceBefore,
+      creator1Before,
+      creator2Before,
+    ] = await Promise.all([
+      connection.getBalance(buyer.publicKey),
+      connection.getBalance(seller.publicKey),
+      connection.getBalance(buysideSolEscrowAccount),
+      connection.getBalance(creatorAccounts[0].pubkey),
+      connection.getBalance(creatorAccounts[1].pubkey),
+    ]);
+
+    console.log(`buyerBefore: ${buyerBefore}`);
+    console.log(`sellerBefore: ${sellerBefore}`);
+    console.log(
+      `buyerSolEscrowAccountBalanceBefore: ${buyerSolEscrowAccountBalanceBefore}`,
+    );
+    console.log(`creator1Before: ${creator1Before}`);
+    console.log(`creator2Before: ${creator2Before}`);
 
     try {
       const metadataSerializer = getMetadataArgsSerializer();
@@ -333,6 +362,66 @@ describe('cnft tests', () => {
       leafIndex,
       metadata,
       [],
+    );
+
+    // Get balances after fulfill buy
+    const [
+      buyerAfter,
+      sellerAfter,
+      buyerSolEscrowAccountBalanceAfter,
+      creator1After,
+      creator2After,
+    ] = await Promise.all([
+      connection.getBalance(buyer.publicKey),
+      connection.getBalance(seller.publicKey),
+      connection.getBalance(buysideSolEscrowAccount),
+      connection.getBalance(creatorAccounts[0].pubkey),
+      connection.getBalance(creatorAccounts[1].pubkey),
+    ]);
+
+    console.log(`buyerAfter: ${buyerAfter}`);
+    console.log(`sellerAfter: ${sellerAfter}`);
+    console.log(
+      `buyerSolEscrowAccountBalanceAfter: ${buyerSolEscrowAccountBalanceAfter}`,
+    );
+    console.log(`creator1After: ${creator1After}`);
+    console.log(`creator2After: ${creator2After}`);
+
+    const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 3; // cosigner + seller + payer (due to provider is under buyer)
+
+    assert.equal(buyerBefore, buyerAfter + expectedTxFees);
+
+    assert.equal(
+      buyerSolEscrowAccountBalanceBefore,
+      buyerSolEscrowAccountBalanceAfter + spotPrice * LAMPORTS_PER_SOL,
+    );
+
+    // In production it should be seller buy tx fee, but with this test set up, buyer pays
+    // tx fee due to provider is initiated under buyer.
+    assert.equal(
+      sellerAfter,
+      sellerBefore +
+        spotPrice * LAMPORTS_PER_SOL -
+        expectedBuyPrices.takerFeePaid.toNumber() -
+        expectedBuyPrices.royaltyPaid.toNumber(),
+    );
+
+    assertIsBetween(
+      creator1After,
+      creator1Before +
+        (expectedBuyPrices.royaltyPaid.toNumber() *
+          metadata.creators[0].share) /
+          100,
+      PRICE_ERROR_RANGE,
+    );
+
+    assertIsBetween(
+      creator2After,
+      creator2Before +
+        (expectedBuyPrices.royaltyPaid.toNumber() *
+          metadata.creators[1].share) /
+          100,
+      PRICE_ERROR_RANGE,
     );
   });
 });
