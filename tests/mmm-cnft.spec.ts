@@ -8,7 +8,6 @@ import {
   DEFAULT_TEST_SETUP_TREE_PARAMS,
   getCreatorRoyaltiesArgs,
   getPubKey,
-  getSellStatePDARent,
   PRICE_ERROR_RANGE,
   setupTree,
   SIGNATURE_FEE_LAMPORTS,
@@ -273,9 +272,6 @@ describe('cnft tests', () => {
           allowlistAux: '',
           makerFeeBp: 0,
           takerFeeBp: 100,
-          creatorShares,
-          creatorVerified,
-          sellerFeeBasisPoints,
           metadataArgs: {
             name: metadataArgs.name,
             symbol: metadataArgs.symbol,
@@ -424,4 +420,9 @@ describe('cnft tests', () => {
       PRICE_ERROR_RANGE,
     );
   });
+
+  // TODO: Add test for
+  // 1. Wrong metadata args (like collection)
+  // 2. trucate canopy
+  // 3. reinvest = true
 });

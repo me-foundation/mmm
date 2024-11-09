@@ -2741,22 +2741,6 @@ export type Mmm = {
             "type": "i16"
           },
           {
-            "name": "creatorShares",
-            "type": {
-              "vec": "u16"
-            }
-          },
-          {
-            "name": "creatorVerified",
-            "type": {
-              "vec": "bool"
-            }
-          },
-          {
-            "name": "sellerFeeBasisPoints",
-            "type": "u16"
-          },
-          {
             "name": "metadataArgs",
             "type": {
               "defined": "MetadataArgs"
@@ -6049,22 +6033,6 @@ export const IDL: Mmm = {
           {
             "name": "takerFeeBp",
             "type": "i16"
-          },
-          {
-            "name": "creatorShares",
-            "type": {
-              "vec": "u16"
-            }
-          },
-          {
-            "name": "creatorVerified",
-            "type": {
-              "vec": "bool"
-            }
-          },
-          {
-            "name": "sellerFeeBasisPoints",
-            "type": "u16"
           },
           {
             "name": "metadataArgs",

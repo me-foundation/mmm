@@ -49,12 +49,8 @@ pub struct SolCnftFulfillBuyArgs {
     pub maker_fee_bp: i16,             // will be checked by cosigner
     pub taker_fee_bp: i16,             // will be checked by cosigner
 
-    // === Creator args === //
-    creator_shares: Vec<u16>,
-    creator_verified: Vec<bool>,
-    // Creator royalties. Validated against the metadata_hash by Bubblegum after hashing with metadata_hash.
-    seller_fee_basis_points: u16,
-
+    // Metadata args for cnft hash
+    // Reference: https://developers.metaplex.com/bubblegum/hashed-nft-data
     pub metadata_args: MetadataArgs,
 }
 
@@ -153,26 +149,21 @@ pub fn handler<'info>(
     let payer = &ctx.accounts.payer;
     let referral: &UncheckedAccount<'info> = &ctx.accounts.referral;
     let merkle_tree = &ctx.accounts.merkle_tree;
-    // Remaining accounts are 1. (Optional) creator addresses and 2. Merkle proof path.
-    let creator_shares_length = args.creator_shares.len();
-    let creator_shares_clone = args.creator_shares.clone();
-    let remaining_accounts = ctx.remaining_accounts;
-    let system_program = &ctx.accounts.system_program;
-
-    let data_hash = hash_metadata(&args.metadata_args)?;
-    let asset_mint = get_asset_id(&merkle_tree.key(), args.nonce);
     let pool_key = pool.key();
     let buyside_sol_escrow_account_seeds: &[&[&[u8]]] = &[&[
         BUYSIDE_SOL_ESCROW_ACCOUNT_PREFIX.as_bytes(),
         pool_key.as_ref(),
         &[ctx.bumps.buyside_sol_escrow_account],
     ]];
+    let system_program = &ctx.accounts.system_program;
+    // Remaining accounts are 1. (Optional) creator addresses and 2. Merkle proof path.
+    let creator_length = args.metadata_args.creators.len();
+    let remaining_accounts = ctx.remaining_accounts;
 
-    // 1. Cacluate seller receives
+    // 1. Cacluate amount and fees
     let (total_price, next_price) =
         get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
     let metadata_royalty_bp = args.metadata_args.seller_fee_basis_points;
-    // TODO: update lp_fee_bp when shared escrow for both side is enabled
     let seller_receives = {
         let lp_fee_bp = get_lp_fee_bp(pool, buyside_sol_escrow_account.lamports());
         get_buyside_seller_receives(
@@ -183,7 +174,6 @@ pub fn handler<'info>(
         )
     }?;
 
-    // 2. Calculate fees
     let lp_fee = get_sol_lp_fee(pool, buyside_sol_escrow_account.lamports(), seller_receives)?;
     assert_valid_fees_bp(args.maker_fee_bp, args.taker_fee_bp)?;
     let maker_fee = get_sol_fee(seller_receives, args.maker_fee_bp)?;
@@ -195,9 +185,7 @@ pub fn handler<'info>(
     )
     .map_err(|_| MMMErrorCode::NumericOverflow)?;
 
-    // 3. Get creator accounts, verify creators
-    // check creator_accounts and verify the remaining accounts
-    // ... existing code ...
+    // 2. Get creator accounts, verify creators
     let (creator_accounts, proof_path) = if pool.using_shared_escrow() {
         check_remaining_accounts_for_m2(remaining_accounts, &pool.owner.key())?;
 
@@ -217,18 +205,35 @@ pub fn handler<'info>(
             .checked_sub(args.asset_amount)
             .ok_or(MMMErrorCode::NumericOverflow)?;
 
-        remaining_accounts[2..].split_at(creator_shares_length + 2)
+        remaining_accounts[2..].split_at(creator_length + 2)
     } else {
-        remaining_accounts.split_at(creator_shares_length)
+        remaining_accounts.split_at(creator_length)
     };
+
+    let creator_shares = args
+        .metadata_args
+        .creators
+        .iter()
+        .map(|c| c.share as u16)
+        .collect::<Vec<u16>>();
+
+    let creator_verified = args
+        .metadata_args
+        .creators
+        .iter()
+        .map(|c| c.verified)
+        .collect();
+
     verify_creators(
         creator_accounts.iter(),
-        args.creator_shares,
-        args.creator_verified,
+        creator_shares,
+        creator_verified,
         args.creator_hash,
     )?;
 
-    // 4. Transfer CNFT to buyer (pool or owner)
+    // 3. Transfer CNFT to buyer (pool or owner)
+    let data_hash = hash_metadata(&args.metadata_args)?;
+    let asset_mint = get_asset_id(&merkle_tree.key(), args.nonce);
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {
             return Err(MMMErrorCode::InvalidAccountState.into());
@@ -284,7 +289,7 @@ pub fn handler<'info>(
         )?;
     }
 
-    // 5. Pool owner as buyer pay royalties to creators
+    // 4. Pool owner as buyer pay royalties to creators
     let royalty_paid = pay_creator_fees_in_sol_cnft(
         pool.buyside_creator_royalty_bp,
         seller_receives,
@@ -295,9 +300,7 @@ pub fn handler<'info>(
         system_program.to_account_info(),
     )?;
 
-    // 6. Pay buyer, prevent frontrun by pool config changes
-    // the royalties are paid by the buyer, but the seller will see the price
-    // after adjusting the royalties.
+    // 5. Seller pay buyer, prevent frontrun by pool config changes
     let payment_amount = total_price
         .checked_sub(lp_fee)
         .ok_or(MMMErrorCode::NumericOverflow)?
@@ -305,13 +308,6 @@ pub fn handler<'info>(
         .ok_or(MMMErrorCode::NumericOverflow)?
         .checked_sub(royalty_paid)
         .ok_or(MMMErrorCode::NumericOverflow)?;
-    msg!("payment_amount: {}", payment_amount);
-    msg!("args.min_payment_amount: {}", args.min_payment_amount);
-    msg!("total_price: {}", total_price);
-    msg!("lp_fee: {}", lp_fee);
-    msg!("taker_fee: {}", taker_fee);
-    msg!("royalty_paid: {}", royalty_paid);
-    msg!("seller_receives {}", seller_receives);
     if payment_amount < args.min_payment_amount {
         return Err(MMMErrorCode::InvalidRequestedPrice.into());
     }
@@ -330,7 +326,7 @@ pub fn handler<'info>(
         buyside_sol_escrow_account_seeds,
     )?;
 
-    // 7. pay lp fee
+    // 6. Pay lp fee
     if lp_fee > 0 {
         anchor_lang::solana_program::program::invoke_signed(
             &anchor_lang::solana_program::system_instruction::transfer(
@@ -347,7 +343,7 @@ pub fn handler<'info>(
         )?;
     }
 
-    // 8. pay referral fee
+    // 7. Pay referral fee
     if referral_fee > 0 {
         anchor_lang::solana_program::program::invoke_signed(
             &anchor_lang::solana_program::system_instruction::transfer(
@@ -364,7 +360,7 @@ pub fn handler<'info>(
         )?;
     }
 
-    // 9. try close buy side escrow account
+    // 8. try close accounts
     try_close_escrow(
         &buyside_sol_escrow_account.to_account_info(),
         pool,
@@ -373,7 +369,7 @@ pub fn handler<'info>(
     )?;
     try_close_sell_state(sell_state, payer.to_account_info())?;
 
-    // 10. return the remaining per pool escrow balance to the shared escrow account
+    // 9. Return the remaining per pool escrow balance to the shared escrow account
     if pool.using_shared_escrow() {
         let min_rent = Rent::get()?.minimum_balance(0);
         let shared_escrow_account = index_ra!(remaining_accounts, 1).to_account_info();
@@ -402,7 +398,8 @@ pub fn handler<'info>(
             )?;
         }
     }
-    // 11. update pool state and log
+
+    // 10. update pool state and log
     pool.lp_fee_earned = pool
         .lp_fee_earned
         .checked_add(lp_fee)
