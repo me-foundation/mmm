@@ -43,7 +43,7 @@ import {
   sendAndAssertTx,
 } from './utils';
 
-describe.skip('mmm-ext-fulfill', () => {
+describe('mmm-ext-fulfill', () => {
   const { connection } = anchor.AnchorProvider.env();
   const wallet = new anchor.Wallet(Keypair.generate());
   const provider = new anchor.AnchorProvider(connection, wallet, {
