@@ -158,7 +158,7 @@ pub fn handler<'info>(
 
     // 0. Verify allowlist
     if let Some(ref collection) = args.metadata_args.collection {
-        let _ = check_allowlists_for_cnft(&pool.allowlists, collection.clone());
+        let _ = check_allowlists_for_cnft(&pool.allowlists, collection.clone())?;
     } else {
         return Err(MMMErrorCode::InvalidCnftMetadata.into());
     }
