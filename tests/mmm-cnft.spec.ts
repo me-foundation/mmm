@@ -7,6 +7,7 @@ import {
   createUmi,
   DEFAULT_TEST_SETUP_TREE_PARAMS,
   getCreatorRoyaltiesArgs,
+  getEmptyAllowLists,
   getPubKey,
   PRICE_ERROR_RANGE,
   setupTree,
@@ -14,6 +15,7 @@ import {
   verifyOwnership,
 } from './utils';
 import {
+  AllowlistKind,
   convertToDecodeTokenProgramVersion,
   convertToDecodeTokenStandardEnum,
   convertToDecodeUseMethodEnum,
@@ -101,8 +103,6 @@ async function createCNftCollectionOffer(
   };
 }
 
-const SOL = new PublicKey('So11111111111111111111111111111111111111112');
-
 describe('cnft tests', () => {
   const endpoint = 'http://localhost:8899';
   const buyer = new anchor.Wallet(Keypair.generate());
@@ -127,9 +127,7 @@ describe('cnft tests', () => {
     airdrop(connection, cosigner.publicKey, 100);
   });
 
-  it.only('cnft fulfill buy', async () => {
-    const umi = await createUmi(endpoint, sol(3));
-
+  it('cnft fulfill buy - happy path', async () => {
     console.log(`buyer: ${buyer.publicKey}`);
     console.log(`seller: ${seller.publicKey}`);
     // 1. Create a tree.
@@ -142,6 +140,7 @@ describe('cnft tests', () => {
       getCnftRef,
       nft,
       creatorRoyalties,
+      collectionKey,
     } = await setupTree(
       umi,
       publicKey(seller.publicKey),
@@ -155,6 +154,13 @@ describe('cnft tests', () => {
       await createCNftCollectionOffer(program, {
         owner: new PublicKey(buyer.publicKey),
         cosigner,
+        allowlists: [
+          {
+            kind: AllowlistKind.mcc,
+            value: collectionKey,
+          },
+          ...getEmptyAllowLists(5),
+        ],
       });
 
     const [treeAuthority, _] = getBubblegumAuthorityPDA(
@@ -266,10 +272,7 @@ describe('cnft tests', () => {
           nonce: new BN(nft.tree.nonce),
           index: nft.nft.nftIndex,
           buyerPrice: new BN(spotPrice * LAMPORTS_PER_SOL),
-          paymentMint: SOL,
-          assetAmount: new BN(1),
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
-          allowlistAux: '',
           makerFeeBp: 0,
           takerFeeBp: 100,
           metadataArgs: {

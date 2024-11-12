@@ -2715,22 +2715,8 @@ export type Mmm = {
             "type": "u64"
           },
           {
-            "name": "paymentMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "assetAmount",
-            "type": "u64"
-          },
-          {
             "name": "minPaymentAmount",
             "type": "u64"
-          },
-          {
-            "name": "allowlistAux",
-            "type": {
-              "option": "string"
-            }
           },
           {
             "name": "makerFeeBp",
@@ -3286,8 +3272,13 @@ export type Mmm = {
     },
     {
       "code": 6036,
-      "name": "InvalidCreators",
-      "msg": "Invalid creators"
+      "name": "InvalidCnftCreators",
+      "msg": "Invalid cnft creators"
+    },
+    {
+      "code": 6037,
+      "name": "InvalidCnftMetadata",
+      "msg": "Invalid cnft metadata"
     }
   ]
 };
@@ -6009,22 +6000,8 @@ export const IDL: Mmm = {
             "type": "u64"
           },
           {
-            "name": "paymentMint",
-            "type": "publicKey"
-          },
-          {
-            "name": "assetAmount",
-            "type": "u64"
-          },
-          {
             "name": "minPaymentAmount",
             "type": "u64"
-          },
-          {
-            "name": "allowlistAux",
-            "type": {
-              "option": "string"
-            }
           },
           {
             "name": "makerFeeBp",
@@ -6580,8 +6557,13 @@ export const IDL: Mmm = {
     },
     {
       "code": 6036,
-      "name": "InvalidCreators",
-      "msg": "Invalid creators"
+      "name": "InvalidCnftCreators",
+      "msg": "Invalid cnft creators"
+    },
+    {
+      "code": 6037,
+      "name": "InvalidCnftMetadata",
+      "msg": "Invalid cnft metadata"
     }
   ]
 };

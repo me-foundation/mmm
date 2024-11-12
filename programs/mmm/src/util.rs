@@ -7,7 +7,7 @@ use crate::{
     errors::MMMErrorCode,
     get_creators_from_royalties,
     state::*,
-    IndexableAsset, MetadataArgs,
+    Collection, IndexableAsset, MetadataArgs,
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
@@ -146,6 +146,35 @@ pub fn check_allowlists_for_mint(
                 // Do not validate URI here, as we already did it above.
                 // These checks are separate since allowlist values are unioned together.
                 continue;
+            }
+            _ => {
+                return Err(MMMErrorCode::InvalidAllowLists.into());
+            }
+        }
+    }
+
+    // at the end, we didn't find a match, thus return err
+    Err(MMMErrorCode::InvalidAllowLists.into())
+}
+
+pub fn check_allowlists_for_cnft(allowlists: &[Allowlist], collection: Collection) -> Result<()> {
+    // We need to check the following validation rules
+    // 1. make sure the metadata is correctly derived from the metadata pda with the mint
+    // 2. make sure mint+metadata(e.g. first verified creator address) can match one of the allowlist
+    // 3. note that the allowlist is unioned together, not intersection
+    // 4. skip if the allowlist.is_empty()
+    // 5. verify that nft either does not have master edition or is master edition
+    for allowlist_val in allowlists.iter() {
+        match allowlist_val.kind {
+            ALLOWLIST_KIND_EMPTY => {}
+            ALLOWLIST_KIND_ANY => {
+                // any is a special case, we don't need to check anything else
+                return Ok(());
+            }
+            ALLOWLIST_KIND_MCC => {
+                if collection.key == allowlist_val.value && collection.verified {
+                    return Ok(());
+                }
             }
             _ => {
                 return Err(MMMErrorCode::InvalidAllowLists.into());
@@ -1342,7 +1371,7 @@ pub fn verify_creators(
             computed_hash,
             creator_hash
         );
-        return Err(MMMErrorCode::InvalidCreators.into());
+        return Err(MMMErrorCode::InvalidCnftCreators.into());
     }
 
     Ok(())

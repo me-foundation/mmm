@@ -72,8 +72,10 @@ pub enum MMMErrorCode {
     InvalidTokenExtension, // 0x1791
     #[msg("Unsupported asset plugin")]
     UnsupportedAssetPlugin, // 0x1792
-    #[msg("Mismatched ceator data lengths")]
+    #[msg("Mismatched creator data lengths")]
     MismatchedCreatorDataLengths, // 0x1793
-    #[msg("Invalid creators")]
-    InvalidCreators, // 0x1794
+    #[msg("Invalid cnft creators")]
+    InvalidCnftCreators, // 0x1794
+    #[msg("Invalid cnft metadata")]
+    InvalidCnftMetadata, // 0x1795
 }

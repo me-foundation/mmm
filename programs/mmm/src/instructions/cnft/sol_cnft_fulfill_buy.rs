@@ -8,10 +8,11 @@ use crate::{
     index_ra,
     state::{BubblegumProgram, Pool, SellState, TreeConfigAnchor},
     util::{
-        assert_valid_fees_bp, check_remaining_accounts_for_m2, get_buyside_seller_receives,
-        get_lp_fee_bp, get_sol_fee, get_sol_lp_fee, get_sol_total_price_and_next_price,
-        hash_metadata, log_pool, pay_creator_fees_in_sol_cnft, transfer_compressed_nft,
-        try_close_escrow, try_close_pool, try_close_sell_state, verify_creators, withdraw_m2,
+        assert_valid_fees_bp, check_allowlists_for_cnft, check_remaining_accounts_for_m2,
+        get_buyside_seller_receives, get_lp_fee_bp, get_sol_fee, get_sol_lp_fee,
+        get_sol_total_price_and_next_price, hash_metadata, log_pool, pay_creator_fees_in_sol_cnft,
+        transfer_compressed_nft, try_close_escrow, try_close_pool, try_close_sell_state,
+        verify_creators, withdraw_m2,
     },
     verify_referral::verify_referral,
 };
@@ -39,14 +40,9 @@ pub struct SolCnftFulfillBuyArgs {
     // === Contract args === //
     // Price of the NFT in the payment_mint.
     buyer_price: u64,
-    // The mint of the SPL token used to pay for the NFT, currently not used and default to SOL.
-    payment_mint: Pubkey,
-    // The asset amount to deposit, default to 1.
-    pub asset_amount: u64,
     pub min_payment_amount: u64,
-    pub allowlist_aux: Option<String>, // TODO: use it for future allowlist_aux
-    pub maker_fee_bp: i16,             // will be checked by cosigner
-    pub taker_fee_bp: i16,             // will be checked by cosigner
+    pub maker_fee_bp: i16, // will be checked by cosigner
+    pub taker_fee_bp: i16, // will be checked by cosigner
 
     // Metadata args for cnft hash
     // Reference: https://developers.metaplex.com/bubblegum/hashed-nft-data
@@ -160,9 +156,15 @@ pub fn handler<'info>(
     let creator_length = args.metadata_args.creators.len();
     let remaining_accounts = ctx.remaining_accounts;
 
+    // 0. Verify allowlist
+    if let Some(ref collection) = args.metadata_args.collection {
+        let _ = check_allowlists_for_cnft(&pool.allowlists, collection.clone());
+    } else {
+        return Err(MMMErrorCode::InvalidCnftMetadata.into());
+    }
+
     // 1. Cacluate amount and fees
-    let (total_price, next_price) =
-        get_sol_total_price_and_next_price(pool, args.asset_amount, true)?;
+    let (total_price, next_price) = get_sol_total_price_and_next_price(pool, 1, true)?;
     let metadata_royalty_bp = args.metadata_args.seller_fee_basis_points;
     let seller_receives = {
         let lp_fee_bp = get_lp_fee_bp(pool, buyside_sol_escrow_account.lamports());
@@ -202,7 +204,7 @@ pub fn handler<'info>(
         )?;
         pool.shared_escrow_count = pool
             .shared_escrow_count
-            .checked_sub(args.asset_amount)
+            .checked_sub(1)
             .ok_or(MMMErrorCode::NumericOverflow)?;
 
         remaining_accounts[2..].split_at(creator_length + 2)
@@ -258,7 +260,7 @@ pub fn handler<'info>(
         )?;
         pool.sellside_asset_amount = pool
             .sellside_asset_amount
-            .checked_add(args.asset_amount)
+            .checked_add(1)
             .ok_or(MMMErrorCode::NumericOverflow)?;
         sell_state.pool = pool.key();
         sell_state.pool_owner = owner.key();
@@ -266,7 +268,7 @@ pub fn handler<'info>(
         sell_state.cosigner_annotation = pool.cosigner_annotation;
         sell_state.asset_amount = sell_state
             .asset_amount
-            .checked_add(args.asset_amount)
+            .checked_add(1)
             .ok_or(MMMErrorCode::NumericOverflow)?;
     } else {
         transfer_compressed_nft(
