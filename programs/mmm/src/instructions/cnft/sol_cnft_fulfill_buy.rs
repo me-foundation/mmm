@@ -1,7 +1,6 @@
-use std::str::FromStr;
-
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 use mpl_bubblegum::utils::get_asset_id;
+use solana_program::pubkey;
 
 use crate::{
     constants::*,
@@ -103,13 +102,14 @@ pub struct SolCnftFulfillBuy<'info> {
     #[account(mut)]
     merkle_tree: UncheckedAccount<'info>,
     /// CHECK: Used by bubblegum for logging (CPI)
-    #[account(address = Pubkey::from_str("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV").unwrap())]
+    #[account(address = pubkey!("noopb9bkMVfRPU8AsbpTUg8AQkHtKwMYZiFUjNRtMmV"))]
     log_wrapper: UncheckedAccount<'info>,
 
     bubblegum_program: Program<'info, BubblegumProgram>,
 
     /// CHECK: The Solana Program Library spl-account-compression program ID.
-    #[account(address = Pubkey::from_str("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK").unwrap())]
+    #[account(address = pubkey!("cmtDvXumGCrqC1Age74AVPhSRVXJMd8PJS91L8KbNCK")
+)]
     compression_program: UncheckedAccount<'info>,
 
     #[account(
