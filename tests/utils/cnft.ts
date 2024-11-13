@@ -18,7 +18,10 @@ import {
   MerkleTree,
   mintToCollectionV1,
 } from '@metaplex-foundation/mpl-bubblegum';
-import { createNft, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
+import {
+  createNft,
+  mplTokenMetadata,
+} from '@metaplex-foundation/mpl-token-metadata';
 import {
   Context,
   generateSigner,
@@ -232,11 +235,6 @@ export async function verifyOwnership(
     index: leafIndex,
     proof: currentProof,
   }).sendAndConfirm(umi);
-  console.log(
-    `verified ${expectedOwner} owns leaf at index ${leafIndex}. Result: ${JSON.stringify(
-      result,
-    )}`,
-  );
 
   return { currentProof };
 }
@@ -265,14 +263,14 @@ export async function setupTree(
   const creatorSigners = await getCreatorPair(umi);
   const unverifiedCreators = await initUnverifiedCreatorsArray(creatorSigners);
 
-  const collectionMint = generateSigner(umi)
+  const collectionMint = generateSigner(umi);
   await createNft(umi, {
     mint: collectionMint,
     name: 'My Collection',
     uri: 'https://example.com/my-collection.json',
     sellerFeeBasisPoints: percentAmount(5), // %
     isCollection: true,
-  }).sendAndConfirm(umi);  
+  }).sendAndConfirm(umi);
 
   const { metadata, leaf, leafIndex, creatorsHash, assetId } = await mint(umi, {
     merkleTree,
@@ -283,8 +281,6 @@ export async function setupTree(
       verified: true,
     },
   });
-
-  console.log(`metadata: ${JSON.stringify(metadata)}`);
 
   const verifyCreatorProofTruncated = getTruncatedMerkleProof(
     treeParams.canopyDepth,
@@ -305,7 +301,6 @@ export async function setupTree(
     proof: verifyCreatorProofTruncated,
   }).sendAndConfirm(umi);
 
-  console.log(`verified creator A`);
   const updatedMetadata = {
     ...metadata,
     creators: [
@@ -358,13 +353,6 @@ export async function setupTree(
     [],
   );
 
-  console.log(`
-    [setupTree]
-      fullProof(length: ${fullProof.length}): ${JSON.stringify(fullProof)}
-      sellerProof[truncated](length: ${sellerProof.length}): ${JSON.stringify(
-    sellerProof,
-  )}
-  `);
   return {
     merkleTree,
     leaf,

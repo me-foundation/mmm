@@ -40,7 +40,6 @@ import {
 } from '@solana/web3.js';
 import {
   findLeafAssetIdPda,
-  getAssetWithProof,
   getMetadataArgsSerializer,
   MetadataArgs,
   MPL_BUBBLEGUM_PROGRAM_ID,
@@ -128,8 +127,6 @@ describe('cnft tests', () => {
   });
 
   it('cnft fulfill buy - happy path', async () => {
-    console.log(`buyer: ${buyer.publicKey}`);
-    console.log(`seller: ${seller.publicKey}`);
     // 1. Create a tree.
     const {
       merkleTree,
@@ -146,8 +143,6 @@ describe('cnft tests', () => {
       publicKey(seller.publicKey),
       DEFAULT_TEST_SETUP_TREE_PARAMS,
     );
-
-    const merkleyTreePubkey = getPubKey(merkleTree);
 
     // 2. Create an offer.
     const { buysideSolEscrowAccount, poolData } =
@@ -172,11 +167,6 @@ describe('cnft tests', () => {
       leafIndex,
     });
 
-    // const asset = await umi.rpc.getAsset(assetId);
-    // console.log(`asset: ${JSON.stringify(asset)}`);
-    // const assetWithProof = await getAssetWithProof(umi, assetId);
-    // console.log(`assetWithProof: ${JSON.stringify(assetWithProof)}`);
-
     const { key: sellState } = getMMMCnftSellStatePDA(
       program.programId,
       poolData.poolKey,
@@ -199,18 +189,10 @@ describe('cnft tests', () => {
       nft.tree.merkleTree,
     );
 
-    console.log(`merkleTree: ${nft.tree.merkleTree}`);
-    console.log(`proofs: ${nft.nft.fullProof}`);
-    console.log(`canopyDepth: ${treeAccount.getCanopyDepth()}`);
-
     const proofPath: AccountMeta[] = getProofPath(
       nft.nft.fullProof,
       treeAccount.getCanopyDepth(),
     );
-    console.log(`nft.nft.proofs.length: ${nft.nft.fullProof.length}`);
-    console.log(`proofPath.length: ${proofPath.length}`);
-
-    console.log(`proofPath: ${JSON.stringify(proofPath)}`);
 
     const {
       accounts: creatorAccounts,
@@ -218,7 +200,6 @@ describe('cnft tests', () => {
       creatorVerified,
       sellerFeeBasisPoints,
     } = getCreatorRoyaltiesArgs(creatorRoyalties);
-    console.log(`got creator royalties`);
 
     // get balances before fulfill buy
     const [
@@ -235,34 +216,11 @@ describe('cnft tests', () => {
       connection.getBalance(creatorAccounts[1].pubkey),
     ]);
 
-    console.log(`buyerBefore: ${buyerBefore}`);
-    console.log(`sellerBefore: ${sellerBefore}`);
-    console.log(
-      `buyerSolEscrowAccountBalanceBefore: ${buyerSolEscrowAccountBalanceBefore}`,
-    );
-    console.log(`creator1Before: ${creator1Before}`);
-    console.log(`creator2Before: ${creator2Before}`);
-
     try {
       const metadataSerializer = getMetadataArgsSerializer();
       const metadataArgs: MetadataArgs = metadataSerializer.deserialize(
         metadataSerializer.serialize(metadata),
       )[0];
-
-      console.log(`metadataArgs: ${JSON.stringify(metadataArgs)}`);
-      console.log(
-        `${JSON.stringify(
-          convertToDecodeTokenProgramVersion(metadataArgs.tokenProgramVersion),
-        )}`,
-      );
-
-      console.log(`expectedBuyPrices: {
-        sellerReceives: ${expectedBuyPrices.sellerReceives.toString(10)},
-        lpFeePaid: ${expectedBuyPrices.lpFeePaid.toString(10)},
-        royaltyPaid: ${expectedBuyPrices.royaltyPaid.toString(10)},
-        takerFeePaid: ${expectedBuyPrices.takerFeePaid.toString(10)},
-        makerFeePaid: ${expectedBuyPrices.makerFeePaid.toString(10)}
-      }`);
 
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
@@ -335,7 +293,6 @@ describe('cnft tests', () => {
         // note: skipPreflight causes some weird error.
         // so just surround in this try-catch to get the logs
         .rpc(/* { skipPreflight: true } */);
-      console.log(`fulfillBuyTxnSig: ${fulfillBuyTxnSig}`);
     } catch (e) {
       if (e instanceof SendTransactionError) {
         const err = e as SendTransactionError;
@@ -350,9 +307,6 @@ describe('cnft tests', () => {
       throw e;
     }
 
-    console.log(`seller: ${seller.publicKey}`);
-    console.log(`buyer: ${buyer.publicKey}`);
-    console.log(`nft: ${JSON.stringify(nft)}`);
     // Verify that buyer now owns the cNFT.
     await verifyOwnership(
       umi,
@@ -377,14 +331,6 @@ describe('cnft tests', () => {
       connection.getBalance(creatorAccounts[0].pubkey),
       connection.getBalance(creatorAccounts[1].pubkey),
     ]);
-
-    console.log(`buyerAfter: ${buyerAfter}`);
-    console.log(`sellerAfter: ${sellerAfter}`);
-    console.log(
-      `buyerSolEscrowAccountBalanceAfter: ${buyerSolEscrowAccountBalanceAfter}`,
-    );
-    console.log(`creator1After: ${creator1After}`);
-    console.log(`creator2After: ${creator2After}`);
 
     const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 3; // cosigner + seller + payer (due to provider is under buyer)
 
@@ -424,12 +370,7 @@ describe('cnft tests', () => {
     );
   });
 
-  // TODO: Add test for
-  // 1. Wrong metadata args (like collection)
-  // 2. trucate canopy
   it('cnft fulfill buy - incorrect collection fail allowlist check', async () => {
-    console.log(`buyer: ${buyer.publicKey}`);
-    console.log(`seller: ${seller.publicKey}`);
     // 1. Create a tree.
     const {
       merkleTree,
@@ -446,8 +387,6 @@ describe('cnft tests', () => {
       publicKey(seller.publicKey),
       DEFAULT_TEST_SETUP_TREE_PARAMS,
     );
-
-    const merkleyTreePubkey = getPubKey(merkleTree);
 
     // 2. Create an offer.
     const { buysideSolEscrowAccount, poolData } =
@@ -472,11 +411,6 @@ describe('cnft tests', () => {
       leafIndex,
     });
 
-    // const asset = await umi.rpc.getAsset(assetId);
-    // console.log(`asset: ${JSON.stringify(asset)}`);
-    // const assetWithProof = await getAssetWithProof(umi, assetId);
-    // console.log(`assetWithProof: ${JSON.stringify(assetWithProof)}`);
-
     const { key: sellState } = getMMMCnftSellStatePDA(
       program.programId,
       poolData.poolKey,
@@ -499,18 +433,10 @@ describe('cnft tests', () => {
       nft.tree.merkleTree,
     );
 
-    console.log(`merkleTree: ${nft.tree.merkleTree}`);
-    console.log(`proofs: ${nft.nft.fullProof}`);
-    console.log(`canopyDepth: ${treeAccount.getCanopyDepth()}`);
-
     const proofPath: AccountMeta[] = getProofPath(
       nft.nft.fullProof,
       treeAccount.getCanopyDepth(),
     );
-    console.log(`nft.nft.proofs.length: ${nft.nft.fullProof.length}`);
-    console.log(`proofPath.length: ${proofPath.length}`);
-
-    console.log(`proofPath: ${JSON.stringify(proofPath)}`);
 
     const {
       accounts: creatorAccounts,
@@ -518,7 +444,6 @@ describe('cnft tests', () => {
       creatorVerified,
       sellerFeeBasisPoints,
     } = getCreatorRoyaltiesArgs(creatorRoyalties);
-    console.log(`got creator royalties`);
 
     // get balances before fulfill buy
     const [
@@ -535,34 +460,11 @@ describe('cnft tests', () => {
       connection.getBalance(creatorAccounts[1].pubkey),
     ]);
 
-    console.log(`buyerBefore: ${buyerBefore}`);
-    console.log(`sellerBefore: ${sellerBefore}`);
-    console.log(
-      `buyerSolEscrowAccountBalanceBefore: ${buyerSolEscrowAccountBalanceBefore}`,
-    );
-    console.log(`creator1Before: ${creator1Before}`);
-    console.log(`creator2Before: ${creator2Before}`);
-
     try {
       const metadataSerializer = getMetadataArgsSerializer();
       const metadataArgs: MetadataArgs = metadataSerializer.deserialize(
         metadataSerializer.serialize(metadata),
       )[0];
-
-      console.log(`metadataArgs: ${JSON.stringify(metadataArgs)}`);
-      console.log(
-        `${JSON.stringify(
-          convertToDecodeTokenProgramVersion(metadataArgs.tokenProgramVersion),
-        )}`,
-      );
-
-      console.log(`expectedBuyPrices: {
-        sellerReceives: ${expectedBuyPrices.sellerReceives.toString(10)},
-        lpFeePaid: ${expectedBuyPrices.lpFeePaid.toString(10)},
-        royaltyPaid: ${expectedBuyPrices.royaltyPaid.toString(10)},
-        takerFeePaid: ${expectedBuyPrices.takerFeePaid.toString(10)},
-        makerFeePaid: ${expectedBuyPrices.makerFeePaid.toString(10)}
-      }`);
 
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
@@ -635,7 +537,6 @@ describe('cnft tests', () => {
         // note: skipPreflight causes some weird error.
         // so just surround in this try-catch to get the logs
         .rpc(/* { skipPreflight: true } */);
-      console.log(`fulfillBuyTxnSig: ${fulfillBuyTxnSig}`);
     } catch (e) {
       expect(e).toBeInstanceOf(anchor.AnchorError);
       const err = e as anchor.AnchorError;
@@ -646,9 +547,6 @@ describe('cnft tests', () => {
       );
     }
 
-    console.log(`seller: ${seller.publicKey}`);
-    console.log(`buyer: ${buyer.publicKey}`);
-    console.log(`nft: ${JSON.stringify(nft)}`);
     // Verify that seller still owns the cNFT.
     await verifyOwnership(
       umi,
@@ -674,14 +572,6 @@ describe('cnft tests', () => {
       connection.getBalance(creatorAccounts[1].pubkey),
     ]);
 
-    console.log(`buyerAfter: ${buyerAfter}`);
-    console.log(`sellerAfter: ${sellerAfter}`);
-    console.log(
-      `buyerSolEscrowAccountBalanceAfter: ${buyerSolEscrowAccountBalanceAfter}`,
-    );
-    console.log(`creator1After: ${creator1After}`);
-    console.log(`creator2After: ${creator2After}`);
-
     assert.equal(buyerBefore, buyerAfter);
 
     assert.equal(
@@ -699,8 +589,6 @@ describe('cnft tests', () => {
   });
 
   it('cnft fulfill buy - incorrect royalty fail bubblegum check', async () => {
-    console.log(`buyer: ${buyer.publicKey}`);
-    console.log(`seller: ${seller.publicKey}`);
     // 1. Create a tree.
     const {
       merkleTree,
@@ -717,8 +605,6 @@ describe('cnft tests', () => {
       publicKey(seller.publicKey),
       DEFAULT_TEST_SETUP_TREE_PARAMS,
     );
-
-    const merkleyTreePubkey = getPubKey(merkleTree);
 
     // 2. Create an offer.
     const { buysideSolEscrowAccount, poolData } =
@@ -743,11 +629,6 @@ describe('cnft tests', () => {
       leafIndex,
     });
 
-    // const asset = await umi.rpc.getAsset(assetId);
-    // console.log(`asset: ${JSON.stringify(asset)}`);
-    // const assetWithProof = await getAssetWithProof(umi, assetId);
-    // console.log(`assetWithProof: ${JSON.stringify(assetWithProof)}`);
-
     const { key: sellState } = getMMMCnftSellStatePDA(
       program.programId,
       poolData.poolKey,
@@ -770,18 +651,10 @@ describe('cnft tests', () => {
       nft.tree.merkleTree,
     );
 
-    console.log(`merkleTree: ${nft.tree.merkleTree}`);
-    console.log(`proofs: ${nft.nft.fullProof}`);
-    console.log(`canopyDepth: ${treeAccount.getCanopyDepth()}`);
-
     const proofPath: AccountMeta[] = getProofPath(
       nft.nft.fullProof,
       treeAccount.getCanopyDepth(),
     );
-    console.log(`nft.nft.proofs.length: ${nft.nft.fullProof.length}`);
-    console.log(`proofPath.length: ${proofPath.length}`);
-
-    console.log(`proofPath: ${JSON.stringify(proofPath)}`);
 
     const {
       accounts: creatorAccounts,
@@ -789,7 +662,6 @@ describe('cnft tests', () => {
       creatorVerified,
       sellerFeeBasisPoints,
     } = getCreatorRoyaltiesArgs(creatorRoyalties);
-    console.log(`got creator royalties`);
 
     // get balances before fulfill buy
     const [
@@ -806,34 +678,11 @@ describe('cnft tests', () => {
       connection.getBalance(creatorAccounts[1].pubkey),
     ]);
 
-    console.log(`buyerBefore: ${buyerBefore}`);
-    console.log(`sellerBefore: ${sellerBefore}`);
-    console.log(
-      `buyerSolEscrowAccountBalanceBefore: ${buyerSolEscrowAccountBalanceBefore}`,
-    );
-    console.log(`creator1Before: ${creator1Before}`);
-    console.log(`creator2Before: ${creator2Before}`);
-
     try {
       const metadataSerializer = getMetadataArgsSerializer();
       const metadataArgs: MetadataArgs = metadataSerializer.deserialize(
         metadataSerializer.serialize(metadata),
       )[0];
-
-      console.log(`metadataArgs: ${JSON.stringify(metadataArgs)}`);
-      console.log(
-        `${JSON.stringify(
-          convertToDecodeTokenProgramVersion(metadataArgs.tokenProgramVersion),
-        )}`,
-      );
-
-      console.log(`expectedBuyPrices: {
-        sellerReceives: ${expectedBuyPrices.sellerReceives.toString(10)},
-        lpFeePaid: ${expectedBuyPrices.lpFeePaid.toString(10)},
-        royaltyPaid: ${expectedBuyPrices.royaltyPaid.toString(10)},
-        takerFeePaid: ${expectedBuyPrices.takerFeePaid.toString(10)},
-        makerFeePaid: ${expectedBuyPrices.makerFeePaid.toString(10)}
-      }`);
 
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
@@ -906,7 +755,6 @@ describe('cnft tests', () => {
         // note: skipPreflight causes some weird error.
         // so just surround in this try-catch to get the logs
         .rpc(/* skipPreflight: true } */);
-      console.log(`fulfillBuyTxnSig: ${fulfillBuyTxnSig}`);
     } catch (e) {
       expect(e).toBeInstanceOf(SendTransactionError);
       const err = e as SendTransactionError;
@@ -918,9 +766,6 @@ describe('cnft tests', () => {
       );
     }
 
-    console.log(`seller: ${seller.publicKey}`);
-    console.log(`buyer: ${buyer.publicKey}`);
-    console.log(`nft: ${JSON.stringify(nft)}`);
     // Verify that seller still owns the cNFT.
     await verifyOwnership(
       umi,
@@ -945,14 +790,6 @@ describe('cnft tests', () => {
       connection.getBalance(creatorAccounts[0].pubkey),
       connection.getBalance(creatorAccounts[1].pubkey),
     ]);
-
-    console.log(`buyerAfter: ${buyerAfter}`);
-    console.log(`sellerAfter: ${sellerAfter}`);
-    console.log(
-      `buyerSolEscrowAccountBalanceAfter: ${buyerSolEscrowAccountBalanceAfter}`,
-    );
-    console.log(`creator1After: ${creator1After}`);
-    console.log(`creator2After: ${creator2After}`);
 
     assert.equal(buyerBefore, buyerAfter);
 
