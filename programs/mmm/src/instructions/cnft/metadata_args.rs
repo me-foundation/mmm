@@ -1,6 +1,7 @@
 use anchor_lang::{prelude::*, AnchorDeserialize, AnchorSerialize};
 
-// Define the TokenStandard enum
+// Below types are copied from mpl bubblegum crate so
+// IDL will automatically include them
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq, PartialOrd, Hash)]
 pub enum TokenStandard {
     NonFungible,
@@ -45,7 +46,6 @@ pub struct Creator {
     pub share: u8,
 }
 
-// Define the MetadataArgs struct
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct MetadataArgs {
     pub name: String,
