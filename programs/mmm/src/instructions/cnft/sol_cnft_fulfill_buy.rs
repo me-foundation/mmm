@@ -236,6 +236,8 @@ pub fn handler<'info>(
     // 3. Transfer CNFT to buyer (pool or owner)
     let data_hash = hash_metadata(&args.metadata_args)?;
     let asset_mint = get_asset_id(&merkle_tree.key(), args.nonce);
+    // reinvest fulfill buy is just a placeholder for now if we want to enable double sided
+    // pool for cnft in the the future.
     if pool.reinvest_fulfill_buy {
         if pool.using_shared_escrow() {
             return Err(MMMErrorCode::InvalidAccountState.into());
