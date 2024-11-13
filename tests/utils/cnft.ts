@@ -16,15 +16,18 @@ import {
   getMerkleProof,
   verifyLeaf,
   MerkleTree,
-  MPL_BUBBLEGUM_PROGRAM_ID,
+  mintToCollectionV1,
 } from '@metaplex-foundation/mpl-bubblegum';
-import { mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
+import { createNft, mplTokenMetadata } from '@metaplex-foundation/mpl-token-metadata';
 import {
   Context,
   generateSigner,
+  isOption,
+  isSome,
   KeypairSigner,
   none,
   Pda,
+  percentAmount,
   PublicKey,
   publicKey,
   sol,
@@ -40,8 +43,6 @@ import {
   PublicKey as Web3PubKey,
 } from '@solana/web3.js';
 import { dasApi } from '@metaplex-foundation/digital-asset-standard-api';
-import { mintCollection } from './nfts';
-import { umiMintCollection } from './umiNfts';
 
 export const ME_TREASURY = new Web3PubKey(
   'rFqFJ9g7TGBD8Ed7TPDnvGKZ5pWLPDyxLcvcH2eRCtt',
@@ -118,21 +119,42 @@ export const mint = async (
       (await fetchMerkleTree(context, merkleTree)).tree.activeIndex,
   );
   const leafCreators = input.creators ?? [];
-  const collection = input.collection ?? none();
+  const collection = input.collection
+    ? isOption(input.collection)
+      ? isSome(input.collection)
+        ? input.collection.value
+        : undefined
+      : input.collection
+    : undefined;
+
   const metadata: MetadataArgsArgs = {
     name: 'My NFT',
     uri: 'https://example.com/my-nft.json',
     sellerFeeBasisPoints: 500, // 5%
-    collection,
+    collection: collection
+      ? {
+          key: collection.key,
+          verified: collection.verified,
+        }
+      : none(),
     creators: leafCreators,
     ...input.metadata,
   };
 
-  await baseMintV1(context, {
-    ...input,
-    metadata,
-    leafOwner,
-  }).sendAndConfirm(context);
+  if (collection) {
+    await mintToCollectionV1(context, {
+      ...input,
+      leafOwner,
+      collectionMint: collection.key,
+      metadata,
+    }).sendAndConfirm(context);
+  } else {
+    await baseMintV1(context, {
+      ...input,
+      metadata,
+      leafOwner,
+    }).sendAndConfirm(context);
+  }
 
   return {
     metadata,
@@ -243,27 +265,26 @@ export async function setupTree(
   const creatorSigners = await getCreatorPair(umi);
   const unverifiedCreators = await initUnverifiedCreatorsArray(creatorSigners);
 
-  const collection = (
-    await umiMintCollection(
-      umi,
-      {
-        numNfts: 0,
-        verifyCollection: false,
-        legacy: true,
-      },
-      new Web3PubKey(MPL_BUBBLEGUM_PROGRAM_ID),
-    )
-  ).collection;
+  const collectionMint = generateSigner(umi)
+  await createNft(umi, {
+    mint: collectionMint,
+    name: 'My Collection',
+    uri: 'https://example.com/my-collection.json',
+    sellerFeeBasisPoints: percentAmount(5), // %
+    isCollection: true,
+  }).sendAndConfirm(umi);  
 
   const { metadata, leaf, leafIndex, creatorsHash, assetId } = await mint(umi, {
     merkleTree,
     leafOwner: seller,
     creators: unverifiedCreators,
     collection: {
-      key: publicKey(collection.mintAddress),
-      verified: false,
+      key: publicKey(collectionMint),
+      verified: true,
     },
   });
+
+  console.log(`metadata: ${JSON.stringify(metadata)}`);
 
   const verifyCreatorProofTruncated = getTruncatedMerkleProof(
     treeParams.canopyDepth,
@@ -365,7 +386,7 @@ export async function setupTree(
       })),
       sellerFeeBasisPoints: 500, // 5% royalty
     },
-    collectionKey: new Web3PubKey(collection.mintAddress),
+    collectionKey: new Web3PubKey(collectionMint.publicKey),
   };
 }
 
