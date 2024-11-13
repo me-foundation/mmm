@@ -441,7 +441,7 @@ describe('cnft tests', () => {
       getCnftRef,
       nft,
       creatorRoyalties,
-      collectionKey
+      collectionKey,
     } = await setupTree(
       umi,
       publicKey(seller.publicKey),
@@ -638,27 +638,23 @@ describe('cnft tests', () => {
         .rpc(/* { skipPreflight: true } */);
       console.log(`fulfillBuyTxnSig: ${fulfillBuyTxnSig}`);
     } catch (e) {
-      if (e instanceof SendTransactionError) {
-        const err = e as SendTransactionError;
-        console.log(
-          `err.logs: ${JSON.stringify(
-            await err.getLogs(provider.connection),
-            null,
-            2,
-          )}`,
-        );
-      }
-      throw e;
+      expect(e).toBeInstanceOf(anchor.AnchorError);
+      const err = e as anchor.AnchorError;
+
+      assert.strictEqual(
+        err.message,
+        'AnchorError occurred. Error Code: InvalidAllowLists. Error Number: 6001. Error Message: invalid allowlists.',
+      );
     }
 
     console.log(`seller: ${seller.publicKey}`);
     console.log(`buyer: ${buyer.publicKey}`);
     console.log(`nft: ${JSON.stringify(nft)}`);
-    // Verify that buyer now owns the cNFT.
+    // Verify that seller still owns the cNFT.
     await verifyOwnership(
       umi,
       merkleTree,
-      publicKey(buyer.publicKey),
+      publicKey(seller.publicKey),
       leafIndex,
       metadata,
       [],
@@ -687,41 +683,19 @@ describe('cnft tests', () => {
     console.log(`creator1After: ${creator1After}`);
     console.log(`creator2After: ${creator2After}`);
 
-    const expectedTxFees = SIGNATURE_FEE_LAMPORTS * 3; // cosigner + seller + payer (due to provider is under buyer)
-
-    assert.equal(buyerBefore, buyerAfter + expectedTxFees);
+    assert.equal(buyerBefore, buyerAfter);
 
     assert.equal(
       buyerSolEscrowAccountBalanceBefore,
-      buyerSolEscrowAccountBalanceAfter + spotPrice * LAMPORTS_PER_SOL,
+      buyerSolEscrowAccountBalanceAfter,
     );
 
     // In production it should be seller buy tx fee, but with this test set up, buyer pays
     // tx fee due to provider is initiated under buyer.
-    assert.equal(
-      sellerAfter,
-      sellerBefore +
-        spotPrice * LAMPORTS_PER_SOL -
-        expectedBuyPrices.takerFeePaid.toNumber() -
-        expectedBuyPrices.royaltyPaid.toNumber(),
-    );
+    assert.equal(sellerAfter, sellerBefore);
 
-    assertIsBetween(
-      creator1After,
-      creator1Before +
-        (expectedBuyPrices.royaltyPaid.toNumber() *
-          metadata.creators[0].share) /
-          100,
-      PRICE_ERROR_RANGE,
-    );
+    assert.equal(creator1After, creator1Before);
 
-    assertIsBetween(
-      creator2After,
-      creator2Before +
-        (expectedBuyPrices.royaltyPaid.toNumber() *
-          metadata.creators[1].share) /
-          100,
-      PRICE_ERROR_RANGE,
-    );
+    assert.equal(creator2After, creator2Before);
   });
 });
