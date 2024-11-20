@@ -2689,15 +2689,6 @@ export type Mmm = {
             }
           },
           {
-            "name": "creatorHash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
             "name": "nonce",
             "type": "u64"
           },
@@ -5962,15 +5953,6 @@ export const IDL: Mmm = {
           },
           {
             "name": "root",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
-            "name": "creatorHash",
             "type": {
               "array": [
                 "u8",

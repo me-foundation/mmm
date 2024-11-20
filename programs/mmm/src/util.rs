@@ -1331,12 +1331,21 @@ pub fn hash_metadata(metadata: &MetadataArgs) -> Result<[u8; 32]> {
     .to_bytes())
 }
 
-pub fn verify_creators(
+pub fn hash_creators_from_metadata_args(
     creator_accounts: Iter<AccountInfo>,
-    creator_shares: Vec<u16>,
-    creator_verified: Vec<bool>,
-    creator_hash: [u8; 32],
-) -> Result<()> {
+    metadata_args: &MetadataArgs,
+) -> Result<[u8; 32]> {
+    let creator_shares = metadata_args
+        .creators
+        .iter()
+        .map(|c| c.share as u16)
+        .collect::<Vec<u16>>();
+
+    let creator_verified = metadata_args
+        .creators
+        .iter()
+        .map(|c| c.verified)
+        .collect::<Vec<bool>>();
     // Check that all input arrays/vectors are of the same length
     if creator_accounts.len() != creator_shares.len()
         || creator_accounts.len() != creator_verified.len()
@@ -1360,17 +1369,7 @@ pub fn verify_creators(
     // Compute the hash from the Creator vector
     let computed_hash = hash_creators(&creators);
 
-    // Compare the computed hash with the provided hash
-    if computed_hash != creator_hash {
-        msg!(
-            "Computed hash does not match provided hash: {{\"computed\":{:?},\"provided\":{:?}}}",
-            computed_hash,
-            creator_hash
-        );
-        return Err(MMMErrorCode::InvalidCnftCreators.into());
-    }
-
-    Ok(())
+    Ok(computed_hash)
 }
 
 #[cfg(test)]

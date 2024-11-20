@@ -225,7 +225,6 @@ describe('cnft tests', () => {
         .cnftFulfillBuy({
           assetId: new PublicKey(assetId),
           root: getByteArray(nft.tree.root),
-          creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
           index: nft.nft.nftIndex,
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
@@ -467,7 +466,6 @@ describe('cnft tests', () => {
         .cnftFulfillBuy({
           assetId: new PublicKey(assetId),
           root: getByteArray(nft.tree.root),
-          creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
           index: nft.nft.nftIndex,
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
@@ -683,7 +681,6 @@ describe('cnft tests', () => {
         .cnftFulfillBuy({
           assetId: new PublicKey(assetId),
           root: getByteArray(nft.tree.root),
-          creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
           index: nft.nft.nftIndex,
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),

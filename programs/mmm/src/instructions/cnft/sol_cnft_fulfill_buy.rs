@@ -10,9 +10,9 @@ use crate::{
     util::{
         assert_valid_fees_bp, check_allowlists_for_cnft, check_remaining_accounts_for_m2,
         get_buyside_seller_receives, get_lp_fee_bp, get_sol_fee, get_sol_lp_fee,
-        get_sol_total_price_and_next_price, hash_metadata, log_pool, pay_creator_fees_in_sol_cnft,
-        transfer_compressed_nft, try_close_escrow, try_close_pool, try_close_sell_state,
-        verify_creators, withdraw_m2,
+        get_sol_total_price_and_next_price, hash_creators_from_metadata_args, hash_metadata,
+        log_pool, pay_creator_fees_in_sol_cnft, transfer_compressed_nft, try_close_escrow,
+        try_close_pool, try_close_sell_state, withdraw_m2,
     },
     verify_referral::verify_referral,
 };
@@ -25,9 +25,6 @@ pub struct SolCnftFulfillBuyArgs {
     asset_id: Pubkey,
     // The Merkle root for the tree. Can be retrieved from off-chain data store.
     root: [u8; 32],
-    // The Keccak256 hash of the NFTs existing creators array (without the verified flag for the creator changed).
-    // The creators array is retrieved from off-chain data store.
-    creator_hash: [u8; 32],
     // A nonce ("number used once") value used to make the Merkle tree leaves unique.
     // This is the value of num_minted for the tree stored in the TreeConfig account at the time the NFT was minted.
     // The unique value for each asset can be retrieved from off-chain data store.
@@ -207,26 +204,8 @@ pub fn handler<'info>(
         remaining_accounts.split_at(creator_length)
     };
 
-    let creator_shares = args
-        .metadata_args
-        .creators
-        .iter()
-        .map(|c| c.share as u16)
-        .collect::<Vec<u16>>();
-
-    let creator_verified = args
-        .metadata_args
-        .creators
-        .iter()
-        .map(|c| c.verified)
-        .collect();
-
-    verify_creators(
-        creator_accounts.iter(),
-        creator_shares,
-        creator_verified,
-        args.creator_hash,
-    )?;
+    let creator_hash =
+        hash_creators_from_metadata_args(creator_accounts.iter(), &args.metadata_args)?;
 
     // 3. Transfer CNFT to buyer (pool or owner)
     let data_hash = hash_metadata(&args.metadata_args)?;
@@ -253,7 +232,7 @@ pub fn handler<'info>(
             ctx.accounts.bubblegum_program.key(),
             args.root,
             data_hash,
-            args.creator_hash,
+            creator_hash,
             args.nonce,
             args.index,
             None, // signer passed through from ctx
@@ -284,7 +263,7 @@ pub fn handler<'info>(
             ctx.accounts.bubblegum_program.key(),
             args.root,
             data_hash,
-            args.creator_hash,
+            creator_hash,
             args.nonce,
             args.index,
             None, // signer passed through from ctx
