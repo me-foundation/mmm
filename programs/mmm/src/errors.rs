@@ -78,4 +78,6 @@ pub enum MMMErrorCode {
     InvalidCnftCreators, // 0x1794
     #[msg("Invalid cnft metadata")]
     InvalidCnftMetadata, // 0x1795
+    #[msg("Invalid cnft metadata args")]
+    InvalidCnftMetadataArgs, // 0x1796
 }

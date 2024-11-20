@@ -23,7 +23,7 @@ import {
   getByteArray,
   getM2BuyerSharedEscrow,
   getMMMBuysideSolEscrowPDA,
-  getMMMCnftSellStatePDA,
+  getMMMSellStatePDA,
   getProofPath,
   getSolFulfillBuyPrices,
   IDL,
@@ -167,11 +167,10 @@ describe('cnft tests', () => {
       leafIndex,
     });
 
-    const { key: sellState } = getMMMCnftSellStatePDA(
+    const { key: sellState } = getMMMSellStatePDA(
       program.programId,
       poolData.poolKey,
-      new PublicKey(nft.tree.merkleTree),
-      nft.nft.nftIndex,
+      new PublicKey(assetId),
     );
 
     const spotPrice = 1;
@@ -224,6 +223,7 @@ describe('cnft tests', () => {
 
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
+          assetId: new PublicKey(assetId),
           root: getByteArray(nft.tree.root),
           creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
@@ -409,11 +409,10 @@ describe('cnft tests', () => {
       leafIndex,
     });
 
-    const { key: sellState } = getMMMCnftSellStatePDA(
+    const { key: sellState } = getMMMSellStatePDA(
       program.programId,
       poolData.poolKey,
-      new PublicKey(nft.tree.merkleTree),
-      nft.nft.nftIndex,
+      new PublicKey(assetId),
     );
 
     const spotPrice = 1;
@@ -466,6 +465,7 @@ describe('cnft tests', () => {
 
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
+          assetId: new PublicKey(assetId),
           root: getByteArray(nft.tree.root),
           creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
@@ -625,11 +625,10 @@ describe('cnft tests', () => {
       leafIndex,
     });
 
-    const { key: sellState } = getMMMCnftSellStatePDA(
+    const { key: sellState } = getMMMSellStatePDA(
       program.programId,
       poolData.poolKey,
-      new PublicKey(nft.tree.merkleTree),
-      nft.nft.nftIndex,
+      new PublicKey(assetId),
     );
 
     const spotPrice = 1;
@@ -682,6 +681,7 @@ describe('cnft tests', () => {
 
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
+          assetId: new PublicKey(assetId),
           root: getByteArray(nft.tree.root),
           creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),

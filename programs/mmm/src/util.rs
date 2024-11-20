@@ -1226,6 +1226,7 @@ pub fn create_core_metadata_core(royalties: &Royalties) -> MplCoreMetadata {
     }
 }
 
+// TODO: use the transfer cpi builder by mpl bubblegum
 #[allow(clippy::too_many_arguments)]
 pub fn transfer_compressed_nft<'info>(
     tree_authority: &AccountInfo<'info>,

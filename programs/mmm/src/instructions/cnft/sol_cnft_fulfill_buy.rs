@@ -6,7 +6,7 @@ use crate::{
     constants::*,
     errors::MMMErrorCode,
     index_ra,
-    state::{BubblegumProgram, Pool, SellState, TreeConfigAnchor},
+    state::{BubblegumProgram, Pool, SellState},
     util::{
         assert_valid_fees_bp, check_allowlists_for_cnft, check_remaining_accounts_for_m2,
         get_buyside_seller_receives, get_lp_fee_bp, get_sol_fee, get_sol_lp_fee,
@@ -22,6 +22,7 @@ use super::MetadataArgs;
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct SolCnftFulfillBuyArgs {
     // === cNFT transfer args === //
+    asset_id: Pubkey,
     // The Merkle root for the tree. Can be retrieved from off-chain data store.
     root: [u8; 32],
     // The Keccak256 hash of the NFTs existing creators array (without the verified flag for the creator changed).
@@ -86,7 +87,7 @@ pub struct SolCnftFulfillBuy<'info> {
             bump,
           )]
     /// CHECK: This account is neither written to nor read from.
-    pub tree_authority: Account<'info, TreeConfigAnchor>,
+    pub tree_authority: UncheckedAccount<'info>,
 
     // The account that contains the Merkle tree, initialized by create_tree.
     /// CHECK: This account is modified in the downstream Bubblegum program
@@ -109,8 +110,7 @@ pub struct SolCnftFulfillBuy<'info> {
         seeds = [
             SELL_STATE_PREFIX.as_bytes(),
             pool.key().as_ref(),
-            merkle_tree.key().as_ref(),
-            args.index.to_le_bytes().as_ref(),
+            args.asset_id.as_ref(),
         ],
         space = SellState::LEN,
         bump
@@ -231,6 +231,9 @@ pub fn handler<'info>(
     // 3. Transfer CNFT to buyer (pool or owner)
     let data_hash = hash_metadata(&args.metadata_args)?;
     let asset_mint = get_asset_id(&merkle_tree.key(), args.nonce);
+    if asset_mint != args.asset_id {
+        return Err(MMMErrorCode::InvalidCnftMetadataArgs.into());
+    }
     // reinvest fulfill buy is just a placeholder for now if we want to enable double sided
     // pool for cnft in the the future.
     if pool.reinvest_fulfill_buy {

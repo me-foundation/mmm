@@ -2676,6 +2676,10 @@ export type Mmm = {
         "kind": "struct",
         "fields": [
           {
+            "name": "assetId",
+            "type": "publicKey"
+          },
+          {
             "name": "root",
             "type": {
               "array": [
@@ -3266,6 +3270,11 @@ export type Mmm = {
       "code": 6037,
       "name": "InvalidCnftMetadata",
       "msg": "Invalid cnft metadata"
+    },
+    {
+      "code": 6038,
+      "name": "InvalidCnftMetadataArgs",
+      "msg": "Invalid cnft metadata args"
     }
   ]
 };
@@ -5948,6 +5957,10 @@ export const IDL: Mmm = {
         "kind": "struct",
         "fields": [
           {
+            "name": "assetId",
+            "type": "publicKey"
+          },
+          {
             "name": "root",
             "type": {
               "array": [
@@ -6538,6 +6551,11 @@ export const IDL: Mmm = {
       "code": 6037,
       "name": "InvalidCnftMetadata",
       "msg": "Invalid cnft metadata"
+    },
+    {
+      "code": 6038,
+      "name": "InvalidCnftMetadataArgs",
+      "msg": "Invalid cnft metadata args"
     }
   ]
 };

@@ -52,24 +52,6 @@ export function getByteArray(key: PublicKey): Array<number> {
   return Array.from(key.toBuffer());
 }
 
-export const getMMMCnftSellStatePDA = (
-  programId: PublicKey,
-  pool: PublicKey,
-  merkleTree: PublicKey,
-  index: number,
-) => {
-  const [key, bump] = PublicKey.findProgramAddressSync(
-    [
-      Buffer.from(PREFIXES.SELL_STATE),
-      pool.toBuffer(),
-      merkleTree.toBuffer(),
-      new BN(index).toBuffer('le', 4),
-    ],
-    programId,
-  );
-  return { key, bump };
-};
-
 // get "proof path" from asset proof, these are the accounts that need to be passed to the program as remaining accounts
 // may also be empty if tree is small enough, and canopy depth is large enough
 export function getProofPath(
