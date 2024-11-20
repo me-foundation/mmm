@@ -158,12 +158,7 @@ pub fn check_allowlists_for_mint(
 }
 
 pub fn check_allowlists_for_cnft(allowlists: &[Allowlist], collection: Collection) -> Result<()> {
-    // We need to check the following validation rules
-    // 1. make sure the metadata is correctly derived from the metadata pda with the mint
-    // 2. make sure mint+metadata(e.g. first verified creator address) can match one of the allowlist
-    // 3. note that the allowlist is unioned together, not intersection
-    // 4. skip if the allowlist.is_empty()
-    // 5. verify that nft either does not have master edition or is master edition
+    // Check mcc for cnft.
     for allowlist_val in allowlists.iter() {
         match allowlist_val.kind {
             ALLOWLIST_KIND_EMPTY => {}

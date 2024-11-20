@@ -225,11 +225,9 @@ describe('cnft tests', () => {
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
           root: getByteArray(nft.tree.root),
-          metadataHash: getByteArray(nft.tree.dataHash),
           creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
           index: nft.nft.nftIndex,
-          buyerPrice: new BN(spotPrice * LAMPORTS_PER_SOL),
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
           makerFeeBp: 0,
           takerFeeBp: 100,
@@ -469,11 +467,9 @@ describe('cnft tests', () => {
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
           root: getByteArray(nft.tree.root),
-          metadataHash: getByteArray(nft.tree.dataHash),
           creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
           index: nft.nft.nftIndex,
-          buyerPrice: new BN(spotPrice * LAMPORTS_PER_SOL),
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
           makerFeeBp: 0,
           takerFeeBp: 100,
@@ -687,11 +683,9 @@ describe('cnft tests', () => {
       const fulfillBuyTxnSig = await program.methods
         .cnftFulfillBuy({
           root: getByteArray(nft.tree.root),
-          metadataHash: getByteArray(nft.tree.dataHash),
           creatorHash: getByteArray(nft.tree.creatorHash),
           nonce: new BN(nft.tree.nonce),
           index: nft.nft.nftIndex,
-          buyerPrice: new BN(spotPrice * LAMPORTS_PER_SOL),
           minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
           makerFeeBp: 0,
           takerFeeBp: 100,

@@ -2685,15 +2685,6 @@ export type Mmm = {
             }
           },
           {
-            "name": "metadataHash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
             "name": "creatorHash",
             "type": {
               "array": [
@@ -2709,10 +2700,6 @@ export type Mmm = {
           {
             "name": "index",
             "type": "u32"
-          },
-          {
-            "name": "buyerPrice",
-            "type": "u64"
           },
           {
             "name": "minPaymentAmount",
@@ -5970,15 +5957,6 @@ export const IDL: Mmm = {
             }
           },
           {
-            "name": "metadataHash",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
-          },
-          {
             "name": "creatorHash",
             "type": {
               "array": [
@@ -5994,10 +5972,6 @@ export const IDL: Mmm = {
           {
             "name": "index",
             "type": "u32"
-          },
-          {
-            "name": "buyerPrice",
-            "type": "u64"
           },
           {
             "name": "minPaymentAmount",

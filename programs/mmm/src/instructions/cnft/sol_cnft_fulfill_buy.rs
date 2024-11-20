@@ -24,9 +24,6 @@ pub struct SolCnftFulfillBuyArgs {
     // === cNFT transfer args === //
     // The Merkle root for the tree. Can be retrieved from off-chain data store.
     root: [u8; 32],
-    // The Keccak256 hash of the NFTs existing metadata (without the verified flag for the creator changed).
-    // The metadata is retrieved from off-chain data store.
-    metadata_hash: [u8; 32],
     // The Keccak256 hash of the NFTs existing creators array (without the verified flag for the creator changed).
     // The creators array is retrieved from off-chain data store.
     creator_hash: [u8; 32],
@@ -38,8 +35,6 @@ pub struct SolCnftFulfillBuyArgs {
     index: u32,
 
     // === Contract args === //
-    // Price of the NFT in the payment_mint.
-    buyer_price: u64,
     pub min_payment_amount: u64,
     pub maker_fee_bp: i16, // will be checked by cosigner
     pub taker_fee_bp: i16, // will be checked by cosigner
