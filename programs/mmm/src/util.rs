@@ -1350,7 +1350,7 @@ pub fn hash_creators_from_metadata_args(
     if creator_accounts.len() != creator_shares.len()
         || creator_accounts.len() != creator_verified.len()
     {
-        return Err(MMMErrorCode::MismatchedCreatorDataLengths.into());
+        return Err(MMMErrorCode::InvalidCreatorAddress.into());
     }
 
     // Convert input data to a vector of Creator structs

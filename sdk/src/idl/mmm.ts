@@ -3249,21 +3249,11 @@ export type Mmm = {
     },
     {
       "code": 6035,
-      "name": "MismatchedCreatorDataLengths",
-      "msg": "Mismatched creator data lengths"
-    },
-    {
-      "code": 6036,
-      "name": "InvalidCnftCreators",
-      "msg": "Invalid cnft creators"
-    },
-    {
-      "code": 6037,
       "name": "InvalidCnftMetadata",
       "msg": "Invalid cnft metadata"
     },
     {
-      "code": 6038,
+      "code": 6036,
       "name": "InvalidCnftMetadataArgs",
       "msg": "Invalid cnft metadata args"
     }
@@ -6521,21 +6511,11 @@ export const IDL: Mmm = {
     },
     {
       "code": 6035,
-      "name": "MismatchedCreatorDataLengths",
-      "msg": "Mismatched creator data lengths"
-    },
-    {
-      "code": 6036,
-      "name": "InvalidCnftCreators",
-      "msg": "Invalid cnft creators"
-    },
-    {
-      "code": 6037,
       "name": "InvalidCnftMetadata",
       "msg": "Invalid cnft metadata"
     },
     {
-      "code": 6038,
+      "code": 6036,
       "name": "InvalidCnftMetadataArgs",
       "msg": "Invalid cnft metadata args"
     }

@@ -338,8 +338,6 @@ describe('cnft tests', () => {
       buyerSolEscrowAccountBalanceAfter + spotPrice * LAMPORTS_PER_SOL,
     );
 
-    // In production it should be seller buy tx fee, but with this test set up, buyer pays
-    // tx fee due to provider is initiated under buyer.
     assert.equal(
       sellerAfter,
       sellerBefore +
@@ -573,8 +571,6 @@ describe('cnft tests', () => {
       buyerSolEscrowAccountBalanceAfter,
     );
 
-    // In production it should be seller buy tx fee, but with this test set up, buyer pays
-    // tx fee due to provider is initiated under buyer.
     assert.equal(sellerAfter, sellerBefore);
 
     assert.equal(creator1After, creator1Before);
@@ -789,8 +785,6 @@ describe('cnft tests', () => {
       buyerSolEscrowAccountBalanceAfter,
     );
 
-    // In production it should be seller buy tx fee, but with this test set up, buyer pays
-    // tx fee due to provider is initiated under buyer.
     assert.equal(sellerAfter, sellerBefore);
 
     assert.equal(creator1After, creator1Before);

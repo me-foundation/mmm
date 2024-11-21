@@ -51,8 +51,6 @@ export const ME_TREASURY = new Web3PubKey(
   'rFqFJ9g7TGBD8Ed7TPDnvGKZ5pWLPDyxLcvcH2eRCtt',
 );
 
-export const treasury = publicKey(ME_TREASURY.toBase58());
-
 export const createUmi = async (endpoint?: string, airdropAmount?: SolAmount) =>
   (await baseCreateUmi(endpoint, { commitment: 'confirmed' }, airdropAmount))
     .use(mplTokenMetadata())
@@ -176,9 +174,6 @@ export const mint = async (
   };
 };
 
-// This is Hash(metadataArgs). Useful for verifying sellers fee basis points are valid.
-// NOTE: this does not perform any checks on the hash, it is recommended to use getMetadataHashChecked
-// in production!!
 export function hashMetadataArgsArgs(metadata: MetadataArgsArgs): Uint8Array {
   return hash(getMetadataArgsSerializer().serialize(metadata));
 }
