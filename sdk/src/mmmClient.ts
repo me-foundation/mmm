@@ -305,7 +305,8 @@ export class MMMClient {
       | ReturnType<MmmMethodsNamespace['solFulfillBuy']>
       | ReturnType<MmmMethodsNamespace['solMip1FulfillBuy']>
       | ReturnType<MmmMethodsNamespace['solExtFulfillBuy']>
-      | ReturnType<MmmMethodsNamespace['solMplCoreFulfillBuy']>;
+      | ReturnType<MmmMethodsNamespace['solMplCoreFulfillBuy']>
+      | ReturnType<MmmMethodsNamespace['cnftFulfillBuy']>;
 
     const mintOrCoreAsset = await this.conn.getAccountInfo(assetMint);
     let { key: buysideSolEscrowAccount } = getMMMBuysideSolEscrowPDA(

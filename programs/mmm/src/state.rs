@@ -138,7 +138,6 @@ impl SellState {
         200; // padding
 }
 
-
 // Wrapper structs to replace the Anchor program types until the Metaplex libs have
 // better Anchor support.
 pub struct BubblegumProgram;
@@ -148,7 +147,6 @@ impl Id for BubblegumProgram {
         mpl_bubblegum::ID
     }
 }
-
 
 #[derive(Clone)]
 pub struct TreeConfigAnchor(pub TreeConfig);
