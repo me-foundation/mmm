@@ -5,3 +5,4 @@ export * from './mmm';
 export * from './nfts';
 export * from './ocp';
 export * from './mpl_core';
+export * from './cnft';

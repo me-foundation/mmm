@@ -7,20 +7,21 @@ use crate::{
     errors::MMMErrorCode,
     get_creators_from_royalties,
     state::*,
-    IndexableAsset,
+    Collection, IndexableAsset, MetadataArgs,
 };
 use anchor_lang::{prelude::*, solana_program::log::sol_log_data};
 use anchor_spl::token_interface::Mint;
 use m2_interface::{
     withdraw_by_mmm_ix_with_program_id, WithdrawByMMMArgs, WithdrawByMmmIxArgs, WithdrawByMmmKeys,
 };
+use mpl_bubblegum::hash::hash_creators;
 use mpl_core::types::{Royalties, UpdateAuthority};
 use mpl_token_metadata::{
     accounts::{MasterEdition, Metadata},
     types::{Creator, TokenStandard},
 };
 use open_creator_protocol::state::Policy;
-use solana_program::program::invoke_signed;
+use solana_program::{keccak, program::invoke_signed};
 use spl_token_2022::{
     extension::{
         group_member_pointer::GroupMemberPointer, metadata_pointer::MetadataPointer,
@@ -30,7 +31,7 @@ use spl_token_2022::{
 };
 use spl_token_group_interface::state::TokenGroupMember;
 use spl_token_metadata_interface::state::TokenMetadata;
-use std::{convert::TryFrom, str::FromStr};
+use std::{convert::TryFrom, slice::Iter, str::FromStr};
 
 #[macro_export]
 macro_rules! index_ra {
@@ -145,6 +146,30 @@ pub fn check_allowlists_for_mint(
                 // Do not validate URI here, as we already did it above.
                 // These checks are separate since allowlist values are unioned together.
                 continue;
+            }
+            _ => {
+                return Err(MMMErrorCode::InvalidAllowLists.into());
+            }
+        }
+    }
+
+    // at the end, we didn't find a match, thus return err
+    Err(MMMErrorCode::InvalidAllowLists.into())
+}
+
+pub fn check_allowlists_for_cnft(allowlists: &[Allowlist], collection: Collection) -> Result<()> {
+    // Check mcc for cnft.
+    for allowlist_val in allowlists.iter() {
+        match allowlist_val.kind {
+            ALLOWLIST_KIND_EMPTY => {}
+            ALLOWLIST_KIND_ANY => {
+                // any is a special case, we don't need to check anything else
+                return Ok(());
+            }
+            ALLOWLIST_KIND_MCC => {
+                if collection.key == allowlist_val.value && collection.verified {
+                    return Ok(());
+                }
             }
             _ => {
                 return Err(MMMErrorCode::InvalidAllowLists.into());
@@ -555,6 +580,83 @@ pub fn pay_creator_fees_in_sol<'info>(
     let creator_accounts_iter = &mut creator_accounts.iter();
     for (index, creator) in creators.iter().enumerate() {
         let creator_fee = if index == creators.len() - 1 {
+            royalty
+                .checked_sub(total_royalty)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+        } else {
+            (royalty as u128)
+                .checked_mul(creator.share as u128)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                .checked_div(100)
+                .ok_or(MMMErrorCode::NumericOverflow)? as u64
+        };
+        let current_creator_info = next_account_info(creator_accounts_iter)?;
+        if creator.address.ne(current_creator_info.key) {
+            return Err(MMMErrorCode::InvalidCreatorAddress.into());
+        }
+        let current_creator_lamports = current_creator_info.lamports();
+        if creator_fee > 0
+            && current_creator_lamports
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?
+                > min_rent
+        {
+            anchor_lang::solana_program::program::invoke_signed(
+                &anchor_lang::solana_program::system_instruction::transfer(
+                    payer.key,
+                    current_creator_info.key,
+                    creator_fee,
+                ),
+                &[
+                    payer.to_account_info(),
+                    current_creator_info.to_account_info(),
+                    system_program.to_account_info(),
+                ],
+                payer_seeds,
+            )?;
+            total_royalty = total_royalty
+                .checked_add(creator_fee)
+                .ok_or(MMMErrorCode::NumericOverflow)?;
+        }
+    }
+    Ok(total_royalty)
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn pay_creator_fees_in_sol_cnft<'info>(
+    buyside_creator_royalty_bp: u16,
+    total_price: u64,
+    metadata_args: &MetadataArgs,
+    creator_accounts: &[AccountInfo<'info>],
+    payer: AccountInfo<'info>,
+    payer_seeds: &[&[&[u8]]],
+    system_program: AccountInfo<'info>,
+) -> Result<u64> {
+    // Calculate the total royalty to be paid
+    let royalty = ((total_price as u128)
+        .checked_mul(metadata_args.seller_fee_basis_points as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_mul(buyside_creator_royalty_bp as u128)
+        .ok_or(MMMErrorCode::NumericOverflow)?
+        .checked_div(10000)
+        .ok_or(MMMErrorCode::NumericOverflow)?) as u64;
+
+    if royalty == 0 {
+        return Ok(0);
+    }
+
+    if payer.lamports() < royalty {
+        return Err(MMMErrorCode::NotEnoughBalance.into());
+    }
+
+    let min_rent = Rent::get()?.minimum_balance(0);
+    let mut total_royalty: u64 = 0;
+
+    let creator_accounts_iter = &mut creator_accounts.iter();
+    for (index, creator) in metadata_args.creators.iter().enumerate() {
+        let creator_fee = if index == metadata_args.creators.len() - 1 {
             royalty
                 .checked_sub(total_royalty)
                 .ok_or(MMMErrorCode::NumericOverflow)?
@@ -1122,6 +1224,152 @@ pub fn create_core_metadata_core(royalties: &Royalties) -> MplCoreMetadata {
         seller_fee_basis_points: royalties.basis_points,
         creators: Some(get_creators_from_royalties(royalties)),
     }
+}
+
+// TODO: use the transfer cpi builder by mpl bubblegum
+#[allow(clippy::too_many_arguments)]
+pub fn transfer_compressed_nft<'info>(
+    tree_authority: &AccountInfo<'info>,
+    leaf_owner: &AccountInfo<'info>,
+    leaf_delegate: &AccountInfo<'info>,
+    new_leaf_owner: &AccountInfo<'info>,
+    merkle_tree: &AccountInfo<'info>,
+    log_wrapper: &AccountInfo<'info>,
+    compression_program: &AccountInfo<'info>,
+    system_program: &Program<'info, System>,
+    proof_path: &[AccountInfo<'info>],
+    bubblegum_program_key: Pubkey,
+    root: [u8; 32],
+    data_hash: [u8; 32],
+    creator_hash: [u8; 32],
+    nonce: u64,
+    index: u32,
+    signer_seeds: Option<&[&[u8]]>,
+) -> Result<()> {
+    // proof_path are the accounts that make up the required proof
+    let proof_path_len = proof_path.len();
+    let mut accounts = Vec::with_capacity(
+        8 // space for the 8 AccountMetas that are always included  (below)
+    + proof_path_len,
+    );
+    accounts.extend(vec![
+        AccountMeta::new_readonly(tree_authority.key(), false),
+        AccountMeta::new_readonly(leaf_owner.key(), true),
+        AccountMeta::new_readonly(leaf_delegate.key(), false),
+        AccountMeta::new_readonly(new_leaf_owner.key(), false),
+        AccountMeta::new(merkle_tree.key(), false),
+        AccountMeta::new_readonly(log_wrapper.key(), false),
+        AccountMeta::new_readonly(compression_program.key(), false),
+        AccountMeta::new_readonly(system_program.key(), false),
+    ]);
+
+    let transfer_discriminator: [u8; 8] = [163, 52, 200, 231, 140, 3, 69, 186];
+
+    let mut data = Vec::with_capacity(
+        8 // The length of transfer_discriminator,
+    + root.len()
+    + data_hash.len()
+    + creator_hash.len()
+    + 8 // The length of the nonce
+    + 8, // The length of the index
+    );
+    data.extend(transfer_discriminator);
+    data.extend(root);
+    data.extend(data_hash);
+    data.extend(creator_hash);
+    data.extend(nonce.to_le_bytes());
+    data.extend(index.to_le_bytes());
+
+    let mut account_infos = Vec::with_capacity(
+        8 // space for the 8 AccountInfos that are always included (below)
+    + proof_path_len,
+    );
+    account_infos.extend(vec![
+        tree_authority.to_account_info(),
+        leaf_owner.to_account_info(),
+        leaf_delegate.to_account_info(),
+        new_leaf_owner.to_account_info(),
+        merkle_tree.to_account_info(),
+        log_wrapper.to_account_info(),
+        compression_program.to_account_info(),
+        system_program.to_account_info(),
+    ]);
+
+    // Add "accounts" (hashes) that make up the merkle proof from the remaining accounts.
+    for acc in proof_path.iter() {
+        accounts.push(AccountMeta::new_readonly(acc.key(), false));
+        account_infos.push(acc.to_account_info());
+    }
+
+    let instruction = solana_program::instruction::Instruction {
+        program_id: bubblegum_program_key,
+        accounts,
+        data,
+    };
+
+    match signer_seeds {
+        Some(seeds) => {
+            let seeds_array: &[&[&[u8]]] = &[seeds];
+            solana_program::program::invoke_signed(&instruction, &account_infos[..], seeds_array)
+        }
+        None => solana_program::program::invoke(&instruction, &account_infos[..]),
+    }?;
+    Ok(())
+}
+
+/// Computes the hash of the metadata.
+///
+/// The hash is computed as the keccak256 hash of the metadata bytes, which is
+/// then hashed with the `seller_fee_basis_points`.
+pub fn hash_metadata(metadata: &MetadataArgs) -> Result<[u8; 32]> {
+    let hash = keccak::hashv(&[metadata.try_to_vec()?.as_slice()]);
+    // Calculate new data hash.
+    Ok(keccak::hashv(&[
+        &hash.to_bytes(),
+        &metadata.seller_fee_basis_points.to_le_bytes(),
+    ])
+    .to_bytes())
+}
+
+pub fn hash_creators_from_metadata_args(
+    creator_accounts: Iter<AccountInfo>,
+    metadata_args: &MetadataArgs,
+) -> Result<[u8; 32]> {
+    let creator_shares = metadata_args
+        .creators
+        .iter()
+        .map(|c| c.share as u16)
+        .collect::<Vec<u16>>();
+
+    let creator_verified = metadata_args
+        .creators
+        .iter()
+        .map(|c| c.verified)
+        .collect::<Vec<bool>>();
+    // Check that all input arrays/vectors are of the same length
+    if creator_accounts.len() != creator_shares.len()
+        || creator_accounts.len() != creator_verified.len()
+    {
+        return Err(MMMErrorCode::InvalidCreatorAddress.into());
+    }
+
+    // Convert input data to a vector of Creator structs
+    let creators: Vec<mpl_bubblegum::types::Creator> = creator_accounts
+        .zip(creator_shares.iter())
+        .zip(creator_verified.iter())
+        .map(
+            |((account, &share), &verified)| mpl_bubblegum::types::Creator {
+                address: *account.key,
+                verified,
+                share: share as u8, // Assuming the share is never more than 255. If it can be, this needs additional checks.
+            },
+        )
+        .collect();
+
+    // Compute the hash from the Creator vector
+    let computed_hash = hash_creators(&creators);
+
+    Ok(computed_hash)
 }
 
 #[cfg(test)]

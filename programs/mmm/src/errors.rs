@@ -72,4 +72,8 @@ pub enum MMMErrorCode {
     InvalidTokenExtension, // 0x1791
     #[msg("Unsupported asset plugin")]
     UnsupportedAssetPlugin, // 0x1792
+    #[msg("Invalid cnft metadata")]
+    InvalidCnftMetadata, // 0x1795
+    #[msg("Invalid cnft metadata args")]
+    InvalidCnftMetadataArgs, // 0x1796
 }
