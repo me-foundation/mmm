@@ -199,7 +199,7 @@ pub fn handler<'info>(
             .checked_sub(1)
             .ok_or(MMMErrorCode::NumericOverflow)?;
 
-        remaining_accounts[2..].split_at(creator_length + 2)
+        remaining_accounts[2..].split_at(creator_length)
     } else {
         remaining_accounts.split_at(creator_length)
     };
