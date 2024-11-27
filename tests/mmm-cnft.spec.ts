@@ -27,6 +27,7 @@ import {
   getProofPath,
   getSolFulfillBuyPrices,
   IDL,
+  M2_PROGRAM,
   Mmm,
   MMMProgramID,
 } from '../sdk/src';
@@ -59,6 +60,7 @@ async function createCNftCollectionOffer(
   const poolData = await createPool(program, {
     ...poolArgs,
     reinvestFulfillBuy: false,
+    reinvestFulfillSell: false,
     buysideCreatorRoyaltyBp: 10_000,
   });
 
@@ -67,18 +69,6 @@ async function createCNftCollectionOffer(
     program.programId,
     poolData.poolKey,
   );
-
-  await program.methods
-    .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
-    .accountsStrict({
-      owner: poolArgs.owner,
-      cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
-      pool: poolKey,
-      buysideSolEscrowAccount,
-      systemProgram: SystemProgram.programId,
-    })
-    .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
-    .rpc({ skipPreflight: true });
 
   if (sharedEscrow) {
     const sharedEscrowAccount = getM2BuyerSharedEscrow(poolArgs.owner).key;
@@ -94,6 +84,18 @@ async function createCNftCollectionOffer(
       })
       .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
       .rpc();
+  } else {
+    await program.methods
+      .solDepositBuy({ paymentAmount: new anchor.BN(10 * LAMPORTS_PER_SOL) })
+      .accountsStrict({
+        owner: poolArgs.owner,
+        cosigner: poolArgs.cosigner?.publicKey ?? poolArgs.owner,
+        pool: poolKey,
+        buysideSolEscrowAccount,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([...(poolArgs.cosigner ? [poolArgs.cosigner] : [])])
+      .rpc({ skipPreflight: true });
   }
 
   return {
@@ -110,6 +112,7 @@ describe('cnft tests', () => {
   let provider = new anchor.AnchorProvider(connection, buyer, {
     commitment: 'confirmed',
   });
+  const sharedEscrowAccount = getM2BuyerSharedEscrow(buyer.publicKey).key;
 
   let umi: Umi;
   const program = new anchor.Program(
@@ -124,6 +127,7 @@ describe('cnft tests', () => {
     airdrop(connection, buyer.publicKey, 100);
     airdrop(connection, seller.publicKey, 100);
     airdrop(connection, cosigner.publicKey, 100);
+    airdrop(connection, sharedEscrowAccount, 100);
   });
 
   it('cnft fulfill buy - happy path', async () => {
@@ -336,6 +340,263 @@ describe('cnft tests', () => {
     assert.equal(
       buyerSolEscrowAccountBalanceBefore,
       buyerSolEscrowAccountBalanceAfter + spotPrice * LAMPORTS_PER_SOL,
+    );
+
+    assert.equal(
+      sellerAfter,
+      sellerBefore +
+        spotPrice * LAMPORTS_PER_SOL -
+        expectedBuyPrices.takerFeePaid.toNumber() -
+        expectedBuyPrices.royaltyPaid.toNumber(),
+    );
+
+    assertIsBetween(
+      creator1After,
+      creator1Before +
+        (expectedBuyPrices.royaltyPaid.toNumber() *
+          metadata.creators[0].share) /
+          100,
+      PRICE_ERROR_RANGE,
+    );
+
+    assertIsBetween(
+      creator2After,
+      creator2Before +
+        (expectedBuyPrices.royaltyPaid.toNumber() *
+          metadata.creators[1].share) /
+          100,
+      PRICE_ERROR_RANGE,
+    );
+  });
+
+  it('cnft fulfill buy - happy path shared escrow', async () => {
+    // 1. Create a tree.
+    const {
+      merkleTree,
+      sellerProof, //already truncated
+      leafIndex,
+      metadata,
+      getBubblegumTreeRef,
+      getCnftRef,
+      nft,
+      creatorRoyalties,
+      collectionKey,
+    } = await setupTree(
+      umi,
+      publicKey(seller.publicKey),
+      DEFAULT_TEST_SETUP_TREE_PARAMS,
+    );
+
+    // 2. Create a shared escrow offer.
+    const { buysideSolEscrowAccount, poolData } =
+      await createCNftCollectionOffer(
+        program,
+        {
+          owner: new PublicKey(buyer.publicKey),
+          cosigner,
+          allowlists: [
+            {
+              kind: AllowlistKind.mcc,
+              value: collectionKey,
+            },
+            ...getEmptyAllowLists(5),
+          ],
+        },
+        true, // shared escrow
+        1, // shared escrow count
+      );
+
+    const [treeAuthority, _] = getBubblegumAuthorityPDA(
+      new PublicKey(nft.tree.merkleTree),
+    );
+
+    const [assetId, bump] = findLeafAssetIdPda(umi, {
+      merkleTree,
+      leafIndex,
+    });
+
+    const { key: sellState } = getMMMSellStatePDA(
+      program.programId,
+      poolData.poolKey,
+      new PublicKey(assetId),
+    );
+
+    const spotPrice = 1;
+    const expectedBuyPrices = getSolFulfillBuyPrices({
+      totalPriceLamports: spotPrice * LAMPORTS_PER_SOL,
+      lpFeeBp: 0,
+      takerFeeBp: 100,
+      metadataRoyaltyBp: 500,
+      buysideCreatorRoyaltyBp: 10_000,
+      makerFeeBp: 0,
+    });
+
+    const treeAccount = await ConcurrentMerkleTreeAccount.fromAccountAddress(
+      connection,
+      nft.tree.merkleTree,
+    );
+
+    const proofPath: AccountMeta[] = getProofPath(
+      nft.nft.fullProof,
+      treeAccount.getCanopyDepth(),
+    );
+
+    const {
+      accounts: creatorAccounts,
+      creatorShares,
+      creatorVerified,
+      sellerFeeBasisPoints,
+    } = getCreatorRoyaltiesArgs(creatorRoyalties);
+
+    // get balances before fulfill buy
+    const [
+      buyerBefore,
+      sellerBefore,
+      sharedEscrowAccountBalanceBefore,
+      creator1Before,
+      creator2Before,
+    ] = await Promise.all([
+      connection.getBalance(buyer.publicKey),
+      connection.getBalance(seller.publicKey),
+      connection.getBalance(sharedEscrowAccount),
+      connection.getBalance(creatorAccounts[0].pubkey),
+      connection.getBalance(creatorAccounts[1].pubkey),
+    ]);
+
+    try {
+      const metadataSerializer = getMetadataArgsSerializer();
+      const metadataArgs: MetadataArgs = metadataSerializer.deserialize(
+        metadataSerializer.serialize(metadata),
+      )[0];
+
+      const fulfillBuyTxnSig = await program.methods
+        .cnftFulfillBuy({
+          assetId: new PublicKey(assetId),
+          root: getByteArray(nft.tree.root),
+          nonce: new BN(nft.tree.nonce),
+          index: nft.nft.nftIndex,
+          minPaymentAmount: new BN(expectedBuyPrices.sellerReceives),
+          makerFeeBp: 0,
+          takerFeeBp: 100,
+          metadataArgs: {
+            name: metadataArgs.name,
+            symbol: metadataArgs.symbol,
+            uri: metadataArgs.uri,
+            sellerFeeBasisPoints: metadataArgs.sellerFeeBasisPoints,
+            primarySaleHappened: metadataArgs.primarySaleHappened,
+            isMutable: metadataArgs.isMutable,
+            editionNonce: isSome(metadataArgs.editionNonce)
+              ? metadataArgs.editionNonce.value
+              : null,
+            tokenStandard: isSome(metadataArgs.tokenStandard)
+              ? convertToDecodeTokenStandardEnum(
+                  metadataArgs.tokenStandard.value,
+                )
+              : null,
+            collection: isSome(metadataArgs.collection)
+              ? {
+                  verified: metadataArgs.collection.value.verified,
+                  key: new PublicKey(metadataArgs.collection.value.key),
+                }
+              : null, // Ensure it's a struct or null
+            uses: isSome(metadataArgs.uses)
+              ? {
+                  useMethod: convertToDecodeUseMethodEnum(
+                    metadataArgs.uses.value.useMethod,
+                  ),
+                  remaining: metadataArgs.uses.value.remaining,
+                  total: metadataArgs.uses.value.total,
+                }
+              : null,
+            tokenProgramVersion: convertToDecodeTokenProgramVersion(
+              metadataArgs.tokenProgramVersion,
+            ),
+            creators: metadataArgs.creators.map((c) => ({
+              address: new PublicKey(c.address),
+              verified: c.verified,
+              share: c.share,
+            })),
+          },
+        })
+        .accountsStrict({
+          payer: new PublicKey(seller.publicKey),
+          owner: buyer.publicKey,
+          cosigner: cosigner.publicKey,
+          referral: poolData.referral.publicKey,
+          pool: poolData.poolKey,
+          buysideSolEscrowAccount,
+          treeAuthority,
+          merkleTree: nft.tree.merkleTree,
+          logWrapper: SPL_NOOP_PROGRAM_ID,
+          bubblegumProgram: MPL_BUBBLEGUM_PROGRAM_ID,
+          compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
+          sellState,
+          systemProgram: SystemProgram.programId,
+        })
+        .remainingAccounts([
+          {
+            pubkey: M2_PROGRAM,
+            isSigner: false,
+            isWritable: false,
+          },
+          {
+            pubkey: sharedEscrowAccount,
+            isWritable: true,
+            isSigner: false,
+          },
+          ...creatorAccounts,
+          ...proofPath,
+        ])
+        .signers([cosigner, seller.payer])
+        // note: skipPreflight causes some weird error.
+        // so just surround in this try-catch to get the logs
+        .rpc(/* { skipPreflight: true } */);
+      const tx = await connection.getParsedTransaction(fulfillBuyTxnSig, {
+        maxSupportedTransactionVersion: 0,
+      });
+      console.log(`${JSON.stringify(tx)}`);
+    } catch (e) {
+      if (e instanceof SendTransactionError) {
+        const err = e as SendTransactionError;
+        console.log(
+          `err.logs: ${JSON.stringify(
+            await err.getLogs(provider.connection),
+            null,
+            2,
+          )}`,
+        );
+      }
+      throw e;
+    }
+
+    // Verify that buyer now owns the cNFT.
+    await verifyOwnership(
+      umi,
+      merkleTree,
+      publicKey(buyer.publicKey),
+      leafIndex,
+      metadata,
+      [],
+    );
+
+    // Get balances after fulfill buy
+    const [
+      buyerAfter,
+      sellerAfter,
+      sharedEscrowAccountBalanceAfter,
+      creator1After,
+      creator2After,
+    ] = await Promise.all([
+      connection.getBalance(buyer.publicKey),
+      connection.getBalance(seller.publicKey),
+      connection.getBalance(sharedEscrowAccount),
+      connection.getBalance(creatorAccounts[0].pubkey),
+      connection.getBalance(creatorAccounts[1].pubkey),
+    ]);
+
+    assert.equal(
+      sharedEscrowAccountBalanceBefore,
+      sharedEscrowAccountBalanceAfter + spotPrice * LAMPORTS_PER_SOL,
     );
 
     assert.equal(
